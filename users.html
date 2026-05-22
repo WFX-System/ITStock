@@ -84,7 +84,9 @@ function renderUsers(){
   onchange="changeRole('${u.docId}',this.value,this)">
             <option value="user" ${u.role!=='admin'?'selected':''}>👤 User</option>
             <option value="admin" ${u.role==='admin'?'selected':''}>🔑 Admin</option>
-          </select>`}
+          </select>
+          <button onclick="deleteUser('${u.docId}')" title="ลบผู้ใช้"
+            style="background:none;border:1px solid var(--r);color:var(--r);border-radius:var(--radsm);padding:4px 8px;font-size:12px;cursor:pointer;flex-shrink:0">🗑️</button>`}
         </div>`;
       }).join('')}
     </div>
@@ -92,6 +94,17 @@ function renderUsers(){
       ${allUsers.length} บัญชี · Admin ${allUsers.filter(u=>u.role==='admin').length} · User ${allUsers.filter(u=>u.role!=='admin').length}
     </div>
   </div>`;
+}
+
+async function deleteUser(uid){
+  const user=allUsers.find(u=>u.docId===uid); if(!user)return;
+  if(!confirm(`ลบผู้ใช้ "${user.displayName||user.email}" ออกจากระบบ?\nการกระทำนี้ไม่สามารถย้อนกลับได้`))return;
+  try{
+    await db.collection('users').doc(uid).delete();
+    allUsers=allUsers.filter(u=>u.docId!==uid);
+    showNotif('ลบผู้ใช้สำเร็จ');
+    renderUsers();
+  }catch(e){showNotif('ไม่สำเร็จ: '+e.message,'error');}
 }
 
 async function changeRole(uid,newRole,el){
