@@ -560,10 +560,11 @@ function renderItemRow(item, isAdmin){
       </div>
       ${units.length===0?`<div class="fz12 txmute" style="padding:6px 0">ยังไม่มีชิ้นส่วนในระบบ</div>`:`
       <div class="units-grid">
-        ${units.map(u=>`
+        ${units.map((u,i)=>`
           <div class="unit-card">
             <div class="unit-dot dot-${u.status||'available'}"></div>
             <div class="unit-info">
+              <span style="font-size:11px;color:var(--tx3);font-weight:700;margin-right:4px">#${i+1}</span>
               ${snBadge(u)} ${unitStatBadge(u.status||'available')}
               ${u.detail?`<div class="unit-detail">${u.detail}</div>`:''}
               ${u.note?`<div class="unit-note">📝 ${u.note}</div>`:''}
@@ -594,11 +595,12 @@ function openQuickWithdraw(itemId) {
 }
 
 function renderQWModal(item, avail) {
-  const unitRows = avail.map(u => `
+  const unitRows = avail.map((u,i) => `
     <label class="qw-unit-row" id="qwrow-${u.docId}">
       <input type="checkbox" value="${u.docId}"
         onchange="qwToggleUnit('${u.docId}',this.checked)"
         ${qwSelectedUnits.includes(u.docId)?'checked':''}/>
+      <span style="font-size:11px;color:var(--tx3);font-weight:700;min-width:20px">#${i+1}</span>
       ${snBadge(u)}
       <span class="fz12 txm" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.detail||'ไม่มีรายละเอียด'}</span>
     </label>`).join('');
