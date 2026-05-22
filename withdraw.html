@@ -316,9 +316,10 @@ function loadWdUnits(){
   document.getElementById('wUnitList').innerHTML=`
     <div class="fz12 fw7 txm" style="margin-bottom:6px">เลือกชิ้นที่ต้องการ (${avail.length} ชิ้นพร้อมใช้):</div>
     <div class="unit-picker">
-      ${avail.map(u=>`
+      ${avail.map((u,i)=>`
         <label class="unit-pick-row">
           <input type="checkbox" class="upick-cb" value="${u.docId}" data-item="${id}" data-name="${item.name}" data-sn="${u.sn||'-'}" data-detail="${u.detail||''}"/>
+          <span style="font-size:11px;color:var(--tx3);font-weight:700;min-width:20px">#${i+1}</span>
           ${snBadge(u)}
           <span class="fz12 txm" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.detail||'ไม่มีรายละเอียด'}</span>
         </label>`).join('')}
