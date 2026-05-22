@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>RYG Stock — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="shared.js"></script>
+<style>
+/* ══════════════════════════════════════════
+   THEME SYSTEM
+══════════════════════════════════════════ */
+/* Theme: Ocean (Default) */
+[data-theme="ocean"] {
+  --g:#1D9E75; --gd:#15785a; --gl:#a8ddc9; --gll:#eaf7f2;
+  --topbar-grad: linear-gradient(135deg,#0f5c43 0%,#1D9E75 100%);
+  --accent2:#0ea5e9; --accent2l:#e0f2fe;
+}
+/* Theme: Indigo */
+[data-theme="indigo"] {
+  --g:#6366f1; --gd:#4338ca; --gl:#c7d2fe; --gll:#eef2ff;
+  --topbar-grad: linear-gradient(135deg,#312e81 0%,#6366f1 100%);
+  --accent2:#f59e0b; --accent2l:#fef3c7;
+}
+/* Theme: Rose */
+[data-theme="rose"] {
+  --g:#f43f5e; --gd:#be123c; --gl:#fecdd3; --gll:#fff1f2;
+  --topbar-grad: linear-gradient(135deg,#9f1239 0%,#f43f5e 100%);
+  --accent2:#06b6d4; --accent2l:#cffafe;
+}
+/* Theme: Amber */
+[data-theme="amber"] {
+  --g:#d97706; --gd:#92400e; --gl:#fcd34d; --gll:#fffbeb;
+  --topbar-grad: linear-gradient(135deg,#78350f 0%,#d97706 100%);
+  --accent2:#8b5cf6; --accent2l:#f5f3ff;
+}
+/* Theme: Slate (Dark) */
+[data-theme="slate"] {
+  --g:#64748b; --gd:#334155; --gl:#cbd5e1; --gll:#f8fafc;
+  --bg:#0f172a; --surf:#1e293b; --bdr:#334155; --bdrm:#475569;
+  --tx1:#f1f5f9; --tx2:#cbd5e1; --tx3:#94a3b8;
+  --topbar-grad: linear-gradient(135deg,#020617 0%,#334155 100%);
+  --accent2:#22d3ee; --accent2l:#164e63;
+  --rl:#3f1010; --aml:#3f2d05;
+}
+
+/* ── Topbar gradient ── */
+.topbar {
+  background: var(--topbar-grad, var(--surf)) !important;
+  border-bottom: none !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.18) !important;
+}
+.topbar-title { color:#fff !important; text-shadow:0 1px 3px rgba(0,0,0,.2); }
+.topbar-logo  { background:rgba(255,255,255,.2) !important; backdrop-filter:blur(4px); }
+.user-name-top{ color:rgba(255,255,255,.9) !important; }
+.badge-admin  { background:rgba(255,255,255,.18) !important; color:#fff !important; border-color:rgba(255,255,255,.3) !important; }
+.badge-user   { background:rgba(255,255,255,.18) !important; color:#fff !important; border-color:rgba(255,255,255,.3) !important; }
+.btn-topout   { border-color:rgba(255,255,255,.3) !important; color:#fff !important; background:rgba(255,255,255,.08) !important; }
+.btn-topout:hover { background:rgba(255,255,255,.2) !important; }
+
+/* ── Theme Switcher Trigger ── */
+.theme-btn {
+  width:30px; height:30px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.4);
+  cursor:pointer; font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.15); backdrop-filter:blur(4px);
+  transition:transform .2s, box-shadow .2s;
+  flex-shrink:0;
+}
+.theme-btn:hover { transform:scale(1.1); box-shadow:0 0 0 3px rgba(255,255,255,.2); }
+
+/* ── Theme Panel ── */
+.theme-panel {
+  position:fixed; top:calc(var(--topbar-h) + 8px); right:12px;
+  background:var(--surf); border:1px solid var(--bdr);
+  border-radius:16px; padding:14px 16px; z-index:300;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+  display:none; width:230px;
+  animation:slideDown .18s ease;
+}
+.theme-panel.open { display:block; }
+@keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+.theme-panel-title { font-size:11px; font-weight:700; color:var(--tx3); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; }
+.theme-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.theme-swatch {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 10px; border-radius:10px;
+  border:2px solid transparent; cursor:pointer;
+  font-size:12px; font-weight:600; color:var(--tx1);
+  background:var(--bg); transition:all .15s;
+}
+.theme-swatch:hover { border-color:var(--bdrm); background:var(--surf); }
+.theme-swatch.active { border-color:var(--g); background:var(--gll); color:var(--gd); }
+.swatch-dot { width:18px; height:18px; border-radius:50%; flex-shrink:0; }
+
+/* ══════════════════════════════════════════
+   DASHBOARD LAYOUT
+══════════════════════════════════════════ */
+.dash-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+.dash-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px; }
+@media(max-width:600px){ .dash-2,.dash-3 { grid-template-columns:1fr; } }
+
+/* ── Upgraded Stat Cards ── */
+.stat-grid-new {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;
+}
+@media(max-width:600px){ .stat-grid-new { grid-template-columns:repeat(2,1fr); } }
+
+.stat-card-new {
+  background:var(--surf); border:1px solid var(--bdr);
+  border-radius:16px; padding:1rem 1rem .85rem;
+  position:relative; overflow:hidden;
+  transition:transform .18s, box-shadow .18s;
+}
+.stat-card-new:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.1); }
+.stat-card-new::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:var(--card-accent, var(--g));
+}
+.stat-card-icon { font-size:22px; margin-bottom:6px; }
+.stat-card-val  { font-size:28px; font-weight:700; line-height:1; color:var(--card-color, var(--tx1)); }
+.stat-card-lbl  { font-size:11px; font-weight:600; color:var(--tx3); margin-top:4px; }
+.stat-card-sub  { font-size:10px; color:var(--tx3); margin-top:2px; }
+
+/* ── Mini bar ── */
+.mini-bar-bg   { flex:1; height:6px; background:var(--bg); border-radius:3px; overflow:hidden; }
+.mini-bar-fill { height:100%; border-radius:3px; background:var(--g); transition:width .4s; }
+.mini-bar-fill.amber { background:var(--am); }
+
+/* ── Row item ── */
+.dash-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--bdr); }
+.dash-row:last-child { border-bottom:none; }
+
+/* ── Trend chip ── */
+.trend-up   { color:var(--gd); font-size:11px; font-weight:700; background:var(--gll); padding:3px 8px; border-radius:20px; }
+.trend-down { color:var(--r);  font-size:11px; font-weight:700; background:var(--rl);  padding:3px 8px; border-radius:20px; }
+.trend-flat { color:var(--tx3);font-size:11px; font-weight:700; background:var(--bg);  padding:3px 8px; border-radius:20px; }
+
+/* ── Dots ── */
+.dot-r { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--r); flex-shrink:0; }
+.dot-g { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--g); flex-shrink:0; }
+.dot-a { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--am); flex-shrink:0; }
+
+/* ── Compare block ── */
+.cmp-block   { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.cmp-num     { font-size:22px; font-weight:700; line-height:1; }
+.cmp-lbl     { font-size:11px; color:var(--tx3); }
+.cmp-divider { width:1px; background:var(--bdrm); align-self:stretch; }
+
+/* ══════════════════════════════════════════
+   ALERT SECTION  ⚠️ ต้องจัดการ
+══════════════════════════════════════════ */
+.alert-card-wrap {
+  background:var(--surf); border:1px solid var(--bdr);
+  border-radius:16px; overflow:hidden; margin-bottom:12px;
+}
+.alert-card-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.75rem 1rem; border-bottom:1px solid var(--bdr);
+  background:linear-gradient(to right, var(--aml), var(--surf));
+}
+.alert-card-title { font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; }
+.alert-filter-row {
+  display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+  padding:.6rem 1rem; border-bottom:1px solid var(--bdr);
+  background:var(--bg);
+}
+.alert-filter-btn {
+  padding:4px 10px; border-radius:20px; border:1.5px solid var(--bdrm);
+  background:var(--surf); font-size:11px; font-weight:700; cursor:pointer;
+  font-family:var(--font); color:var(--tx2); transition:all .15s;
+}
+.alert-filter-btn.active { background:var(--g); border-color:var(--g); color:#fff; }
+
+/* Alert rows */
+.alert-item {
+  display:flex; align-items:center; gap:10px;
+  padding:.65rem 1rem; border-bottom:1px solid var(--bdr);
+  transition:background .12s; position:relative;
+}
+.alert-item:last-child { border-bottom:none; }
+.alert-item:hover { background:var(--bg); }
+.alert-item.snoozed { opacity:.45; }
+.alert-item.snoozed .alert-name { text-decoration:line-through; }
+
+.alert-left { flex:1; min-width:0; }
+.alert-name { font-size:13px; font-weight:600; cursor:pointer; transition:color .15s; }
+.alert-name:hover { color:var(--g); }
+.alert-code { font-size:11px; color:var(--tx3); font-family:var(--mono); margin-top:1px; }
+.alert-right { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+
+/* Snooze toggle */
+.snooze-toggle {
+  display:flex; align-items:center; gap:5px;
+  font-size:11px; font-weight:600; color:var(--tx3);
+  cursor:pointer; padding:4px 8px; border-radius:8px;
+  border:1.5px solid var(--bdr); background:var(--bg);
+  transition:all .15s; white-space:nowrap; user-select:none;
+}
+.snooze-toggle:hover { border-color:var(--bdrm); background:var(--surf); }
+.snooze-toggle.active { background:var(--gll); border-color:var(--gl); color:var(--gd); }
+.snooze-toggle input[type=checkbox] {
+  width:auto; padding:0; border:none; background:transparent;
+  accent-color:var(--g); cursor:pointer; margin:0;
+}
+
+/* Show/hide snoozed */
+.show-snoozed-btn {
+  font-size:12px; color:var(--tx3); background:none; border:none;
+  cursor:pointer; padding:6px 0; font-family:var(--font);
+  text-decoration:underline;
+}
+
+/* Alert footer */
+.alert-footer {
+  padding:.65rem 1rem; border-top:1px solid var(--bdr);
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg);
+}
+
+/* ── All-clear ── */
+.all-clear {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:2.5rem 1rem; gap:8px;
+}
+
+/* ══════════════════════════════════════════
+   CARD ENHANCEMENTS
+══════════════════════════════════════════ */
+.card { border-radius:16px !important; }
+.card-header { background:linear-gradient(to right, var(--bg), var(--surf)); }
+
+/* Section label */
+.section-label {
+  font-size:10px; font-weight:700; color:var(--tx3);
+  text-transform:uppercase; letter-spacing:.08em;
+  margin-bottom:8px; margin-top:4px;
+}
+</style>
+</head>
+<body>
+<div id="loadingScreen">
+  <div style="width:52px;height:52px;background:var(--g);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>
+  <div style="font-size:15px;font-weight:700;">RYG Stock System</div>
+  <div class="spinner"></div>
+</div>
+<div id="mainApp">
+  <div class="topbar">
+    <div class="topbar-logo">📦</div>
+    <span class="topbar-title">RYG Stock</span>
+    <div class="user-mini">
+      <img id="uAvatar" class="user-ava" src="" onerror="this.style.display='none'" alt=""/>
+      <span id="uFallback" class="user-ava"></span>
+      <span id="uName" class="user-name-top"></span>
+      <span id="uRole" class="badge-role badge-admin"></span>
+      <!-- Theme button -->
+      <button class="theme-btn" onclick="toggleThemePanel()" title="เลือกธีมสี">🎨</button>
+      <button class="btn-topout" onclick="doLogout()">ออก</button>
+    </div>
+  </div>
+
+  <!-- Theme panel -->
+  <div class="theme-panel" id="themePanel">
+    <div class="theme-panel-title">🎨 ธีมสี</div>
+    <div class="theme-grid" id="themeGrid"></div>
+  </div>
+
+  <div class="nav-tabs" id="navTabs"></div>
+  <div class="content" id="mainContent"></div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+</div>
+<div id="printArea"></div>
+<div id="notif"></div>
+
+<script>
+/* ════════════════════════════════════════════
+   THEME SYSTEM
+════════════════════════════════════════════ */
+const THEMES = [
+  { id:'ocean',  label:'Ocean',   dot:'#1D9E75', emoji:'🌊' },
+  { id:'indigo', label:'Indigo',  dot:'#6366f1', emoji:'💜' },
+  { id:'rose',   label:'Rose',    dot:'#f43f5e', emoji:'🌹' },
+  { id:'amber',  label:'Amber',   dot:'#d97706', emoji:'🌟' },
+  { id:'slate',  label:'Dark',    dot:'#64748b', emoji:'🌙' },
+];
+
+function applyTheme(id){
+  document.documentElement.setAttribute('data-theme', id);
+  localStorage.setItem('ryg_theme', id);
+  renderThemeGrid();
+}
+
+function toggleThemePanel(){
+  const p=document.getElementById('themePanel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')) renderThemeGrid();
+}
+
+// Close theme panel on outside click
+document.addEventListener('click', e=>{
+  const p=document.getElementById('themePanel');
+  if(p && !p.contains(e.target) && !e.target.closest('.theme-btn')){
+    p.classList.remove('open');
+  }
+});
+
+function renderThemeGrid(){
+  const cur=document.documentElement.getAttribute('data-theme')||'ocean';
+  document.getElementById('themeGrid').innerHTML = THEMES.map(t=>`
+    <div class="theme-swatch${t.id===cur?' active':''}" onclick="applyTheme('${t.id}');toggleThemePanel()">
+      <div class="swatch-dot" style="background:${t.dot}"></div>
+      <span>${t.emoji} ${t.label}</span>
+    </div>`).join('');
+}
+
+// Apply saved theme on load
+(function(){
+  const saved = localStorage.getItem('ryg_theme')||'ocean';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
+/* ════════════════════════════════════════════
+   DATA
+════════════════════════════════════════════ */
+let allItems=[], allUnits=[], historyData=[], currentUser=null, currentRole='user', db=null;
+
+// Snoozed alerts — persisted in localStorage
+// Key: itemId → { snoozed:true, until:null (indefinite) | timestamp }
+function getSnoozedMap(){
+  try{ return JSON.parse(localStorage.getItem('ryg_snoozed')||'{}'); }catch(e){ return {}; }
+}
+function saveSnoozedMap(m){
+  localStorage.setItem('ryg_snoozed', JSON.stringify(m));
+}
+function isSnoozed(id){
+  const m=getSnoozedMap(); const s=m[id];
+  if(!s) return false;
+  if(s.until && Date.now() > s.until){ delete m[id]; saveSnoozedMap(m); return false; }
+  return !!s.snoozed;
+}
+function toggleSnooze(id){
+  const m=getSnoozedMap();
+  if(m[id]?.snoozed){ delete m[id]; }
+  else { m[id]={snoozed:true, until:null}; }
+  saveSnoozedMap(m);
+}
+
+// Alert filter state
+let alertFilter='all'; // 'all' | 'out' | 'low'
+let showSnoozedAlerts=false;
+
+initShell('dashboard', async (user, role, firestore) => {
+  currentUser=user; currentRole=role; db=firestore;
+  await loadItems();
+  await loadUnits();
+  subscribeHistory();
+});
+
+async function loadItems(){
+  const snap=await db.collection('items').get();
+  allItems=snap.docs.map(d=>({docId:d.id,...d.data()}));
+  allItems.sort((a,b)=>(a.id||'').localeCompare(b.id||''));
+  if(!allItems.length) await seedItems();
+}
+async function seedItems(){
+  const seed=[
+    {id:'SP001',name:'SSD 128GB',min:2,loc:'ชั้น IT',cat:'Storage'},
+    {id:'SP002',name:'SSD 240GB',min:2,loc:'ชั้น IT',cat:'Storage'},
+    {id:'SP003',name:'HDD 320GB',min:1,loc:'ชั้น IT',cat:'Storage'},
+    {id:'SP004',name:'HDD 500GB',min:3,loc:'ชั้น IT',cat:'Storage'},
+    {id:'SP005',name:'HDD 1TB',min:3,loc:'ชั้น IT',cat:'Storage'},
+    {id:'SP006',name:'HDD 2TB',min:1,loc:'ชั้น IT',cat:'Storage'},
+    {id:'SP007',name:'RAM PC3 8GB',min:2,loc:'ชั้น IT',cat:'Memory'},
+    {id:'SP008',name:'RAM PC3 4GB',min:3,loc:'ชั้น IT',cat:'Memory'},
+    {id:'SP009',name:'RAM PC3 2GB',min:2,loc:'ชั้น IT',cat:'Memory'},
+    {id:'SP010',name:'RAM PC4 4GB',min:2,loc:'ชั้น IT',cat:'Memory'},
+    {id:'SP011',name:'CPU',min:3,loc:'ชั้น IT',cat:'Component'},
+    {id:'SP012',name:'GPU',min:2,loc:'ชั้น IT',cat:'Component'},
+    {id:'SP045',name:'Keyboard',min:2,loc:'ชั้น IT',cat:'Device'},
+    {id:'SP046',name:'Mouse',min:2,loc:'ชั้น IT',cat:'Device'},
+    {id:'SP047',name:'Webcam',min:2,loc:'ชั้น IT',cat:'Device'},
+    {id:'SP043',name:'Monitor',min:2,loc:'ชั้น IT',cat:'Device'},
+  ];
+  const batch=db.batch();
+  seed.forEach(i=>batch.set(db.collection('items').doc(i.id),i));
+  await batch.commit(); await loadItems();
+}
+
+async function loadUnits(){
+  const snap=await db.collection('units').get();
+  allUnits=snap.docs.map(d=>({docId:d.id,...d.data()}));
+}
+
+function getItemQty(id){ return allUnits.filter(u=>u.itemId===id&&u.status==='available').length; }
+function getStatus(id){
+  const q=getItemQty(id), item=allItems.find(i=>i.id===id);
+  if(!item)return'ok'; if(q<=0)return'out'; if(q<=(item.min||1))return'low'; return'ok';
+}
+function statusBadge(id){
+  const s=getStatus(id);
+  if(s==='out') return'<span class="badge badge-out">🔴 หมดสต็อก</span>';
+  if(s==='low') return'<span class="badge badge-low">🟡 ใกล้หมด</span>';
+  return'<span class="badge badge-ok">🟢 ปกติ</span>';
+}
+
+// ── Date helpers ──
+function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+function startOfMonth(d){ return new Date(d.getFullYear(),d.getMonth(),1); }
+function startOfPrevMonth(d){ return new Date(d.getFullYear(),d.getMonth()-1,1); }
+function endOfPrevMonth(d){ return new Date(d.getFullYear(),d.getMonth(),0,23,59,59,999); }
+function tsToDate(ts){
+  if(!ts) return null;
+  if(ts.toDate) return ts.toDate();
+  if(ts instanceof Date) return ts;
+  return new Date(ts);
+}
+
+let histUnsub=null;
+function subscribeHistory(){
+  if(histUnsub) histUnsub();
+  histUnsub=db.collection('transactions').orderBy('createdAt','desc').limit(500)
+    .onSnapshot(snap=>{
+      historyData=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderDashboard();
+    });
+}
+
+/* ════════════════════════════════════════════
+   RENDER DASHBOARD
+════════════════════════════════════════════ */
+function renderDashboard(){
+  const now=new Date();
+  const todayStart   =startOfDay(now);
+  const monthStart   =startOfMonth(now);
+  const prevMonthStart=startOfPrevMonth(now);
+  const prevMonthEnd  =endOfPrevMonth(now);
+
+  /* ── Stats ── */
+  const totalAvail=allUnits.filter(u=>u.status==='available').length;
+  const out  =allItems.filter(i=>getItemQty(i.id)<=0).length;
+  const low  =allItems.filter(i=>{ const q=getItemQty(i.id); return q>0&&q<=(i.min||1); }).length;
+  const damaged=allUnits.filter(u=>u.status==='damaged').length;
+
+  /* ── Transactions ── */
+  const outTx=historyData.filter(h=>h.type==='out');
+  const todayOut    =outTx.filter(h=>{ const d=tsToDate(h.createdAt); return d&&d>=todayStart; }).length;
+  const thisMonthOut=outTx.filter(h=>{ const d=tsToDate(h.createdAt); return d&&d>=monthStart; }).length;
+  const prevMonthOut=outTx.filter(h=>{ const d=tsToDate(h.createdAt); return d&&d>=prevMonthStart&&d<=prevMonthEnd; }).length;
+
+  let trendHTML='';
+  if(prevMonthOut>0){
+    const pct=Math.round((thisMonthOut-prevMonthOut)/prevMonthOut*100);
+    if(pct>0) trendHTML=`<span class="trend-up">↑ +${pct}% vs เดือนที่แล้ว</span>`;
+    else if(pct<0) trendHTML=`<span class="trend-down">↓ ${pct}% vs เดือนที่แล้ว</span>`;
+    else trendHTML=`<span class="trend-flat">= เท่ากับเดือนที่แล้ว</span>`;
+  }
+
+  /* ── Top 5 ── */
+  const itemCount={};
+  outTx.forEach(h=>{ if(h.itemId) itemCount[h.itemId]=(itemCount[h.itemId]||0)+(h.qty||1); });
+  const top5=Object.entries(itemCount).sort((a,b)=>b[1]-a[1]).slice(0,5)
+    .map(([id,cnt])=>({ id, cnt, name:allItems.find(i=>i.id===id)?.name||id }));
+  const maxTop=top5[0]?.cnt||1;
+
+  /* ── Damaged ── */
+  const damagedUnits=allUnits.filter(u=>u.status==='damaged');
+  const damagedByItem={};
+  damagedUnits.forEach(u=>{ damagedByItem[u.itemId]=(damagedByItem[u.itemId]||0)+1; });
+  const damagedList=Object.entries(damagedByItem)
+    .map(([id,cnt])=>({ id, cnt, name:allItems.find(i=>i.id===id)?.name||id }))
+    .sort((a,b)=>b.cnt-a.cnt).slice(0,5);
+
+  /* ── Used longest ── */
+  const usedUnits=allUnits.filter(u=>u.status==='used'&&u.usedAt)
+    .map(u=>{ const d=tsToDate(u.usedAt); const days=d?Math.floor((now-d)/(864e5)):0;
+      return {...u, days, itemName:allItems.find(i=>i.id===u.itemId)?.name||u.itemId}; })
+    .sort((a,b)=>b.days-a.days).slice(0,5);
+
+  /* ── Recent in ── */
+  const inTx=historyData.filter(h=>h.type==='in').slice(0,5);
+
+  /* ── Bar chart ── */
+  const cats={};
+  allItems.forEach(i=>{ const g=getGroupKey(i.cat); cats[g]=(cats[g]||0)+getItemQty(i.id); });
+  const topCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const maxV=topCats[0]?topCats[0][1]:1;
+
+  /* ── ALL alerts (up to 30) ── */
+  const allAlerts=allItems.filter(i=>getStatus(i.id)!=='ok').slice(0,30);
+
+  /* ── Build filtered alert list ── */
+  function getAlertList(){
+    let list=allAlerts;
+    if(alertFilter==='out') list=list.filter(i=>getStatus(i.id)==='out');
+    if(alertFilter==='low') list=list.filter(i=>getStatus(i.id)==='low');
+    return list;
+  }
+
+  function renderAlertRows(list){
+    if(!list.length) return`<div class="all-clear"><div style="font-size:32px">🎉</div><div class="fz13 fw7" style="color:var(--g)">ไม่มีรายการที่ต้องจัดการ</div></div>`;
+    const snoozedMap=getSnoozedMap();
+    const visible=showSnoozedAlerts ? list : list.filter(i=>!isSnoozed(i.id));
+    const hidden=list.filter(i=>isSnoozed(i.id));
+
+    return visible.map(i=>{
+      const sn=isSnoozed(i.id);
+      return`
+      <div class="alert-item${sn?' snoozed':''}" id="alert-row-${i.id}">
+        <div class="alert-left">
+          <div class="alert-name" onclick="navigate('stock')">${i.name}</div>
+          <div class="alert-code">${i.id} · ${i.loc||''}</div>
+        </div>
+        <div class="alert-right">
+          ${statusBadge(i.id)}
+          <span class="fz12 fw7" style="${getStatus(i.id)==='out'?'color:var(--r)':'color:var(--am)'}">${getItemQty(i.id)} ชิ้น</span>
+          <label class="snooze-toggle${sn?' active':''}" title="ติ๊กเพื่อไม่แจ้งเตือนรายการนี้">
+            <input type="checkbox" ${sn?'checked':''} onchange="handleSnooze('${i.id}',this)" style="display:none"/>
+            ${sn?'<span>✓ ไม่แจ้ง</span>':'<span>ปิดแจ้ง</span>'}
+          </label>
+        </div>
+      </div>`;
+    }).join('') + (hidden.length&&!showSnoozedAlerts?`
+      <div style="padding:.5rem 1rem;text-align:center">
+        <button class="show-snoozed-btn" onclick="showSnoozedAlerts=true;rerenderAlerts()">
+          + ดู ${hidden.length} รายการที่ปิดการแจ้งเตือนไว้
+        </button>
+      </div>`:'');
+  }
+
+  function renderAlertSection(){
+    const list=getAlertList();
+    const activeCount=list.filter(i=>!isSnoozed(i.id)).length;
+    const snoozedCount=list.filter(i=>isSnoozed(i.id)).length;
+    return`
+    <div class="alert-card-wrap">
+      <div class="alert-card-header">
+        <div class="alert-card-title">
+          ⚠️ ต้องจัดการ
+          ${activeCount>0?`<span class="badge badge-out">${activeCount} รายการ</span>`:''}
+          ${snoozedCount>0?`<span class="badge badge-used2">${snoozedCount} ปิดแจ้ง</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${allAlerts.length>0?`<button class="btn btn-sm" onclick="clearAllSnooze()" title="รีเซ็ตทั้งหมดที่ปิดไว้" style="font-size:11px">↺ รีเซ็ต</button>`:''}
+        </div>
+      </div>
+      <div class="alert-filter-row">
+        <span class="fz11 txmute fw7">กรอง:</span>
+        <button class="alert-filter-btn${alertFilter==='all'?' active':''}" onclick="alertFilter='all';rerenderAlerts()">ทั้งหมด (${allAlerts.length})</button>
+        <button class="alert-filter-btn${alertFilter==='out'?' active':''}" onclick="alertFilter='out';rerenderAlerts()" style="color:var(--r)">🔴 หมดสต็อก (${allAlerts.filter(i=>getStatus(i.id)==='out').length})</button>
+        <button class="alert-filter-btn${alertFilter==='low'?' active':''}" onclick="alertFilter='low';rerenderAlerts()" style="color:var(--am)">🟡 ใกล้หมด (${allAlerts.filter(i=>getStatus(i.id)==='low').length})</button>
+      </div>
+      <div id="alertRows">${renderAlertRows(list)}</div>
+      ${allAlerts.length>0?`
+      <div class="alert-footer">
+        <span class="fz11 txmute">แสดง ${Math.min(30,allAlerts.length)} จาก ${allItems.filter(i=>getStatus(i.id)!=='ok').length} รายการ</span>
+        <button class="btn btn-sm btn-primary" onclick="navigate('stock')">จัดการสต็อก →</button>
+      </div>`:''}
+    </div>`;
+  }
+
+  /* ════ Render HTML ════ */
+  document.getElementById('mainContent').innerHTML=`
+
+  <!-- Stat cards -->
+  <div class="stat-grid-new">
+    <div class="stat-card-new" style="--card-accent:var(--g)">
+      <div class="stat-card-icon">📦</div>
+      <div class="stat-card-val">${allItems.length}</div>
+      <div class="stat-card-lbl">ประเภทสินค้า</div>
+    </div>
+    <div class="stat-card-new" style="--card-accent:#0ea5e9">
+      <div class="stat-card-icon">✅</div>
+      <div class="stat-card-val" style="color:var(--g)">${totalAvail}</div>
+      <div class="stat-card-lbl">ชิ้นพร้อมใช้</div>
+    </div>
+    <div class="stat-card-new" style="--card-accent:var(--am)">
+      <div class="stat-card-icon">⚡</div>
+      <div class="stat-card-val" style="color:var(--am)">${low}</div>
+      <div class="stat-card-lbl">ใกล้หมด</div>
+    </div>
+    <div class="stat-card-new" style="--card-accent:var(--r)">
+      <div class="stat-card-icon">🚨</div>
+      <div class="stat-card-val" style="color:var(--r)">${out}</div>
+      <div class="stat-card-lbl">หมดสต็อก</div>
+    </div>
+  </div>
+
+  <!-- Withdraw + Top5 -->
+  <div class="dash-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">📤 การเบิกสินค้า</span>${trendHTML?trendHTML:''}</div>
+      <div style="padding:1rem">
+        <div style="display:flex;gap:0;align-items:stretch">
+          <div class="cmp-block" style="flex:1">
+            <div class="cmp-lbl">วันนี้</div>
+            <div class="cmp-num" style="color:var(--g)">${todayOut}</div>
+            <div class="cmp-lbl">ชิ้น</div>
+          </div>
+          <div class="cmp-divider"></div>
+          <div class="cmp-block" style="flex:1">
+            <div class="cmp-lbl">เดือนนี้</div>
+            <div class="cmp-num">${thisMonthOut}</div>
+            <div class="cmp-lbl">ชิ้น</div>
+          </div>
+          <div class="cmp-divider"></div>
+          <div class="cmp-block" style="flex:1">
+            <div class="cmp-lbl">เดือนที่แล้ว</div>
+            <div class="cmp-num" style="color:var(--tx3)">${prevMonthOut}</div>
+            <div class="cmp-lbl">ชิ้น</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">🏆 เบิกบ่อยสุด</span></div>
+      <div style="padding:.5rem 1rem">
+        ${top5.length===0?'<div class="fz12 txmute" style="padding:6px 0">ยังไม่มีประวัติการเบิก</div>'
+          :top5.map((t,i)=>`
+          <div class="dash-row">
+            <div class="fz11 txmute" style="min-width:14px;font-weight:700">${i+1}</div>
+            <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</div>
+            <div class="mini-bar-bg" style="max-width:80px"><div class="mini-bar-fill${t.cnt/maxTop<0.5?' amber':''}" style="width:${Math.round(t.cnt/maxTop*100)}%"></div></div>
+            <div class="fz12 fw7" style="min-width:24px;text-align:right">${t.cnt}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>
+
+  <!-- Damaged + Used longest -->
+  <div class="dash-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🔧 สินค้าชำรุด</span>
+        ${damaged>0?`<span class="badge badge-out">${damaged} ชิ้น</span>`:''}
+      </div>
+      <div style="padding:.5rem 1rem">
+        ${damagedList.length===0?'<div class="fz12 txmute" style="padding:6px 0">ไม่มีชิ้นส่วนชำรุด 🎉</div>'
+          :damagedList.map(d=>`
+          <div class="dash-row">
+            <span class="dot-r"></span>
+            <div style="flex:1;font-size:12px">${d.name}</div>
+            <span class="badge badge-out">${d.cnt} ชิ้น</span>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">⏱️ เบิกออกนานสุด</span></div>
+      <div style="padding:.5rem 1rem">
+        ${usedUnits.length===0?'<div class="fz12 txmute" style="padding:6px 0">ไม่มีของที่เบิกออก</div>'
+          :usedUnits.map(u=>`
+          <div class="dash-row">
+            <div style="flex:1;min-width:0">
+              <div class="fz12" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.itemName}</div>
+              ${u.usedAtLabel?`<div class="fz11 txmute">📍 ${u.usedAtLabel}</div>`:''}
+            </div>
+            <span class="badge ${u.days>=30?'badge-out':u.days>=14?'badge-low':'badge-ok'}">${u.days} วัน</span>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent import + Activity -->
+  <div class="dash-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">📥 นำเข้าล่าสุด</span></div>
+      <div style="padding:.5rem 1rem">
+        ${inTx.length===0?'<div class="fz12 txmute" style="padding:6px 0">ยังไม่มีการนำเข้า</div>'
+          :inTx.map(h=>`
+          <div class="dash-row">
+            <span class="dot-g"></span>
+            <div style="flex:1;min-width:0">
+              <div class="fz12" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.itemName}</div>
+              <div class="fz11 txmute">${h.userName||''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div class="fz12 fw7" style="color:var(--g)">+${h.qty||1} ชิ้น</div>
+              <div class="fz11 txmute">${formatDT(h.createdAt)}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">🔄 ความเคลื่อนไหวล่าสุด</span></div>
+      <div style="padding:.5rem 1rem">
+        ${historyData.length===0?'<div class="fz12 txmute" style="padding:6px 0">ยังไม่มีรายการ</div>'
+          :historyData.slice(0,5).map(h=>`
+          <div class="dash-row">
+            <span class="${h.type==='in'?'dot-g':'dot-r'}"></span>
+            <div style="flex:1;min-width:0">
+              <div class="fz12" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                ${h.type==='in'?'นำเข้า':'เบิก'} ${h.itemName}</div>
+              <div class="fz11 txmute">${h.userName||''}</div>
+            </div>
+            <div class="fz11 txmute" style="flex-shrink:0">${formatDT(h.createdAt)}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>
+
+  <!-- Stock by group + ALERT SECTION -->
+  <div class="dash-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">📊 สต็อกตามกลุ่ม</span></div>
+      <div style="padding:1rem">
+        ${topCats.map(([k,v])=>{
+          const g=getGroupDef(k);
+          return`<div style="margin-bottom:10px">
+            <div class="flex jb fz12" style="margin-bottom:4px">
+              <span>${g.icon} ${g.label}</span>
+              <span class="txmute">${v} ชิ้น</span>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(v/maxV*100)}%"></div></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    ${renderAlertSection()}
+  </div>`;
+}
+
+/* ════════════════════════════════════════════
+   ALERT HELPERS
+════════════════════════════════════════════ */
+function handleSnooze(id, checkbox){
+  toggleSnooze(id);
+  rerenderAlerts();
+  const sn=isSnoozed(id);
+  showNotif(sn ? `ปิดการแจ้งเตือน "${allItems.find(i=>i.id===id)?.name||id}"` : `เปิดการแจ้งเตือนอีกครั้ง`, sn?'ok':'error');
+}
+
+function rerenderAlerts(){
+  // Re-render only the alert section to avoid full page re-render
+  const allAlerts=allItems.filter(i=>getStatus(i.id)!=='ok').slice(0,30);
+  function getAlertList(){
+    let list=allAlerts;
+    if(alertFilter==='out') list=list.filter(i=>getStatus(i.id)==='out');
+    if(alertFilter==='low') list=list.filter(i=>getStatus(i.id)==='low');
+    return list;
+  }
+  function renderAlertRows(list){
+    if(!list.length) return`<div class="all-clear"><div style="font-size:32px">🎉</div><div class="fz13 fw7" style="color:var(--g)">ไม่มีรายการที่ต้องจัดการ</div></div>`;
+    const visible=showSnoozedAlerts ? list : list.filter(i=>!isSnoozed(i.id));
+    const hidden=list.filter(i=>isSnoozed(i.id));
+    return visible.map(i=>{
+      const sn=isSnoozed(i.id);
+      return`
+      <div class="alert-item${sn?' snoozed':''}" id="alert-row-${i.id}">
+        <div class="alert-left">
+          <div class="alert-name" onclick="navigate('stock')">${i.name}</div>
+          <div class="alert-code">${i.id} · ${i.loc||''}</div>
+        </div>
+        <div class="alert-right">
+          ${statusBadge(i.id)}
+          <span class="fz12 fw7" style="${getStatus(i.id)==='out'?'color:var(--r)':'color:var(--am)'}">${getItemQty(i.id)} ชิ้น</span>
+          <label class="snooze-toggle${sn?' active':''}" title="ติ๊กเพื่อไม่แจ้งเตือนรายการนี้">
+            <input type="checkbox" ${sn?'checked':''} onchange="handleSnooze('${i.id}',this)" style="display:none"/>
+            ${sn?'<span>✓ ไม่แจ้ง</span>':'<span>ปิดแจ้ง</span>'}
+          </label>
+        </div>
+      </div>`;
+    }).join('') + (hidden.length&&!showSnoozedAlerts?`
+      <div style="padding:.5rem 1rem;text-align:center">
+        <button class="show-snoozed-btn" onclick="showSnoozedAlerts=true;rerenderAlerts()">
+          + ดู ${hidden.length} รายการที่ปิดการแจ้งเตือนไว้
+        </button>
+      </div>`:'');
+  }
+  // Update filter buttons
+  const filterBtns=document.querySelectorAll('.alert-filter-btn');
+  filterBtns.forEach(b=>{
+    const t=b.getAttribute('onclick');
+    b.classList.toggle('active',
+      (alertFilter==='all'&&t&&t.includes("'all'"))||
+      (alertFilter==='out'&&t&&t.includes("'out'"))||
+      (alertFilter==='low'&&t&&t.includes("'low'"))
+    );
+  });
+  const rows=document.getElementById('alertRows');
+  if(rows) rows.innerHTML=renderAlertRows(getAlertList());
+}
+
+function clearAllSnooze(){
+  localStorage.removeItem('ryg_snoozed');
+  showSnoozedAlerts=false;
+  showNotif('รีเซ็ตการแจ้งเตือนทั้งหมดแล้ว');
+  rerenderAlerts();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>RYG Stock — สต็อก</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="shared.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+/* ── Category Quick-Select Grid ─────────────── */
+.cat-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+.cat-select-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 2px solid var(--bdrm);
+  border-radius: var(--rad);
+  background: var(--surf);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all .15s;
+  position: relative;
+}
+.cat-select-btn:hover { border-color: var(--g); background: var(--gll); }
+.cat-select-btn.active {
+  border-color: var(--g);
+  background: var(--g);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(29,158,117,.25);
+}
+.cat-select-btn .csb-icon { font-size: 22px; line-height: 1; }
+.cat-select-btn .csb-name { font-size: 10px; font-weight: 700; text-align: center; line-height: 1.2; }
+.cat-select-btn .csb-count {
+  font-size: 10px; font-weight: 700;
+  background: rgba(0,0,0,.12);
+  border-radius: 20px;
+  padding: 1px 6px;
+  min-width: 20px; text-align: center;
+}
+.cat-select-btn.active .csb-count { background: rgba(255,255,255,.25); }
+.cat-select-btn .csb-badge-out {
+  position: absolute; top: 4px; right: 4px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--r);
+}
+.cat-select-btn .csb-badge-low {
+  position: absolute; top: 4px; right: 4px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--am);
+}
+.cat-select-btn.cat-all { border-style: dashed; }
+
+/* Manage cats button */
+.cat-manage-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 2px dashed var(--bdrm);
+  border-radius: var(--rad);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font);
+  color: var(--tx3);
+  font-size: 10px;
+  font-weight: 700;
+  transition: all .15s;
+}
+.cat-manage-btn:hover { border-color: var(--g); color: var(--g); }
+
+/* Add item button in grid — matches manage btn style but green tint */
+.cat-add-item-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 2px dashed var(--g);
+  border-radius: var(--rad);
+  background: var(--gll);
+  cursor: pointer;
+  font-family: var(--font);
+  color: var(--g);
+  font-size: 10px;
+  font-weight: 700;
+  transition: all .15s;
+}
+.cat-add-item-btn:hover { background: var(--g); color: #fff; }
+
+/* ── Add mode toggle ─────────────────────────── */
+.add-mode-tabs{display:flex;gap:0;margin-bottom:1rem;border:1px solid var(--bdrm);border-radius:var(--rad);overflow:hidden;}
+.add-mode-tab{flex:1;padding:9px;font-size:12px;font-weight:700;text-align:center;cursor:pointer;background:var(--bg);color:var(--tx2);font-family:var(--font);border:none;}
+.add-mode-tab.active{background:var(--g);color:#fff;}
+.qty-stepper{display:flex;align-items:center;gap:0;border:1px solid var(--bdrm);border-radius:var(--rad);overflow:hidden;}
+.qty-stepper button{width:38px;height:38px;background:var(--bg);border:none;font-size:18px;cursor:pointer;font-family:var(--font);}
+.qty-stepper button:hover{background:#e0e0e0;}
+.qty-stepper input{width:60px;height:38px;text-align:center;border:none;border-left:1px solid var(--bdrm);border-right:1px solid var(--bdrm);font-size:16px;font-weight:700;font-family:var(--mono);}
+.qty-stepper input:focus{outline:none;}
+
+/* ── Manage Categories Modal ─────────────────── */
+.cat-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bdr);
+}
+.cat-list-row:last-child { border-bottom: none; }
+.cat-list-icon { font-size: 20px; width: 28px; text-align: center; }
+.cat-list-name { flex: 1; font-size: 13px; font-weight: 600; }
+.cat-list-count { font-size: 11px; color: var(--tx3); min-width: 50px; text-align: right; }
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--bg);
+  border-radius: var(--rad);
+  border: 1px solid var(--bdrm);
+  margin-top: 6px;
+}
+.emoji-opt {
+  font-size: 20px;
+  text-align: center;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1.4;
+  border: 2px solid transparent;
+}
+.emoji-opt:hover { background: var(--gll); }
+.emoji-opt.selected { border-color: var(--g); background: var(--gll); }
+
+/* ── Import/Export bar ───────────────────────── */
+.ie-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;}
+.ie-bar .btn{font-size:12px;}
+.ie-drop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;align-items:center;justify-content:center;}
+.ie-drop.show{display:flex;}
+.ie-box{background:#fff;border-radius:16px;padding:1.5rem;width:min(480px,90vw);max-height:80vh;overflow-y:auto;}
+.ie-title{font-size:15px;font-weight:700;margin-bottom:1rem;}
+.ie-section{margin-bottom:1rem;padding:1rem;background:#F8F9FA;border-radius:10px;border:1px solid var(--bdr);}
+.ie-section-title{font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:.6rem;}
+.drop-zone{border:2px dashed var(--bdrm);border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;transition:.2s;}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--g);background:var(--gll);}
+.drop-zone .dz-icon{font-size:28px;margin-bottom:6px;}
+.drop-zone .dz-text{font-size:12px;color:var(--tx2);}
+.import-preview{margin-top:10px;border:1px solid var(--bdr);border-radius:8px;overflow:hidden;}
+.import-preview table{width:100%;border-collapse:collapse;font-size:11px;}
+.import-preview th{background:var(--g);color:#fff;padding:6px 8px;text-align:left;font-weight:600;}
+.import-preview td{padding:5px 8px;border-bottom:1px solid var(--bdr);}
+.import-preview tr:last-child td{border-bottom:none;}
+.import-preview tr:nth-child(even) td{background:#FAFAFA;}
+.ie-row-ok{color:var(--g);}
+.ie-row-warn{color:var(--am);}
+.ie-row-err{color:var(--r);}
+.import-summary{font-size:12px;font-weight:600;margin:.6rem 0;padding:.5rem .75rem;border-radius:6px;background:var(--gll);border:1px solid var(--gl);color:var(--gd);}
+.import-summary.warn{background:#FFF8E1;border-color:#FFD54F;color:#B8860B;}
+.import-summary.err{background:var(--rl);border-color:#F0A0A0;color:var(--r);}
+.progress-bar{height:6px;background:#e0e0e0;border-radius:3px;overflow:hidden;margin:.5rem 0;}
+.progress-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
+
+/* ── Quick-Withdraw button ───────────────────── */
+.btn-withdraw-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font);
+  background: var(--g);
+  color: #fff;
+  border: none;
+  border-radius: var(--radsm, 6px);
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-withdraw-quick:hover { background: var(--gd, #15805e); }
+.btn-withdraw-quick:disabled { background: #ccc; cursor: not-allowed; }
+
+/* Date picker styling (quick-withdraw modal) */
+.date-input-wrap { position: relative; }
+.date-input-wrap input[type="date"] {
+  opacity: 0; position: absolute; width: 0; height: 0; pointer-events: none;
+}
+.date-input-wrap input[type="text"] {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--bdrm);
+  border-radius: var(--rad);
+  font-size: 13px;
+  font-family: var(--font);
+  background: var(--surf);
+  color: var(--tx1);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.date-input-wrap input[type="text"]:focus { outline: none; border-color: var(--g); }
+.date-quick { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+.date-quick-btn {
+  padding: 4px 10px; font-size: 11px; font-weight: 600;
+  border: 1px solid var(--bdrm); border-radius: 20px;
+  background: var(--bg); color: var(--tx2);
+  cursor: pointer; font-family: var(--font); transition: all .15s;
+}
+.date-quick-btn:hover, .date-quick-btn.active { background: var(--g); color: #fff; border-color: var(--g); }
+
+/* unit picker inside quick-withdraw modal */
+.qw-unit-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+.qw-unit-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px;
+  border: 1.5px solid var(--bdrm);
+  border-radius: var(--rad);
+  cursor: pointer;
+  transition: all .15s;
+  font-size: 12px;
+}
+.qw-unit-row:hover { border-color: var(--g); background: var(--gll); }
+.qw-unit-row input[type="checkbox"] { accent-color: var(--g); width: 15px; height: 15px; flex-shrink: 0; }
+.qw-unit-row.selected { border-color: var(--g); background: var(--gll); }
+
+/* ── Service No field ────────────────────────── */
+.service-no-wrap {
+  display: none;
+  margin-top: 6px;
+}
+.service-no-wrap.show {
+  display: block;
+}
+
+/* ══════════════════════════════════════════════
+   ── MODAL POSITION FIX — อยู่กลางหน้าจอ ──────
+   ══════════════════════════════════════════════ */
+
+/* overlay ของ shared.js — บังคับกลางหน้าจอทั้ง desktop & mobile */
+.modal-overlay,
+[class*="modal-wrap"],
+[class*="modal-backdrop"] {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+}
+
+/* กล่อง modal เอง — ไม่ให้ชนขอบล่าง */
+.modal-sheet,
+.modal-box,
+.modal-container,
+[class*="modal-inner"] {
+  margin: auto !important;
+  border-radius: 16px !important;
+  max-height: 88vh !important;
+  overflow-y: auto !important;
+  /* ยกเลิก bottom-sheet positioning */
+  position: relative !important;
+  bottom: unset !important;
+  top: unset !important;
+  transform: none !important;
+}
+</style>
+</head>
+<body>
+<div id="loadingScreen">
+  <div style="width:52px;height:52px;background:#1D9E75;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>
+  <div style="font-size:15px;font-weight:700;">RYG Stock System</div>
+  <div class="spinner"></div>
+</div>
+<div id="mainApp">
+  <div class="topbar">
+    <div class="topbar-logo">📦</div>
+    <span class="topbar-title">RYG Stock</span>
+    <div class="user-mini">
+      <img id="uAvatar" class="user-ava" src="" onerror="this.style.display='none'" alt=""/>
+      <span id="uFallback" class="user-ava"></span>
+      <span id="uName" class="user-name-top"></span>
+      <span id="uRole" class="badge-role badge-admin"></span>
+      <button class="btn-topout" onclick="doLogout()">ออก</button>
+    </div>
+  </div>
+  <div class="nav-tabs" id="navTabs"></div>
+  <div class="content" id="mainContent"></div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+</div>
+
+<!-- Import/Export Overlay -->
+<div class="ie-drop" id="ieOverlay" onclick="closeIEOverlay(event)">
+  <div class="ie-box" id="ieBox">
+    <div class="ie-title" id="ieTitle">📊 Import / Export Excel</div>
+    <div id="ieBody"></div>
+  </div>
+</div>
+
+<div id="notif"></div>
+
+<script>
+// ── Default categories (fallback) ────────────────
+const DEFAULT_CATS = [
+  { key:'Storage',   label:'Storage',         icon:'💾' },
+  { key:'Memory',    label:'Memory / RAM',    icon:'🧠' },
+  { key:'Component', label:'Component',       icon:'🔧' },
+  { key:'Network',   label:'Network',         icon:'🌐' },
+  { key:'Camera',    label:'Camera',          icon:'📷' },
+  { key:'Cable',     label:'Cable / Adapter', icon:'🔌' },
+  { key:'Power',     label:'Power Supply',    icon:'⚡' },
+  { key:'Device',    label:'Device',          icon:'🖥️' },
+  { key:'Other',     label:'อื่น ๆ',          icon:'📋' },
+];
+
+if(typeof GROUP_MAP==='undefined') window.GROUP_MAP={};
+if(typeof getGroupKey==='undefined') window.getGroupKey=k=>k;
+if(typeof getGroupDef==='undefined') window.getGroupDef=k=>({label:k,icon:'📋'});
+
+// ── State ────────────────────────────────────────
+let allItems=[], allUnits=[], currentUser=null, currentRole='user', db=null;
+let searchQ='', expandedItem=null, selectedCat='__all__';
+let pendingUnits=[], importRows=[], importMode='stock';
+let addMode='qty';
+let catGroups = [...DEFAULT_CATS];
+
+// Quick-withdraw state
+let qwDate = todayISO();
+let qwSelectedUnits = [];
+
+const EMOJI_OPTIONS = ['💾','🧠','🔧','🌐','📷','🔌','⚡','🖥️','📋','🖱️','⌨️','🖨️',
+  '📱','💻','🔋','📡','🔩','🪛','🛠️','🗂️','📁','📂','💡','🔦','📟','🧰','🗜️','📲',
+  '🎮','🖲️','💿','📀','📼','📺','📻','🔬','🔭','🧲','🪝','🔐','🔑','🗝️','🔒'];
+
+// ── Helpers ──────────────────────────────────────
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function isoToDMY(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ── Auto-generate next item ID ────────────────────
+function genNextItemId() {
+  let max = 0;
+  allItems.forEach(item => {
+    const m = item.id.match(/^SP(\d+)$/i);
+    if (m) max = Math.max(max, parseInt(m[1]));
+  });
+  const next = max + 1;
+  return `SP${String(next).padStart(3, '0')}`;
+}
+
+// ── Init ─────────────────────────────────────────
+initShell('stock', async (user, role, firestore) => {
+  currentUser=user; currentRole=role; db=firestore;
+  try {
+    await loadCats();
+    await loadItems();
+    await loadUnits();
+  } catch(e) {
+    console.error('Load error:', e);
+    document.getElementById('mainContent').innerHTML=
+      `<div class="empty-state" style="color:var(--r)">โหลดข้อมูลไม่สำเร็จ: ${e.message}<br>
+       <button class="btn btn-primary" style="margin-top:12px" onclick="location.reload()">ลองใหม่</button></div>`;
+    return;
+  }
+  renderStock();
+});
+
+async function loadCats() {
+  try {
+    const snap = await db.collection('categories').orderBy('order').get();
+    if (!snap.empty) {
+      catGroups = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    } else {
+      await seedDefaultCats();
+    }
+  } catch(e) {
+    catGroups = [...DEFAULT_CATS];
+  }
+}
+async function seedDefaultCats() {
+  const batch = db.batch();
+  DEFAULT_CATS.forEach((c, i) => {
+    batch.set(db.collection('categories').doc(c.key), { ...c, order: i });
+  });
+  await batch.commit();
+  catGroups = DEFAULT_CATS.map((c,i) => ({ docId: c.key, ...c, order: i }));
+}
+async function loadItems() {
+  const snap = await db.collection('items').get();
+  allItems = snap.docs.map(d=>({docId:d.id,...d.data()}));
+  allItems.sort((a,b)=>(a.id||'').localeCompare(b.id||''));
+}
+async function loadUnits() {
+  const snap = await db.collection('units').get();
+  allUnits = snap.docs.map(d=>({docId:d.id,...d.data()}));
+}
+
+const getUnitsOf=id=>allUnits.filter(u=>u.itemId===id);
+const getAvail=id=>allUnits.filter(u=>u.itemId===id&&u.status==='available');
+const getItemQty=id=>getAvail(id).length;
+
+function getStatus(id){
+  const q=getItemQty(id),item=allItems.find(i=>i.id===id);
+  if(!item)return'ok'; if(q<=0)return'out'; if(q<=(item.min||1))return'low'; return'ok';
+}
+function statusBadge(id){
+  const s=getStatus(id);
+  if(s==='out')return'<span class="badge badge-out">หมดสต็อก</span>';
+  if(s==='low')return'<span class="badge badge-low">ใกล้หมด</span>';
+  return'<span class="badge badge-ok">ปกติ</span>';
+}
+function snBadge(u){ return(u.sn&&u.sn!=='-')?`<span class="badge badge-sn">${u.sn}</span>`:`<span class="unit-nosn">ไม่มี S/N</span>`; }
+function unitStatBadge(s){
+  if(s==='used')return'<span class="badge badge-used2">เบิกแล้ว</span>';
+  if(s==='damaged')return'<span class="badge badge-dmg">ชำรุด</span>';
+  return'<span class="badge badge-avail">พร้อมใช้</span>';
+}
+function getCatKey(cat) {
+  if (!cat) return 'Other';
+  return catGroups.find(c => c.key === cat) ? cat : 'Other';
+}
+function getCatDef(key) {
+  return catGroups.find(c => c.key === key) || { key:'Other', label:'อื่น ๆ', icon:'📋' };
+}
+
+// ── RENDER STOCK ─────────────────────────────────
+function renderStock() {
+  const isAdmin = currentRole === 'admin';
+  const q = searchQ.toLowerCase();
+  let filtered = allItems.filter(i =>
+    !q || i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q) || (i.cat||'').toLowerCase().includes(q)
+  );
+  if (selectedCat !== '__all__') filtered = filtered.filter(i => getCatKey(i.cat) === selectedCat);
+
+  // ── Category grid ────────────────────────────────
+  let catGridHTML = `<div class="cat-select-grid">`;
+  const totalAvail = allUnits.filter(u=>u.status==='available').length;
+  catGridHTML += `
+    <button class="cat-select-btn cat-all${selectedCat==='__all__'?' active':''}" onclick="selectCat('__all__')">
+      <span class="csb-icon">📦</span>
+      <span class="csb-name">ทั้งหมด</span>
+      <span class="csb-count">${totalAvail}</span>
+    </button>`;
+  catGroups.forEach(grp => {
+    const items = allItems.filter(i => getCatKey(i.cat) === grp.key);
+    const qty = items.reduce((a,i) => a+getItemQty(i.id), 0);
+    const hasOut = items.some(i => getStatus(i.id) === 'out');
+    const hasLow = !hasOut && items.some(i => getStatus(i.id) === 'low');
+    catGridHTML += `
+      <button class="cat-select-btn${selectedCat===grp.key?' active':''}" onclick="selectCat('${grp.key}')">
+        ${hasOut?`<span class="csb-badge-out"></span>`:''}
+        ${hasLow?`<span class="csb-badge-low"></span>`:''}
+        <span class="csb-icon">${grp.icon}</span>
+        <span class="csb-name">${grp.label}</span>
+        <span class="csb-count">${qty}</span>
+      </button>`;
+  });
+
+  // ── Admin action buttons ข้างท้าย grid ────────────
+  if (isAdmin) {
+    catGridHTML += `
+      <button class="cat-add-item-btn" onclick="openAddItem()" title="เพิ่มประเภทสินค้าใหม่">
+        <span style="font-size:18px">➕</span>
+        <span>ประเภทสินค้า</span>
+      </button>
+      <button class="cat-manage-btn" onclick="openManageCats()" title="จัดการหมวดหมู่">
+        <span style="font-size:18px">⚙️</span>
+        <span>จัดการหมวด</span>
+      </button>`;
+  }
+  catGridHTML += `</div>`;
+
+  // ── หัวหน้า + Search bar ──────
+  let html = `
+  <div class="flex jb items-c section-gap" style="flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
+    <div style="font-size:15px;font-weight:700">📦 สต็อกสินค้า</div>
+    <div class="search-bar">
+      <input class="search-input" placeholder="ค้นหา..." value="${searchQ}" oninput="searchQ=this.value;renderStock()"/>
+    </div>
+  </div>
+  ${catGridHTML}`;
+
+  if (isAdmin) {
+    html += `
+  <div class="ie-bar">
+    <button class="btn btn-sm" onclick="openExportStock()">📥 Export Excel</button>
+    <button class="btn btn-sm" onclick="openImportStock()">📤 Import Excel</button>
+    <button class="btn btn-sm" onclick="openExportUnits()">📋 Export ชิ้นส่วน</button>
+    <button class="btn btn-sm" onclick="downloadTemplate()">📑 Template</button>
+  </div>`;
+  }
+
+  if (!filtered.length) {
+    html += `<div class="empty-state">ไม่พบสินค้า${selectedCat!=='__all__'?' ในหมวดนี้':''}</div>`;
+  } else {
+    filtered.forEach(item => { html += renderItemRow(item, isAdmin); });
+  }
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function selectCat(key) {
+  selectedCat = key;
+  expandedItem = null;
+  renderStock();
+}
+
+function renderItemRow(item, isAdmin){
+  const units=getUnitsOf(item.id);
+  const qty=getItemQty(item.id);
+  const isExp=expandedItem===item.id;
+  const catDef=getCatDef(getCatKey(item.cat));
+  return`
+  <div>
+    <div class="item-row ${isExp?'expanded':''}" onclick="toggleExpand('${item.id}')">
+      <div style="min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span style="font-size:12px;color:var(--tx3);transition:transform .15s;${isExp?'transform:rotate(90deg)':''};display:inline-block">▸</span>
+          <span class="item-name">${item.name}</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="item-code">${item.id}</span>
+          <span style="font-size:11px;color:var(--tx3)">${catDef.icon} ${catDef.label}</span>
+          ${statusBadge(item.id)}
+        </div>
+      </div>
+      <div class="item-right">
+        <div class="qty-pill">${qty}<span class="fz11 txmute"> ชิ้น</span></div>
+        <div class="flex gap8" onclick="event.stopPropagation()">
+          <button class="btn-withdraw-quick" onclick="openQuickWithdraw('${item.id}')" ${qty===0?'disabled':''} title="เบิกสินค้า">📤 เบิก</button>
+          ${isAdmin?`
+          <button class="btn btn-icon btn-sm" onclick="openEditItem('${item.id}')" title="แก้ไข">✏️</button>
+          <button class="btn btn-icon btn-sm btn-primary" onclick="openAddUnits('${item.id}')" title="เพิ่มสต็อก">+📦</button>
+          <button class="btn btn-icon btn-sm btn-danger" onclick="confirmDeleteItem('${item.id}')" title="ลบ">🗑️</button>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="item-expand ${isExp?'open':''}" id="expand-${item.id}">
+      <div class="flex jb items-c" style="margin-bottom:8px">
+        <span class="fz12 fw7">${units.length} ชิ้นทั้งหมด · พร้อมใช้: ${qty}</span>
+        ${isAdmin?`<button class="btn btn-primary btn-sm" onclick="openAddUnits('${item.id}')">+ เพิ่มสต็อก</button>`:''}
+      </div>
+      ${units.length===0?`<div class="fz12 txmute" style="padding:6px 0">ยังไม่มีชิ้นส่วนในระบบ</div>`:`
+      <div class="units-grid">
+        ${units.map(u=>`
+          <div class="unit-card">
+            <div class="unit-dot dot-${u.status||'available'}"></div>
+            <div class="unit-info">
+              ${snBadge(u)} ${unitStatBadge(u.status||'available')}
+              ${u.detail?`<div class="unit-detail">${u.detail}</div>`:''}
+              ${u.note?`<div class="unit-note">📝 ${u.note}</div>`:''}
+              ${u.status==='used'&&u.usedAtLabel?`<div class="unit-loc">📍 ${u.usedAtLabel}</div>`:''}
+            </div>
+            ${isAdmin?`<div class="unit-actions">
+              <button class="btn btn-icon btn-sm" onclick="openEditUnit('${u.docId}')">✏️</button>
+              ${u.status==='available'?`<button class="btn btn-icon btn-sm btn-danger" onclick="markDamaged('${u.docId}')">🔧</button>`:''}
+            </div>`:''}
+          </div>`).join('')}
+      </div>`}
+    </div>
+  </div>`;
+}
+
+function toggleExpand(id){ expandedItem=expandedItem===id?null:id; renderStock(); }
+
+// ══════════════════════════════════════════════
+// ── QUICK WITHDRAW MODAL ─────────────────────
+// ══════════════════════════════════════════════
+function openQuickWithdraw(itemId) {
+  const item = allItems.find(i => i.id === itemId);
+  if (!item) return;
+  qwDate = todayISO();
+  qwSelectedUnits = [];
+  const avail = getAvail(itemId);
+  renderQWModal(item, avail);
+}
+
+function renderQWModal(item, avail) {
+  const unitRows = avail.map(u => `
+    <label class="qw-unit-row" id="qwrow-${u.docId}">
+      <input type="checkbox" value="${u.docId}"
+        onchange="qwToggleUnit('${u.docId}',this.checked)"
+        ${qwSelectedUnits.includes(u.docId)?'checked':''}/>
+      ${snBadge(u)}
+      <span class="fz12 txm" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.detail||'ไม่มีรายละเอียด'}</span>
+    </label>`).join('');
+
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">📤 เบิกสินค้า — ${item.name}</div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label>ผู้เบิก</label>
+        <input id="qwReqBy" value="${currentUser?.displayName||''}"/>
+      </div>
+      <div class="field">
+        <label>แผนก</label>
+        <select id="qwDept">
+          <option value="">— เลือก —</option>
+          <option value="IT">IT</option>
+          <option value="__other__">อื่นๆ</option>
+        </select>
+        <div id="qwDeptOther" style="display:none;margin-top:6px">
+          <input id="qwDeptOtherInput" placeholder="ระบุแผนก..."/>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>ใช้งานที่</label>
+      <input id="qwUsedAt" placeholder="เช่น PC-05"/>
+    </div>
+
+    <div class="field">
+      <label>รายละเอียดงาน</label>
+      <input id="qwServiceRef" placeholder="รายละเอียดงาน"/>
+    </div>
+
+    <div class="field">
+      <label>ใบ Service</label>
+      <select id="qwHasService" onchange="qwToggleServiceNo()">
+        <option value="no">— ไม่มีใบ Service —</option>
+        <option value="yes">✅ มีใบ Service</option>
+      </select>
+      <div class="service-no-wrap" id="qwServiceNoWrap">
+        <input id="qwServiceNo" placeholder="เลขที่ใบ Service เช่น SV-2024-001"
+          style="font-family:var(--mono);margin-top:6px"/>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>📅 วันที่เบิก</label>
+      <div class="date-input-wrap">
+        <input type="date" id="qwDateHidden" value="${qwDate}" onchange="qwOnDateChange()"/>
+        <input type="text" id="qwDateText" value="${isoToDMY(qwDate)}"
+          placeholder="วว/ดด/ปปปป" readonly onclick="qwOpenPicker()"/>
+        <div class="date-quick">
+          <button class="date-quick-btn active" data-qwoffset="0" onclick="qwSetDate(0)">วันนี้</button>
+          <button class="date-quick-btn" data-qwoffset="-1" onclick="qwSetDate(-1)">เมื่อวาน</button>
+          <button class="date-quick-btn" data-qwoffset="-2" onclick="qwSetDate(-2)">2 วันก่อน</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field"><label>หมายเหตุ</label><textarea id="qwNote" placeholder="รายละเอียดเพิ่มเติม"></textarea></div>
+
+    <div class="field">
+      <label style="margin-bottom:6px;display:block">เลือกชิ้นที่ต้องการเบิก (${avail.length} ชิ้นพร้อมใช้)</label>
+      ${avail.length > 0
+        ? `<div class="qw-unit-list">${unitRows}</div>`
+        : `<div class="fz12" style="color:var(--r)">ไม่มีชิ้นส่วนพร้อมใช้</div>`}
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" id="qwConfirmBtn"
+        onclick="doQuickWithdraw('${item.id}')"
+        ${avail.length===0?'disabled':''}>
+        ✅ ยืนยันเบิก (<span id="qwCount">0</span> ชิ้น)
+      </button>
+    </div>`, true);
+
+  // dept "อื่นๆ" toggle
+  const deptSel = document.getElementById('qwDept');
+  if (deptSel) deptSel.addEventListener('change', () => {
+    const other = document.getElementById('qwDeptOther');
+    if (other) other.style.display = deptSel.value === '__other__' ? 'block' : 'none';
+  });
+}
+
+// ── Toggle service number field ───────────────────
+function qwToggleServiceNo() {
+  const sel  = document.getElementById('qwHasService');
+  const wrap = document.getElementById('qwServiceNoWrap');
+  if (!sel || !wrap) return;
+  if (sel.value === 'yes') {
+    wrap.classList.add('show');
+  } else {
+    wrap.classList.remove('show');
+    const inp = document.getElementById('qwServiceNo');
+    if (inp) inp.value = '';
+  }
+}
+
+function qwToggleUnit(docId, checked) {
+  if (checked) { if (!qwSelectedUnits.includes(docId)) qwSelectedUnits.push(docId); }
+  else { qwSelectedUnits = qwSelectedUnits.filter(x => x !== docId); }
+  const cnt = document.getElementById('qwCount');
+  if (cnt) cnt.textContent = qwSelectedUnits.length;
+  const btn = document.getElementById('qwConfirmBtn');
+  if (btn) btn.disabled = qwSelectedUnits.length === 0;
+}
+
+function qwOpenPicker() {
+  const inp = document.getElementById('qwDateHidden');
+  if (!inp) return;
+  try { inp.showPicker ? inp.showPicker() : inp.click(); } catch(e) { inp.click(); }
+}
+function qwOnDateChange() {
+  const inp = document.getElementById('qwDateHidden');
+  if (inp) {
+    qwDate = inp.value || todayISO();
+    const txt = document.getElementById('qwDateText');
+    if (txt) txt.value = isoToDMY(qwDate);
+  }
+  document.querySelectorAll('.date-quick-btn[data-qwoffset]').forEach(b => b.classList.remove('active'));
+}
+function qwSetDate(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  qwDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const inp = document.getElementById('qwDateHidden');
+  if (inp) inp.value = qwDate;
+  const txt = document.getElementById('qwDateText');
+  if (txt) txt.value = isoToDMY(qwDate);
+  document.querySelectorAll('.date-quick-btn[data-qwoffset]').forEach(b => {
+    b.classList.toggle('active', b.dataset.qwoffset === String(offset));
+  });
+}
+
+function qwGetDept() {
+  const sel = document.getElementById('qwDept');
+  if (!sel) return '';
+  if (sel.value === '__other__') return (document.getElementById('qwDeptOtherInput')?.value||'').trim();
+  return sel.value;
+}
+
+async function doQuickWithdraw(itemId) {
+  if (!qwSelectedUnits.length) { showNotif('เลือกชิ้นส่วนก่อน', 'error'); return; }
+  const item        = allItems.find(i => i.id === itemId);
+  const withdrawDate= document.getElementById('qwDateHidden')?.value || qwDate;
+  const reqBy       = document.getElementById('qwReqBy')?.value || '';
+  const dept        = qwGetDept();
+  const usedAt      = document.getElementById('qwUsedAt')?.value || '';
+  const serviceRef  = document.getElementById('qwServiceRef')?.value || '';
+  const hasService  = document.getElementById('qwHasService')?.value || 'no';
+  const serviceNo   = hasService === 'yes'
+                        ? (document.getElementById('qwServiceNo')?.value?.trim() || '') : '';
+  const note        = document.getElementById('qwNote')?.value || '';
+  const txNo        = await genNo();
+  const txDate      = new Date(withdrawDate + 'T00:00:00');
+
+  const btn = document.getElementById('qwConfirmBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'กำลังเบิก...'; }
+
+  try {
+    const batch = db.batch();
+    qwSelectedUnits.forEach(unitDocId => {
+      const u = allUnits.find(x => x.docId === unitDocId);
+      batch.update(db.collection('units').doc(unitDocId), {
+        status: 'used',
+        usedAtLabel: usedAt,
+        usedTxId: txNo,
+        usedAt: firebase.firestore.Timestamp.fromDate(txDate),
+        usedBy: currentUser.displayName,
+      });
+      batch.set(db.collection('transactions').doc(), {
+        type: 'out',
+        serviceNo: txNo,
+        itemId,
+        itemName: item.name,
+        qty: 1,
+        sn: u?.sn || '-',
+        unitId: unitDocId,
+        detail: u?.detail || '',
+        usedAt,
+        dept,
+        reqBy,
+        hasService,
+        serviceNo,
+        serviceRef,
+        note,
+        withdrawDate,
+        userId: currentUser.uid,
+        userEmail: currentUser.email,
+        userName: currentUser.displayName,
+        createdAt: firebase.firestore.Timestamp.fromDate(txDate),
+      });
+    });
+    await batch.commit();
+
+    qwSelectedUnits.forEach(uid => {
+      const u = allUnits.find(x => x.docId === uid);
+      if (u) { u.status = 'used'; u.usedAtLabel = usedAt; }
+    });
+
+    closeModal();
+    showNotif(`เบิกสำเร็จ ${qwSelectedUnits.length} ชิ้น`);
+    qwSelectedUnits = [];
+    renderStock();
+  } catch(e) {
+    showNotif('เบิกไม่สำเร็จ: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันเบิก'; }
+  }
+}
+
+// ══════════════════════════════════════════════
+// ── MANAGE CATEGORIES ────────────────────────
+// ══════════════════════════════════════════════
+let editCatKey=null, editCatIcon='📋';
+
+function openManageCats(){
+  renderManageCatsModal();
+}
+function renderManageCatsModal(){
+  const rows = catGroups.map((c,i) => {
+    const itemCnt = allItems.filter(it=>getCatKey(it.cat)===c.key).length;
+    return `
+    <div class="cat-list-row">
+      <span class="cat-list-icon">${c.icon}</span>
+      <span class="cat-list-name">${c.label}</span>
+      <span class="cat-list-count">${itemCnt} รายการ</span>
+      <button class="btn btn-icon btn-sm" onclick="openEditCat('${c.key}')">✏️</button>
+      <button class="btn btn-icon btn-sm btn-danger" onclick="confirmDeleteCat('${c.key}')" ${itemCnt>0?'title="มีสินค้าอยู่ในหมวดนี้"':''}>🗑️</button>
+    </div>`;
+  }).join('');
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ จัดการหมวดหมู่</div>
+    <div style="max-height:50vh;overflow-y:auto;margin-bottom:1rem">
+      ${rows || '<div class="fz12 txmute">ยังไม่มีหมวดหมู่</div>'}
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ปิด</button>
+      <button class="btn btn-primary" onclick="openAddCat()">+ เพิ่มหมวดหมู่</button>
+    </div>`, true);
+}
+function openAddCat(){
+  editCatKey=null; editCatIcon='📋';
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">+ เพิ่มหมวดหมู่ใหม่</div>
+    ${catFormHTML('','','📋')}
+    <div class="modal-actions">
+      <button class="btn" onclick="openManageCats()">← กลับ</button>
+      <button class="btn btn-primary" onclick="doSaveCat(null)">บันทึก</button>
+    </div>`, true);
+}
+function openEditCat(key){
+  editCatKey=key;
+  const c=catGroups.find(x=>x.key===key)||{};
+  editCatIcon=c.icon||'📋';
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ แก้ไขหมวดหมู่</div>
+    ${catFormHTML(key, c.label||'', c.icon||'📋', true)}
+    <div class="modal-actions">
+      <button class="btn" onclick="openManageCats()">← กลับ</button>
+      <button class="btn btn-primary" onclick="doSaveCat('${key}')">บันทึก</button>
+    </div>`, true);
+}
+function catFormHTML(key, label, icon, lockKey=false){
+  return `
+    <div class="field">
+      <label>รหัสหมวด (ภาษาอังกฤษ ไม่มีช่องว่าง) *</label>
+      <input id="catKey" value="${key}" placeholder="เช่น Storage, MyGroup" ${lockKey?'readonly style="background:var(--bg);color:var(--tx3)"':''}/>
+    </div>
+    <div class="field">
+      <label>ชื่อหมวด *</label>
+      <input id="catLabel" value="${label}" placeholder="เช่น อุปกรณ์เก็บข้อมูล"/>
+    </div>
+    <div class="field">
+      <label>ไอคอน</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="catIconPreview" style="font-size:28px">${icon}</span>
+        <span class="fz12 txmute">คลิกเลือกด้านล่าง</span>
+      </div>
+      <div class="emoji-grid" id="emojiGrid">
+        ${EMOJI_OPTIONS.map(e=>`<div class="emoji-opt${e===icon?' selected':''}" onclick="selectEmoji('${e}')">${e}</div>`).join('')}
+      </div>
+    </div>`;
+}
+function selectEmoji(e){
+  editCatIcon=e;
+  const prev=document.getElementById('catIconPreview');
+  if(prev) prev.textContent=e;
+  document.querySelectorAll('.emoji-opt').forEach(el=>{
+    el.classList.toggle('selected', el.textContent===e);
+  });
+}
+async function doSaveCat(existingKey){
+  const keyInput=(document.getElementById('catKey')?.value||'').trim().replace(/\s+/g,'');
+  const label=(document.getElementById('catLabel')?.value||'').trim();
+  const icon=editCatIcon||'📋';
+  if(!keyInput||!label){showNotif('กรุณากรอกรหัสและชื่อหมวด','error');return;}
+  if(!existingKey){
+    if(catGroups.find(c=>c.key===keyInput)){showNotif('รหัสหมวดซ้ำ','error');return;}
+    const order=catGroups.length;
+    await db.collection('categories').doc(keyInput).set({key:keyInput,label,icon,order});
+    catGroups.push({docId:keyInput,key:keyInput,label,icon,order});
+  } else {
+    await db.collection('categories').doc(existingKey).update({label,icon});
+    const c=catGroups.find(x=>x.key===existingKey);
+    if(c){c.label=label;c.icon=icon;}
+  }
+  showNotif('บันทึกหมวดหมู่สำเร็จ');
+  renderStock(); openManageCats();
+}
+function confirmDeleteCat(key){
+  const c=catGroups.find(x=>x.key===key);
+  const itemCnt=allItems.filter(it=>getCatKey(it.cat)===key).length;
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="color:var(--r)">🗑️ ลบหมวดหมู่</div>
+    <div style="background:var(--rl);border:1px solid #f0a0a0;border-radius:var(--rad);padding:.75rem 1rem;margin-bottom:1rem">
+      <div style="font-size:13px;font-weight:700">${c?.icon} ${c?.label}</div>
+    </div>
+    ${itemCnt>0?`<div class="info-box" style="background:var(--rl);border-color:#f0a0a0;color:var(--r)">
+      ⚠️ มีสินค้า <b>${itemCnt} รายการ</b> ในหมวดนี้<br>สินค้าเหล่านั้นจะถูกย้ายไปหมวด "อื่น ๆ" โดยอัตโนมัติ
+    </div>`:''}
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:1rem">การกระทำนี้ไม่สามารถย้อนกลับได้</div>
+    <div class="modal-actions">
+      <button class="btn" onclick="openManageCats()">← กลับ</button>
+      <button class="btn btn-danger" onclick="doDeleteCat('${key}')">🗑️ ยืนยันลบ</button>
+    </div>`, true);
+}
+async function doDeleteCat(key){
+  const itemsInCat=allItems.filter(it=>getCatKey(it.cat)===key);
+  if(itemsInCat.length>0){
+    const batch=db.batch();
+    itemsInCat.forEach(it=>{
+      batch.update(db.collection('items').doc(it.docId),{cat:'Other'});
+      it.cat='Other';
+    });
+    await batch.commit();
+  }
+  await db.collection('categories').doc(key).delete();
+  catGroups=catGroups.filter(c=>c.key!==key);
+  if(selectedCat===key) selectedCat='__all__';
+  showNotif('ลบหมวดหมู่สำเร็จ');
+  renderStock(); openManageCats();
+}
+
+// ── ADD UNITS MODAL ───────────────────────────────
+function openAddUnits(itemId){
+  const item=allItems.find(i=>i.id===itemId);
+  addMode='qty'; pendingUnits=[{sn:'',detail:'',note:''}];
+  renderAddUnitsModal(item);
+}
+function renderAddUnitsModal(item){
+  const itemId=item.id;
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 เพิ่มสต็อก — ${item.name}</div>
+    <div class="add-mode-tabs">
+      <button class="add-mode-tab ${addMode==='qty'?'active':''}" onclick="setAddMode('qty','${itemId}')">⚡ เพิ่มจำนวน</button>
+      <button class="add-mode-tab ${addMode==='sn'?'active':''}" onclick="setAddMode('sn','${itemId}')">🔢 ระบุ S/N</button>
+    </div>
+    <div id="addModeBody">${addMode==='qty'?renderQtyMode(itemId):renderSNMode(itemId)}</div>
+  `, true);
+}
+function renderQtyMode(itemId){
+  return`
+    <div class="info-box">💡 ระบบจะสร้างรายการโดยใส่ S/N เป็น "-" ไว้ก่อน</div>
+    <div class="field"><label>จำนวนที่เพิ่ม</label>
+      <div class="qty-stepper">
+        <button onclick="adjustQty(-1)">−</button>
+        <input type="number" id="qtyVal" value="1" min="1" max="999" oninput="this.value=Math.max(1,parseInt(this.value)||1)"/>
+        <button onclick="adjustQty(1)">+</button>
+      </div></div>
+    <div class="field"><label>รายละเอียด</label><input id="qtyDetail" placeholder="เช่น 2TB SATA, Seagate"/></div>
+    <div class="field"><label>หมายเหตุ</label><input id="qtyNote" placeholder="หมายเหตุ"/></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="doSaveQty('${itemId}')">💾 บันทึก</button>
+    </div>`;
+}
+function renderSNMode(itemId){
+  return`
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 1fr auto;gap:6px;margin-bottom:4px;font-size:10px;font-weight:700;color:var(--tx3);padding:0 2px">
+      <span>S/N</span><span>รายละเอียด</span><span>หมายเหตุ</span><span></span>
+    </div>
+    <div id="pendingList">${pendingUnits.map((u,i)=>snRowHTML(u,i,itemId)).join('')}</div>
+    <button class="btn btn-sm" style="margin-top:8px" onclick="addPendingRow('${itemId}')">+ เพิ่มแถว</button>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" id="savePendingBtn" onclick="doSaveUnits('${itemId}')">💾 บันทึก ${pendingUnits.length} ชิ้น</button>
+    </div>`;
+}
+function setAddMode(mode,itemId){
+  addMode=mode;
+  document.getElementById('addModeBody').innerHTML=mode==='qty'?renderQtyMode(itemId):renderSNMode(itemId);
+}
+function adjustQty(d){
+  const el=document.getElementById('qtyVal');if(!el)return;
+  el.value=Math.max(1,(parseInt(el.value)||1)+d);
+}
+async function doSaveQty(itemId){
+  const item=allItems.find(i=>i.id===itemId);
+  const qty=Math.max(1,parseInt(document.getElementById('qtyVal')?.value)||1);
+  const detail=document.getElementById('qtyDetail')?.value.trim()||'';
+  const note=document.getElementById('qtyNote')?.value.trim()||'';
+  const batch=db.batch();
+  for(let i=0;i<qty;i++){
+    batch.set(db.collection('units').doc(),{
+      itemId,sn:'-',detail,note,status:'available',
+      addedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      addedBy:currentUser.displayName,addedByUid:currentUser.uid
+    });
+  }
+  batch.set(db.collection('transactions').doc(),{
+    type:'in',itemId,itemName:item.name,qty,sn:'-',
+    userId:currentUser.uid,userEmail:currentUser.email,userName:currentUser.displayName,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),source:'manual_qty'
+  });
+  await batch.commit();
+  await loadUnits();
+  closeModal(); showNotif(`เพิ่ม ${qty} ชิ้นสำเร็จ`); renderStock();
+}
+function snRowHTML(u,i,itemId){
+  return`<div class="sn-row" id="srow-${i}" style="display:grid;grid-template-columns:1fr 1.6fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center">
+    <input placeholder="S/N" value="${u.sn||''}" style="padding:7px 9px;border:1px solid var(--bdrm);border-radius:var(--radsm);font-size:12px;font-family:var(--mono);width:100%" oninput="pendingUnits[${i}].sn=this.value"/>
+    <input placeholder="รายละเอียด" value="${u.detail||''}" style="padding:7px 9px;border:1px solid var(--bdrm);border-radius:var(--radsm);font-size:12px;font-family:var(--font);width:100%" oninput="pendingUnits[${i}].detail=this.value"/>
+    <input placeholder="หมายเหตุ" value="${u.note||''}" style="padding:7px 9px;border:1px solid var(--bdrm);border-radius:var(--radsm);font-size:12px;font-family:var(--font);width:100%" oninput="pendingUnits[${i}].note=this.value"/>
+    <button class="btn btn-icon btn-sm btn-danger" onclick="removePendingRow(${i})">✕</button>
+  </div>`;
+}
+function addPendingRow(itemId){
+  pendingUnits.push({sn:'',detail:'',note:''});
+  document.getElementById('pendingList').innerHTML=pendingUnits.map((u,i)=>snRowHTML(u,i,itemId)).join('');
+  const b=document.getElementById('savePendingBtn');
+  if(b)b.textContent=`💾 บันทึก ${pendingUnits.length} ชิ้น`;
+}
+function removePendingRow(idx){
+  if(pendingUnits.length===1){showNotif('ต้องมีอย่างน้อย 1 แถว','error');return;}
+  pendingUnits.splice(idx,1);
+  document.getElementById('pendingList').innerHTML=pendingUnits.map((u,i)=>snRowHTML(u,i,'_')).join('');
+}
+async function doSaveUnits(itemId){
+  const item=allItems.find(i=>i.id===itemId);
+  pendingUnits.forEach((u,i)=>{
+    const row=document.getElementById(`srow-${i}`);
+    if(row){const inp=row.querySelectorAll('input');u.sn=inp[0].value.trim()||'-';u.detail=inp[1].value.trim();u.note=inp[2].value.trim();}
+  });
+  const batch=db.batch();
+  pendingUnits.forEach(u=>{
+    batch.set(db.collection('units').doc(),{
+      itemId,sn:u.sn,detail:u.detail,note:u.note,status:'available',
+      addedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      addedBy:currentUser.displayName,addedByUid:currentUser.uid
+    });
+  });
+  batch.set(db.collection('transactions').doc(),{
+    type:'in',itemId,itemName:item.name,qty:pendingUnits.length,
+    sn:pendingUnits.map(u=>u.sn).join(', '),
+    userId:currentUser.uid,userEmail:currentUser.email,userName:currentUser.displayName,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),source:'manual_sn'
+  });
+  await batch.commit();
+  await loadUnits();
+  closeModal(); showNotif(`เพิ่ม ${pendingUnits.length} ชิ้นสำเร็จ`); renderStock();
+}
+
+// ── EDIT UNIT ─────────────────────────────────────
+function openEditUnit(uid){
+  const u=allUnits.find(x=>x.docId===uid);if(!u)return;
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ แก้ไขชิ้นส่วน</div>
+    <div class="field"><label>S/N</label><input id="euSN" value="${u.sn||'-'}" style="font-family:var(--mono)"/></div>
+    <div class="field"><label>รายละเอียด</label><input id="euD" value="${u.detail||''}" placeholder="สเปก, MAC, รุ่น..."/></div>
+    <div class="field"><label>หมายเหตุ</label><textarea id="euN">${u.note||''}</textarea></div>
+    <div class="field"><label>สถานะ</label>
+      <select id="euS">
+        <option value="available" ${u.status==='available'?'selected':''}>✅ พร้อมใช้</option>
+        <option value="damaged" ${u.status==='damaged'?'selected':''}>🔧 ชำรุด</option>
+        <option value="used" ${u.status==='used'?'selected':''}>📤 เบิกแล้ว</option>
+      </select></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="doSaveUnit('${uid}')">บันทึก</button>
+    </div>`);
+}
+async function doSaveUnit(uid){
+  const u=allUnits.find(x=>x.docId===uid);
+  const data={sn:document.getElementById('euSN').value.trim()||'-',
+    detail:document.getElementById('euD').value.trim(),
+    note:document.getElementById('euN').value.trim(),
+    status:document.getElementById('euS').value};
+  await db.collection('units').doc(uid).update(data);
+  Object.assign(u,data); closeModal(); showNotif('บันทึกสำเร็จ'); renderStock();
+}
+async function markDamaged(uid){
+  if(!confirm('ทำเครื่องหมาย "ชำรุด" สำหรับชิ้นนี้?'))return;
+  await db.collection('units').doc(uid).update({status:'damaged'});
+  const u=allUnits.find(x=>x.docId===uid);if(u)u.status='damaged';
+  showNotif('อัปเดตสถานะแล้ว'); renderStock();
+}
+
+// ── ADD/EDIT ITEM TYPE ────────────────────────────
+function openAddItem(){
+  const nextId = genNextItemId();
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">+ เพิ่มประเภทสินค้า</div>
+    <div class="grid-2">
+      <div class="field">
+        <label>รหัสสินค้า *</label>
+        <input id="mId" value="${nextId}" style="font-family:var(--mono);font-weight:700"/>
+      </div>
+      <div class="field"><label>หมวดหมู่</label>
+        <select id="mCat">${catGroups.map(c=>`<option value="${c.key}">${c.icon} ${c.label}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>ชื่อสินค้า *</label><input id="mName"/></div>
+    <div class="grid-2">
+      <div class="field"><label>จำนวนขั้นต่ำ</label><input id="mMin" type="number" value="1" min="0"/></div>
+      <div class="field"><label>สถานที่</label><input id="mLoc" value="ชั้น IT"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="doAddItem()">บันทึก</button>
+    </div>`);
+}
+async function doAddItem(){
+  const id=document.getElementById('mId').value.trim().toUpperCase();
+  const name=document.getElementById('mName').value.trim();
+  if(!id||!name){showNotif('กรุณากรอกให้ครบ','error');return;}
+  if(allItems.find(i=>i.id===id)){showNotif('รหัสสินค้าซ้ำ!','error');return;}
+  if(allItems.find(i=>i.name.trim().toLowerCase()===name.toLowerCase())){showNotif('ชื่อสินค้าซ้ำ!','error');return;}
+  const data={id,name,cat:document.getElementById('mCat').value,
+    min:parseInt(document.getElementById('mMin').value)||1,
+    loc:document.getElementById('mLoc').value};
+  await db.collection('items').doc(id).set(data);
+  allItems.push({docId:id,...data}); allItems.sort((a,b)=>a.id.localeCompare(b.id));
+  closeModal(); showNotif('เพิ่มสำเร็จ'); renderStock();
+}
+function openEditItem(id){
+  const item=allItems.find(i=>i.id===id);
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ แก้ไข — ${item.name}</div>
+    <div class="field"><label>ชื่อสินค้า</label><input id="eName" value="${item.name}"/></div>
+    <div class="grid-2">
+      <div class="field"><label>หมวดหมู่</label>
+        <select id="eCat">${catGroups.map(c=>`<option value="${c.key}" ${item.cat===c.key?'selected':''}>${c.icon} ${c.label}</option>`).join('')}</select></div>
+      <div class="field"><label>สถานที่</label><input id="eLoc" value="${item.loc||''}"/></div>
+    </div>
+    <div class="field"><label>จำนวนขั้นต่ำ</label><input id="eMin" type="number" value="${item.min}" min="0"/></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="doEditItem('${id}')">บันทึก</button>
+    </div>`);
+}
+async function doEditItem(id){
+  const item=allItems.find(i=>i.id===id);
+  const data={name:document.getElementById('eName').value,cat:document.getElementById('eCat').value,
+    loc:document.getElementById('eLoc').value,min:parseInt(document.getElementById('eMin').value)||1};
+  await db.collection('items').doc(id).update(data);
+  Object.assign(item,data); closeModal(); showNotif('บันทึกสำเร็จ'); renderStock();
+}
+
+// ── DELETE ITEM ───────────────────────────────────
+function confirmDeleteItem(id){
+  const item=allItems.find(i=>i.id===id);if(!item)return;
+  const units=allUnits.filter(u=>u.itemId===id);
+  const avail=units.filter(u=>u.status==='available').length;
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="color:var(--r)">🗑️ ลบประเภทสินค้า</div>
+    <div style="background:var(--rl);border:1px solid #f0a0a0;border-radius:var(--rad);padding:.75rem 1rem;margin-bottom:1rem">
+      <div style="font-size:13px;font-weight:700">${item.name}</div>
+      <div style="font-size:12px;color:var(--tx2);margin-top:2px">${item.id} · ${units.length} ชิ้นทั้งหมด · พร้อมใช้ ${avail} ชิ้น</div>
+    </div>
+    ${units.length>0?`<div class="info-box" style="background:var(--rl);border-color:#f0a0a0;color:var(--r)">
+      ⚠️ มีชิ้นส่วน <b>${units.length} ชิ้น</b> ในระบบ การลบจะลบชิ้นส่วนทั้งหมดด้วย</div>`:''}
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:1rem">การกระทำนี้ไม่สามารถย้อนกลับได้</div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="doDeleteItem('${id}')">🗑️ ยืนยันลบ</button>
+    </div>`);
+}
+async function doDeleteItem(id){
+  const item=allItems.find(i=>i.id===id);if(!item)return;
+  const units=allUnits.filter(u=>u.itemId===id);
+  try{
+    const CHUNK=400;
+    for(let s=0;s<units.length;s+=CHUNK){
+      const batch=db.batch();
+      units.slice(s,s+CHUNK).forEach(u=>batch.delete(db.collection('units').doc(u.docId)));
+      await batch.commit();
+    }
+    await db.collection('items').doc(id).delete();
+    allItems=allItems.filter(i=>i.id!==id);
+    allUnits=allUnits.filter(u=>u.itemId!==id);
+    closeModal(); showNotif(`ลบ "${item.name}" สำเร็จ`); renderStock();
+  }catch(e){showNotif('ลบไม่สำเร็จ: '+e.message,'error');}
+}
+
+// ══════════════════════════════════════════════════
+// ── IMPORT / EXPORT EXCEL ─────────────────────────
+// ══════════════════════════════════════════════════
+function closeIEOverlay(e){ if(e.target===document.getElementById('ieOverlay')) closeIE(); }
+function closeIE(){ document.getElementById('ieOverlay').classList.remove('show'); importRows=[]; }
+
+function openExportStock(){
+  document.getElementById('ieTitle').textContent='📥 Export สต็อก Spare Part';
+  document.getElementById('ieBody').innerHTML=`
+    <p class="fz12 txmute" style="margin-bottom:1rem">Export รายการสต็อกทั้งหมด รองรับ 2 ชีต</p>
+    <div class="flex gap8" style="flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="doExportStock()">📥 Export ตอนนี้</button>
+      <button class="btn" onclick="closeIE()">ยกเลิก</button>
+    </div>`;
+  document.getElementById('ieOverlay').classList.add('show');
+}
+function doExportStock(){
+  const wb=XLSX.utils.book_new();
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const stockRows=[
+    [`รายการทรัพย์สิน Spare Part`,'','','',`อัพเดต ${dateStr}`,''],
+    ['ลำดับ','รายละเอียด','จำนวน (นำเข้า)','คงเหลือ','สถานที่จัดเก็บ','หมวดหมู่']
+  ];
+  allItems.forEach((item,idx)=>{
+    const avail=getItemQty(item.id);
+    const total=getUnitsOf(item.id).length;
+    stockRows.push([idx+1,item.name,total,avail,item.loc||'ชั้น IT',item.cat||'']);
+  });
+  stockRows.push(['','รวมทั้งหมด',allUnits.length,allUnits.filter(u=>u.status==='available').length,'','']);
+  const ws1=XLSX.utils.aoa_to_sheet(stockRows);
+  ws1['!cols']=[{wch:8},{wch:35},{wch:16},{wch:10},{wch:20},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Spare Part');
+  const unitRows=[['รหัสสินค้า','ชื่อสินค้า','หมวดหมู่','S/N','รายละเอียด','สถานะ','ใช้งานที่','หมายเหตุ']];
+  allItems.forEach(item=>{
+    getUnitsOf(item.id).forEach(u=>{
+      const statusTH=u.status==='available'?'พร้อมใช้':u.status==='used'?'เบิกแล้ว':'ชำรุด';
+      unitRows.push([item.id,item.name,item.cat||'',u.sn||'-',u.detail||'',statusTH,u.usedAtLabel||'',u.note||'']);
+    });
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(unitRows);
+  ws2['!cols']=[{wch:10},{wch:30},{wch:12},{wch:20},{wch:25},{wch:12},{wch:15},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws2,'ชิ้นส่วน (Units)');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['หมายเหตุ'],['ดูประวัติการเบิกได้ที่หน้า ประวัติ']]),'เบิกออก');
+  XLSX.writeFile(wb,`RYG_Stock_${dateStr}.xlsx`);
+  showNotif('Export สำเร็จ!'); closeIE();
+}
+function openExportUnits(){
+  document.getElementById('ieTitle').textContent='📋 Export รายการชิ้นส่วน';
+  document.getElementById('ieBody').innerHTML=`
+    <p class="fz12 txmute" style="margin-bottom:1rem">Export รายละเอียดชิ้นส่วนทุกชิ้น</p>
+    <div class="flex gap8">
+      <button class="btn btn-primary" onclick="doExportUnits()">📋 Export ตอนนี้</button>
+      <button class="btn" onclick="closeIE()">ยกเลิก</button>
+    </div>`;
+  document.getElementById('ieOverlay').classList.add('show');
+}
+function doExportUnits(){
+  const wb=XLSX.utils.book_new();
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const rows=[['รหัสสินค้า','ชื่อสินค้า','หมวดหมู่','S/N','รายละเอียด','สถานะ','ใช้งานที่','วันที่เพิ่ม','เพิ่มโดย','หมายเหตุ']];
+  allItems.forEach(item=>{
+    getUnitsOf(item.id).forEach(u=>{
+      const statusTH=u.status==='available'?'พร้อมใช้':u.status==='used'?'เบิกแล้ว':'ชำรุด';
+      const addedAt=u.addedAt?.toDate?u.addedAt.toDate().toLocaleDateString('th-TH'):'';
+      rows.push([item.id,item.name,item.cat||'',u.sn||'-',u.detail||'',statusTH,u.usedAtLabel||'',addedAt,u.addedBy||'',u.note||'']);
+    });
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:10},{wch:30},{wch:12},{wch:20},{wch:25},{wch:12},{wch:15},{wch:14},{wch:15},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws,'Units');
+  XLSX.writeFile(wb,`RYG_Units_${dateStr}.xlsx`);
+  showNotif('Export ชิ้นส่วนสำเร็จ!'); closeIE();
+}
+function downloadTemplate(){
+  const wb=XLSX.utils.book_new();
+  const itemSheet=XLSX.utils.aoa_to_sheet([
+    ['=== Template: นำเข้าประเภทสินค้า (Items) ===','','','','',''],
+    ['คำอธิบาย: กรอกข้อมูลตั้งแต่แถวที่ 4 ลงไป','','','','',''],
+    ['รหัสสินค้า *','ชื่อสินค้า *','หมวดหมู่','จำนวนขั้นต่ำ','สถานที่จัดเก็บ','หมายเหตุ'],
+    ['SP050','ตัวอย่าง: RAM DDR5 16GB','Memory',2,'ชั้น IT',''],
+  ]);
+  itemSheet['!cols']=[{wch:14},{wch:35},{wch:14},{wch:14},{wch:18},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,itemSheet,'Template_Items');
+  const unitSheet=XLSX.utils.aoa_to_sheet([
+    ['=== Template: นำเข้าชิ้นส่วน (Units) ===','','','',''],
+    ['รหัสสินค้า *','S/N','รายละเอียด','หมายเหตุ','จำนวน'],
+    ['SP001','SN-12345','SSD 128GB SATA','','1'],
+    ['SP007','-','RAM 8GB Kingston','สภาพดี','1'],
+  ]);
+  unitSheet['!cols']=[{wch:14},{wch:20},{wch:28},{wch:18},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,unitSheet,'Template_Units');
+  const catSheet=XLSX.utils.aoa_to_sheet([
+    ['หมวดหมู่ที่มีในระบบ'],
+    ...catGroups.map(c=>[`${c.key}`,`${c.label}`])
+  ]);
+  catSheet['!cols']=[{wch:16},{wch:28}];
+  XLSX.utils.book_append_sheet(wb,catSheet,'หมวดหมู่');
+  XLSX.writeFile(wb,'RYG_Stock_Template.xlsx');
+  showNotif('ดาวน์โหลด Template สำเร็จ!');
+}
+function openImportStock(){
+  importRows=[];
+  document.getElementById('ieTitle').textContent='📤 Import Excel';
+  document.getElementById('ieBody').innerHTML=`
+    <div class="ie-section">
+      <div class="ie-section-title">เลือกประเภทการ Import</div>
+      <div style="display:flex;gap:8px;margin-bottom:.5rem">
+        <button class="btn btn-sm ${importMode==='stock'?'btn-primary':''}" onclick="setImportMode('stock')">📦 ประเภทสินค้า</button>
+        <button class="btn btn-sm ${importMode==='units'?'btn-primary':''}" onclick="setImportMode('units')">🔢 ชิ้นส่วน</button>
+      </div>
+      <div class="fz11 txmute" id="importModeDesc">${importMode==='stock'?'Import รายการประเภทสินค้าใหม่':'Import ชิ้นส่วนแต่ละชิ้น'}</div>
+    </div>
+    <div class="ie-section">
+      <div class="ie-section-title">อัปโหลดไฟล์ Excel</div>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event)">
+        <div class="dz-icon">📊</div>
+        <div class="dz-text">คลิกหรือลากไฟล์ .xlsx</div>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFileSelect(this)"/>
+    </div>
+    <div id="importPreviewArea"></div>
+    <div class="flex gap8" id="importActions" style="display:none!important">
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="doImport()">✅ นำเข้า</button>
+      <button class="btn" onclick="closeIE()">ยกเลิก</button>
+    </div>`;
+  document.getElementById('ieOverlay').classList.add('show');
+}
+function setImportMode(mode){
+  importMode=mode; importRows=[];
+  const desc=document.getElementById('importModeDesc');
+  if(desc) desc.textContent=mode==='stock'?'Import รายการประเภทสินค้าใหม่':'Import ชิ้นส่วนแต่ละชิ้น';
+  document.querySelectorAll('#ieBody .btn-sm').forEach(b=>{
+    b.classList.remove('btn-primary');
+    if((mode==='stock'&&b.textContent.includes('ประเภท'))||(mode==='units'&&b.textContent.includes('ชิ้นส่วน'))) b.classList.add('btn-primary');
+  });
+  document.getElementById('importPreviewArea').innerHTML='';
+  document.getElementById('importActions').style.display='none';
+}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const file=e.dataTransfer.files[0];if(file)parseExcelFile(file);
+}
+function handleFileSelect(input){const file=input.files[0];if(file)parseExcelFile(file);}
+function parseExcelFile(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      let sheetName;
+      if(importMode==='stock'){
+        sheetName=wb.SheetNames.find(n=>n.toLowerCase().includes('template_item')||n.toLowerCase().includes('spare part'))||wb.SheetNames[0];
+      } else {
+        sheetName=wb.SheetNames.find(n=>n.toLowerCase().includes('template_unit')||n.toLowerCase().includes('unit'))||wb.SheetNames[0];
+      }
+      const ws=wb.Sheets[sheetName];
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(importMode==='stock') parseStockRows(raw);
+      else parseUnitRows(raw);
+    }catch(err){
+      document.getElementById('importPreviewArea').innerHTML=`<div class="fz12" style="color:var(--r)">อ่านไฟล์ไม่สำเร็จ: ${err.message}</div>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function parseStockRows(raw){
+  let headerIdx=-1;
+  for(let i=0;i<Math.min(raw.length,10);i++){
+    const row=raw[i].map(c=>String(c||'').trim());
+    if(row.some(c=>c.includes('รหัส')||c.includes('ชื่อ'))){headerIdx=i;break;}
+  }
+  const dataStart=headerIdx>=0?headerIdx+1:2;
+  const parsed=[];
+  for(let i=dataStart;i<raw.length;i++){
+    const row=raw[i];
+    const idRaw=String(row[0]||'').trim();
+    const nameRaw=String(row[1]||'').trim();
+    if(!idRaw||!nameRaw||idRaw.startsWith('='))continue;
+    const id=idRaw.toUpperCase();
+    const exists=!!allItems.find(item=>item.id===id);
+    const cat=String(row[2]||'Other').trim();
+    const min=parseInt(row[3])||1;
+    const loc=String(row[4]||'ชั้น IT').trim();
+    let status='ok',msg='';
+    if(!id.match(/^[A-Z0-9]{2,10}$/)){status='warn';msg='รหัสควรเป็นตัวอักษร 2-10 ตัว';}
+    if(exists){status='skip';msg='รหัสซ้ำ — จะข้าม';}
+    parsed.push({id,name:nameRaw,cat,min,loc,exists,status,msg});
+  }
+  importRows=parsed; renderImportPreviewStock();
+}
+function parseUnitRows(raw){
+  let dataStart=1;
+  for(let i=0;i<Math.min(raw.length,10);i++){
+    const row=raw[i].map(c=>String(c||'').trim());
+    if(row.some(c=>c.includes('รหัส')||c==='S/N')){dataStart=i+1;break;}
+  }
+  const parsed=[];
+  for(let i=dataStart;i<raw.length;i++){
+    const row=raw[i];
+    const itemId=String(row[0]||'').trim().toUpperCase();
+    if(!itemId||itemId.startsWith('='))continue;
+    const sn=String(row[1]||'-').trim()||'-';
+    const detail=String(row[2]||'').trim();
+    const note=String(row[3]||'').trim();
+    const qty=Math.max(1,parseInt(row[4])||1);
+    const item=allItems.find(it=>it.id===itemId);
+    let status='ok',msg='';
+    if(!item){status='err';msg='ไม่พบรหัสสินค้า';}
+    parsed.push({itemId,itemName:item?.name||'?',sn,detail,note,qty:sn!=='-'?1:qty,status,msg,item});
+  }
+  importRows=parsed; renderImportPreviewUnits();
+}
+function renderImportPreviewStock(){
+  const ok=importRows.filter(r=>r.status==='ok').length;
+  const skip=importRows.filter(r=>r.status==='skip').length;
+  const warn=importRows.filter(r=>r.status==='warn').length;
+  document.getElementById('importPreviewArea').innerHTML=`
+    <div class="import-summary ${skip>0||warn>0?'warn':''}">
+      พบ ${importRows.length} แถว · จะนำเข้า ${ok+warn} · ข้าม ${skip} (ซ้ำ)
+    </div>
+    <div class="import-preview" style="max-height:220px;overflow-y:auto">
+      <table><tr><th>#</th><th>รหัส</th><th>ชื่อ</th><th>หมวด</th><th>สถานะ</th></tr>
+      ${importRows.map((r,i)=>`<tr><td>${i+1}</td>
+        <td class="ie-row-${r.status==='skip'?'warn':r.status}">${r.id}</td>
+        <td>${r.name}</td><td>${r.cat}</td>
+        <td class="ie-row-${r.status==='skip'?'warn':r.status}">${r.msg||'✓ OK'}</td>
+      </tr>`).join('')}</table>
+    </div>`;
+  const actEl=document.getElementById('importActions');
+  actEl.style.cssText='display:flex;gap:8px;margin-top:1rem';
+  const btn=document.getElementById('importConfirmBtn');
+  btn.disabled=(ok+warn)===0; btn.textContent=`✅ นำเข้า ${ok+warn} รายการ`;
+}
+function renderImportPreviewUnits(){
+  const ok=importRows.filter(r=>r.status!=='err').length;
+  const err=importRows.filter(r=>r.status==='err').length;
+  document.getElementById('importPreviewArea').innerHTML=`
+    <div class="import-summary ${err>0?'warn':''}">
+      พบ ${importRows.length} แถว · จะนำเข้า ${ok} · ข้าม ${err}
+    </div>
+    <div class="import-preview" style="max-height:220px;overflow-y:auto">
+      <table><tr><th>#</th><th>รหัส</th><th>ชื่อ</th><th>S/N</th><th>จำนวน</th><th>สถานะ</th></tr>
+      ${importRows.map((r,i)=>`<tr><td>${i+1}</td>
+        <td class="ie-row-${r.status==='err'?'err':'ok'}">${r.itemId}</td>
+        <td>${r.itemName}</td>
+        <td style="font-family:var(--mono);font-size:11px">${r.sn}</td>
+        <td>${r.qty}</td>
+        <td class="ie-row-${r.status==='err'?'err':r.status==='warn'?'warn':'ok'}">${r.msg||'✓ OK'}</td>
+      </tr>`).join('')}</table>
+    </div>`;
+  const actEl=document.getElementById('importActions');
+  actEl.style.cssText='display:flex;gap:8px;margin-top:1rem';
+  const btn=document.getElementById('importConfirmBtn');
+  btn.disabled=ok===0; btn.textContent=`✅ นำเข้า ${ok} ชิ้น`;
+}
+async function doImport(){
+  if(!importRows.length)return;
+  const btn=document.getElementById('importConfirmBtn');
+  btn.disabled=true; btn.textContent='กำลังนำเข้า...';
+  document.getElementById('importPreviewArea').insertAdjacentHTML('afterbegin',
+    `<div class="progress-bar"><div class="progress-fill" id="importProg" style="width:0%"></div></div>
+     <div class="fz12 txmute" id="importProgText">กำลังนำเข้า...</div>`);
+  try{
+    if(importMode==='stock') await doImportItems();
+    else await doImportUnits();
+  }catch(e){
+    showNotif('นำเข้าไม่สำเร็จ: '+e.message,'error');
+    btn.disabled=false; btn.textContent='ลองใหม่';
+  }
+}
+async function doImportItems(){
+  const toAdd=importRows.filter(r=>r.status!=='skip');
+  let done=0;
+  const CHUNK=400;
+  for(let s=0;s<toAdd.length;s+=CHUNK){
+    const batch=db.batch();
+    toAdd.slice(s,s+CHUNK).forEach(r=>{
+      batch.set(db.collection('items').doc(r.id),{id:r.id,name:r.name,cat:r.cat,min:r.min,loc:r.loc});
+    });
+    await batch.commit();
+    done+=Math.min(CHUNK,toAdd.length-s);
+    const pct=Math.round(done/toAdd.length*100);
+    const pg=document.getElementById('importProg');if(pg)pg.style.width=pct+'%';
+    const pt=document.getElementById('importProgText');if(pt)pt.textContent=`นำเข้า ${done}/${toAdd.length}...`;
+  }
+  await loadItems(); await loadUnits();
+  showNotif(`นำเข้าสำเร็จ ${toAdd.length} รายการ`);
+  renderStock(); closeIE();
+}
+async function doImportUnits(){
+  const toAdd=importRows.filter(r=>r.status!=='err');
+  let done=0,totalUnits=0;
+  const CHUNK=400;
+  for(let s=0;s<toAdd.length;s+=CHUNK){
+    const batch=db.batch();
+    toAdd.slice(s,s+CHUNK).forEach(r=>{
+      const count=(r.sn!=='-')?1:r.qty;
+      for(let k=0;k<count;k++){
+        totalUnits++;
+        batch.set(db.collection('units').doc(),{
+          itemId:r.itemId,sn:r.sn,detail:r.detail,note:r.note,status:'available',
+          addedAt:firebase.firestore.FieldValue.serverTimestamp(),
+          addedBy:currentUser.displayName,addedByUid:currentUser.uid
+        });
+      }
+      batch.set(db.collection('transactions').doc(),{
+        type:'in',itemId:r.itemId,itemName:r.itemName,qty:count,sn:r.sn,
+        userId:currentUser.uid,userEmail:currentUser.email,userName:currentUser.displayName,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp(),source:'excel_import'
+      });
+    });
+    await batch.commit();
+    done+=Math.min(CHUNK,toAdd.length-s);
+    const pct=Math.round(done/toAdd.length*100);
+    const pg=document.getElementById('importProg');if(pg)pg.style.width=pct+'%';
+    const pt=document.getElementById('importProgText');if(pt)pt.textContent=`นำเข้า ${done}/${toAdd.length}...`;
+  }
+  await loadUnits();
+  showNotif(`นำเข้าสำเร็จ ${toAdd.length} รายการ (${totalUnits} ชิ้น)`);
+  renderStock(); closeIE();
+}
+</script>
+</body>
+</html>
