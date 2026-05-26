@@ -356,14 +356,15 @@ async function submitWd(){
   const f = readForm();
   selectedDate = f.withdrawDate;
 
-  const txDate = new Date(f.withdrawDate + 'T00:00:00');
+  // createdAt = เวลาจริงตอนกดยืนยัน (ไม่ใช้วันที่ที่ผู้ใช้เลือก)
+  const nowTs = firebase.firestore.Timestamp.fromDate(new Date());
 
   try{
     const batch=db.batch();
     withdrawUnits.forEach(w=>{
       batch.update(db.collection('units').doc(w.unitId),{
         status:'used', usedAtLabel:f.usedAt, usedTxId:currentServiceNo,
-        usedAt: firebase.firestore.Timestamp.fromDate(txDate),
+        usedAt: nowTs,
         usedBy: currentUser.displayName
       });
       batch.set(db.collection('transactions').doc(),{
@@ -374,7 +375,7 @@ async function submitWd(){
         hasService:f.hasService, serviceRef:f.serviceRef, note:f.note,
         withdrawDate: f.withdrawDate,
         userId:currentUser.uid, userEmail:currentUser.email, userName:currentUser.displayName,
-        createdAt: firebase.firestore.Timestamp.fromDate(txDate)
+        createdAt: nowTs
       });
     });
     await batch.commit();
