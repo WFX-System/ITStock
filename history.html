@@ -11,16 +11,116 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="shared.js"></script>
-<!-- SheetJS for Excel Export -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-.progress-bar{height:6px;background:#e0e0e0;border-radius:3px;overflow:hidden;margin:.5rem 0;}
-.progress-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
+/* ── Progress bar ── */
+.progress-bar  { height:6px; background:#e0e0e0; border-radius:3px; overflow:hidden; margin:.5rem 0; }
+.progress-fill { height:100%; background:var(--g); border-radius:3px; transition:width .3s; }
+
+/* ── Segment filter ── */
+.seg-filter { display:flex; gap:0; border:1.5px solid var(--bdrm); border-radius:var(--rad); overflow:hidden; }
+.seg-btn {
+  padding:6px 13px; border:none;
+  background:var(--surf); color:var(--tx2);
+  cursor:pointer; font-size:12px; font-weight:700;
+  font-family:var(--font); border-right:1px solid var(--bdrm);
+  transition:background .15s, color .15s;
+}
+.seg-btn:last-child { border-right:none; }
+.seg-btn.active { background:var(--g); color:#fff; }
+
+/* ── History cards enhanced ── */
+.hist-card-v2 {
+  background:var(--surf);
+  border:1px solid var(--bdr);
+  border-radius:var(--radlg);
+  padding:.85rem 1rem;
+  border-left:3px solid transparent;
+  transition:box-shadow .15s, transform .1s;
+  cursor:default;
+}
+.hist-card-v2:hover { box-shadow:0 3px 12px rgba(0,0,0,.08); transform:translateY(-1px); }
+.hist-card-v2.type-in  { border-left-color:var(--g); }
+.hist-card-v2.type-out { border-left-color:var(--r); }
+
+.hist-top-v2 { display:flex; align-items:flex-start; gap:8px; margin-bottom:5px; }
+.hist-name-v2 { font-size:13px; font-weight:700; flex:1; line-height:1.35; }
+.hist-meta-v2 {
+  display:flex; flex-wrap:wrap; gap:4px 10px;
+  font-size:11px; color:var(--tx3); line-height:1.7;
+}
+.hist-meta-v2 .meta-chip {
+  display:inline-flex; align-items:center; gap:3px;
+}
+.hist-sn-v2 {
+  font-size:11px; font-family:var(--mono); color:#1D4ED8;
+  background:#EFF6FF; border:1px solid #BFDBFE;
+  border-radius:4px; padding:1px 6px;
+  display:inline-block; margin-bottom:4px;
+}
+.hist-note-v2 {
+  font-size:11px; color:var(--tx3); font-style:italic;
+  margin-top:5px; padding-top:5px;
+  border-top:1px solid var(--bdr);
+}
+
+/* ── Card action buttons ── */
+.hist-actions {
+  display:flex; gap:6px;
+  margin-top:9px; padding-top:9px;
+  border-top:1px solid var(--bdr);
+}
+.act-btn {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:4px 10px; font-size:11px; font-weight:700;
+  border:1.5px solid var(--bdrm);
+  border-radius:var(--radsm);
+  background:var(--surf); color:var(--tx2);
+  cursor:pointer; font-family:var(--font);
+  transition:background .12s, color .12s, border-color .12s;
+}
+.act-btn:hover { background:var(--bg); }
+.act-btn.view:hover  { background:var(--gll); color:var(--gd); border-color:var(--gl); }
+.act-btn.edit:hover  { background:#EFF6FF; color:#1D4ED8; border-color:#BFDBFE; }
+.act-btn.del:hover   { background:var(--rl); color:var(--r); border-color:#f0a0a0; }
+
+/* ── Detail modal grid ── */
+.detail-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:8px 16px; margin:.75rem 0;
+}
+.detail-cell { }
+.detail-lbl { font-size:10px; font-weight:700; color:var(--tx3); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px; }
+.detail-val { font-size:13px; font-weight:600; color:var(--tx1); }
+
+/* ── Edit form ── */
+.edit-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media(max-width:480px){ .edit-grid-2 { grid-template-columns:1fr; } }
+
+/* ── Warn box ── */
+.warn-box {
+  background:var(--rl); border:1px solid #f0a0a0;
+  border-radius:var(--rad); padding:.7rem .9rem;
+  margin-bottom:1rem;
+}
+.warn-box-title { font-size:13px; font-weight:700; color:var(--r); }
+.warn-box-sub   { font-size:12px; color:var(--tx2); margin-top:3px; }
+
+/* ── Count label ── */
+.count-lbl { font-size:12px; color:var(--tx3); margin-bottom:.7rem; }
+
+/* ── Toolbar ── */
+.hist-toolbar {
+  display:flex; align-items:center; gap:8px;
+  flex-wrap:wrap; margin-bottom:1rem;
+}
+.hist-toolbar-title { font-size:15px; font-weight:700; flex:1; min-width:140px; }
+.hist-toolbar-right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 </style>
 </head>
 <body>
 <div id="loadingScreen">
-  <div style="width:52px;height:52px;background:#1D9E75;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>
+  <div style="width:52px;height:52px;background:var(--g);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>
   <div style="font-size:15px;font-weight:700;">RYG Stock System</div>
   <div class="spinner"></div>
 </div>
@@ -43,223 +143,481 @@
 <div id="notif"></div>
 
 <script>
-let currentUser=null, currentRole='user', db=null;
-let historyData=[], filterType='all', searchQ='';
-let _histUnsub=null;
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let currentUser = null, currentRole = 'user', db = null;
+let historyData = [], filterType = 'all', searchQ = '';
+let _histUnsub = null;
 
 initShell('history', (user, role, firestore) => {
-  currentUser=user; currentRole=role; db=firestore;
+  currentUser = user; currentRole = role; db = firestore;
   subscribeHistory();
 });
 
-function subscribeHistory(){
-  if(_histUnsub){ _histUnsub(); _histUnsub=null; }
-
-  // BUG FIX: ใช้แค่ orderBy('createdAt') ไม่มี .where() เพิ่ม
-  // เพื่อหลีกเลี่ยง composite index ที่ต้องสร้างใน Firestore console
-  // กรอง userId ฝั่ง client แทน
-  const q = db.collection('transactions').orderBy('createdAt','desc').limit(500);
-
+/* ═══════════════════════════════════════════
+   FIRESTORE SUBSCRIBE
+═══════════════════════════════════════════ */
+function subscribeHistory() {
+  if (_histUnsub) { _histUnsub(); _histUnsub = null; }
+  const q = db.collection('transactions').orderBy('createdAt', 'desc').limit(500);
   _histUnsub = q.onSnapshot(snap => {
-    let docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    // กรอง user ปกติให้เห็นแค่ของตัวเอง (client-side)
-    if(currentRole !== 'admin'){
-      docs = docs.filter(h => h.userId === currentUser.uid);
-    }
+    let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (currentRole !== 'admin') docs = docs.filter(h => h.userId === currentUser.uid);
     historyData = docs;
     renderHistory();
   }, err => {
     console.error('History error:', err);
-    // Fallback: ถ้า snapshot ไม่ได้ ลอง get แบบ one-time
     loadHistoryOnce();
   });
 }
 
-async function loadHistoryOnce(){
-  try{
-    const snap = await db.collection('transactions').orderBy('createdAt','desc').limit(500).get();
-    let docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    if(currentRole !== 'admin'){
-      docs = docs.filter(h => h.userId === currentUser.uid);
-    }
+async function loadHistoryOnce() {
+  try {
+    const snap = await db.collection('transactions').orderBy('createdAt', 'desc').limit(500).get();
+    let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (currentRole !== 'admin') docs = docs.filter(h => h.userId === currentUser.uid);
     historyData = docs;
     renderHistory();
-  }catch(e){
-    document.getElementById('mainContent').innerHTML=`<div class="empty-state" style="color:var(--r)">โหลดประวัติไม่สำเร็จ: ${e.message}</div>`;
+  } catch (e) {
+    document.getElementById('mainContent').innerHTML =
+      `<div class="empty-state" style="color:var(--r)">โหลดประวัติไม่สำเร็จ: ${e.message}</div>`;
   }
 }
 
-function safeFormatDT(ts){
-  try{ return (typeof formatDT==='function') ? formatDT(ts) : ''; }
-  catch(e){ return ''; }
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+function safeFormatDT(ts) {
+  try { return (typeof formatDT === 'function') ? formatDT(ts) : ''; }
+  catch (e) { return ''; }
 }
 
-function getFilteredData(){
-  let data=historyData;
-  if(filterType!=='all') data=data.filter(h=>h.type===filterType);
-  if(searchQ){
-    const q=searchQ.toLowerCase();
-    data=data.filter(h=>
-      (h.itemName||'').toLowerCase().includes(q)||
-      (h.sn||'').toLowerCase().includes(q)||
-      (h.serviceNo||'').toLowerCase().includes(q)||
-      (h.usedAt||'').toLowerCase().includes(q)||
-      (h.reqBy||'').toLowerCase().includes(q)||
-      (h.dept||'').toLowerCase().includes(q)
+function getFilteredData() {
+  let data = historyData;
+  if (filterType !== 'all') data = data.filter(h => h.type === filterType);
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    data = data.filter(h =>
+      (h.itemName || '').toLowerCase().includes(q) ||
+      (h.sn || '').toLowerCase().includes(q) ||
+      (h.serviceNo || '').toLowerCase().includes(q) ||
+      (h.usedAt || '').toLowerCase().includes(q) ||
+      (h.reqBy || '').toLowerCase().includes(q) ||
+      (h.dept || '').toLowerCase().includes(q) ||
+      (h.userName || '').toLowerCase().includes(q) ||
+      (h.note || '').toLowerCase().includes(q)
     );
   }
   return data;
 }
 
-function renderHistory(){
-  const data=getFilteredData();
-  const isAdmin=currentRole==='admin';
+function svcLabel(v) {
+  return { no: 'ไม่มี', yes: '✅ ใบ Service', job: '📋 Job Order' }[v] || '-';
+}
 
-  document.getElementById('mainContent').innerHTML=`
-  <div class="flex jb items-c section-gap" style="flex-wrap:wrap;gap:8px">
-    <span style="font-size:15px;font-weight:700">🕐 ประวัติ${currentRole==='user'?' (ของฉัน)':''}</span>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <div style="display:flex;gap:0;border:1px solid var(--bdrm);border-radius:var(--rad);overflow:hidden">
-        ${['all','in','out'].map(t=>`
-          <button style="padding:6px 12px;border:none;background:${filterType===t?'var(--g)':'var(--bg)'};color:${filterType===t?'#fff':'var(--tx2)'};cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font)"
+/* ═══════════════════════════════════════════
+   RENDER MAIN LIST
+═══════════════════════════════════════════ */
+function renderHistory() {
+  const data = getFilteredData();
+  const isAdmin = currentRole === 'admin';
+
+  document.getElementById('mainContent').innerHTML = `
+  <!-- Toolbar -->
+  <div class="hist-toolbar">
+    <span class="hist-toolbar-title">🕐 ประวัติ${currentRole === 'user' ? ' (ของฉัน)' : ''}</span>
+    <div class="hist-toolbar-right">
+      <div class="seg-filter">
+        ${['all', 'in', 'out'].map(t => `
+          <button class="seg-btn${filterType === t ? ' active' : ''}"
             onclick="filterType='${t}';renderHistory()">
-            ${{all:'ทั้งหมด',in:'📥 นำเข้า',out:'📤 เบิก'}[t]}
+            ${{ all: 'ทั้งหมด', in: '📥 นำเข้า', out: '📤 เบิก' }[t]}
           </button>`).join('')}
       </div>
-      <input class="search-input" style="min-width:140px;max-width:200px" placeholder="ค้นหา..." value="${searchQ}"
+      <input class="search-input" style="min-width:140px;max-width:200px"
+        placeholder="ค้นหา..." value="${searchQ.replace(/"/g, '&quot;')}"
         oninput="searchQ=this.value;renderHistory()"/>
-      ${isAdmin?`<button class="btn btn-sm" onclick="exportHistory()" title="Export ประวัติเป็น Excel">📥 Export</button><button class="btn btn-sm btn-danger" onclick="confirmDeleteHistory()" title="ลบประวัติทั้งหมด">🗑️ ลบทั้งหมด</button>`:''}
+      ${isAdmin ? `
+        <button class="btn btn-sm" onclick="exportHistory()" title="Export เป็น Excel">📥 Export</button>
+        <button class="btn btn-sm btn-danger" onclick="confirmDeleteAll()" title="ลบทั้งหมด">🗑️ ลบทั้งหมด</button>
+      ` : ''}
     </div>
   </div>
-  <div class="fz12 txmute" style="margin-bottom:.7rem">${data.length} รายการ${historyData.length>data.length?' (กรองจาก '+historyData.length+')':''}</div>
-  ${data.length===0?`<div class="empty-state">ยังไม่มีรายการ</div>`:`
-  <div class="hist-list">
-    ${data.map(h=>`
-      <div class="hist-card">
-        <div class="hist-top">
-          <div class="hist-dot" style="background:${h.type==='in'?'#1D9E75':'#E24B4A'}"></div>
-          <span class="hist-item">${h.itemName}</span>
-          ${h.type==='in'?'<span class="badge badge-in">📥 นำเข้า</span>':'<span class="badge badge-out2">📤 เบิก</span>'}
-        </div>
-        ${(h.sn&&h.sn!=='-')?`<div class="hist-sn">S/N: ${h.sn}</div>`:''}
-        <div class="hist-meta">
-          ${h.usedAt?`📍 ${h.usedAt} · `:''}
-          ${h.hasService==='yes'?'✅ ใบ Service ':h.hasService==='job'?'📋 Job Order ':''}
-          ${h.serviceRef?`<span class="hist-ref">${h.serviceRef}</span> · `:''}
-          ${h.dept?h.dept+' · ':''}
-          ${isAdmin&&h.userName?h.userName+' · ':''}
-          ${safeFormatDT(h.createdAt)}
-        </div>
-        ${h.serviceNo?`<div class="hist-ref" style="margin-top:3px">${h.serviceNo}</div>`:''}
-      </div>`).join('')}
-  </div>`}`;
+
+  <!-- Count -->
+  <div class="count-lbl">${data.length} รายการ${historyData.length > data.length ? ' (กรองจาก ' + historyData.length + ')' : ''}</div>
+
+  <!-- List -->
+  ${data.length === 0
+    ? `<div class="empty-state">ยังไม่มีรายการ</div>`
+    : `<div class="hist-list">
+        ${data.map(h => renderHistCard(h, isAdmin)).join('')}
+      </div>`
+  }`;
 }
 
-function exportHistory(){
-  const data=getFilteredData();
-  if(!data.length){ showNotif('ไม่มีข้อมูลที่จะ Export','error'); return; }
+function renderHistCard(h, isAdmin) {
+  const dt = safeFormatDT(h.createdAt);
+  return `
+  <div class="hist-card-v2 type-${h.type}">
+    <div class="hist-top-v2">
+      <div class="hist-dot" style="background:${h.type === 'in' ? 'var(--g)' : 'var(--r)'};margin-top:3px;flex-shrink:0"></div>
+      <span class="hist-name-v2">${h.itemName || '-'}</span>
+      ${h.type === 'in'
+        ? '<span class="badge badge-in" style="flex-shrink:0">📥 นำเข้า</span>'
+        : '<span class="badge badge-out2" style="flex-shrink:0">📤 เบิก</span>'}
+    </div>
 
-  const wb=XLSX.utils.book_new();
-  const rows=[['ประเภท','เลขที่ใบเบิก','รหัสสินค้า','ชื่อสินค้า','S/N','จำนวน','ใช้งานที่','แผนก','ผู้ดำเนินการ','ใบ Service','เลขอ้างอิง','หมายเหตุ','วันที่']];
+    ${(h.sn && h.sn !== '-') ? `<div class="hist-sn-v2">S/N: ${h.sn}</div>` : ''}
 
-  data.forEach(h=>{
-    const typeTH=h.type==='in'?'📥 นำเข้า':'📤 เบิก';
-    const svcTH={no:'ไม่มี',yes:'ใบ Service',job:'Job Order'}[h.hasService]||'';
-    let dateStr='';
-    try{
-      if(h.createdAt?.toDate) dateStr=h.createdAt.toDate().toLocaleString('th-TH');
-      else if(h.createdAt?.seconds) dateStr=new Date(h.createdAt.seconds*1000).toLocaleString('th-TH');
-    }catch(e){}
-    rows.push([typeTH,h.serviceNo||'',h.itemId||'',h.itemName||'',h.sn||'-',h.qty||1,h.usedAt||'',h.dept||'',h.userName||'',svcTH,h.serviceRef||'',h.note||'',dateStr]);
-  });
+    <div class="hist-meta-v2">
+      ${h.usedAt    ? `<span class="meta-chip">📍 ${h.usedAt}</span>` : ''}
+      ${h.dept      ? `<span class="meta-chip">🏢 ${h.dept}</span>` : ''}
+      ${isAdmin && h.userName ? `<span class="meta-chip">👤 ${h.userName}</span>` : ''}
+      ${h.qty > 1   ? `<span class="meta-chip">📦 ×${h.qty}</span>` : ''}
+      ${h.serviceRef ? `<span class="hist-ref">${h.serviceRef}</span>` : ''}
+      ${h.hasService === 'yes' ? `<span class="meta-chip" style="color:var(--gd)">✅ ใบ Service</span>` : ''}
+      ${h.hasService === 'job' ? `<span class="meta-chip" style="color:var(--gd)">📋 Job Order</span>` : ''}
+      ${h.serviceNo ? `<span class="hist-ref" style="color:var(--tx2)">${h.serviceNo}</span>` : ''}
+      ${dt ? `<span class="meta-chip" style="margin-left:auto">🕐 ${dt}</span>` : ''}
+    </div>
 
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:10},{wch:18},{wch:10},{wch:28},{wch:18},{wch:8},{wch:14},{wch:12},{wch:16},{wch:12},{wch:16},{wch:20},{wch:20}];
-  XLSX.utils.book_append_sheet(wb,ws,'ประวัติ');
+    ${h.note ? `<div class="hist-note-v2">💬 ${h.note}</div>` : ''}
 
-  const outRows=data.filter(h=>h.type==='out');
-  const inRows=data.filter(h=>h.type==='in');
-  if(outRows.length){
-    const outWs=XLSX.utils.aoa_to_sheet([rows[0],...outRows.map(h=>{
-      let ds=''; try{ if(h.createdAt?.toDate) ds=h.createdAt.toDate().toLocaleString('th-TH'); }catch(e){}
-      const sv={no:'ไม่มี',yes:'ใบ Service',job:'Job Order'}[h.hasService]||'';
-      return['📤 เบิก',h.serviceNo||'',h.itemId||'',h.itemName||'',h.sn||'-',h.qty||1,h.usedAt||'',h.dept||'',h.userName||'',sv,h.serviceRef||'',h.note||'',ds];
-    })]);
-    outWs['!cols']=ws['!cols'];
-    XLSX.utils.book_append_sheet(wb,outWs,'เบิกออก');
-  }
-  if(inRows.length){
-    const inWs=XLSX.utils.aoa_to_sheet([rows[0],...inRows.map(h=>{
-      let ds=''; try{ if(h.createdAt?.toDate) ds=h.createdAt.toDate().toLocaleString('th-TH'); }catch(e){}
-      return['📥 นำเข้า',h.serviceNo||'',h.itemId||'',h.itemName||'',h.sn||'-',h.qty||1,'','',h.userName||'','','','',ds];
-    })]);
-    inWs['!cols']=ws['!cols'];
-    XLSX.utils.book_append_sheet(wb,inWs,'นำเข้า');
-  }
-
-  const now=new Date();
-  const ds=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  XLSX.writeFile(wb,`RYG_History_${ds}.xlsx`);
-  showNotif(`Export ${data.length} รายการสำเร็จ`);
+    <!-- Actions -->
+    <div class="hist-actions">
+      <button class="act-btn view" onclick="showDetail('${h.id}')">🔍 ดูรายละเอียด</button>
+      ${isAdmin ? `<button class="act-btn edit" onclick="showEdit('${h.id}')">✏️ แก้ไข</button>` : ''}
+      ${isAdmin ? `<button class="act-btn del"  onclick="confirmDelete('${h.id}')">🗑️ ลบ</button>` : ''}
+    </div>
+  </div>`;
 }
 
-// ─── DELETE ALL HISTORY ───
-function confirmDeleteHistory(){
+/* ═══════════════════════════════════════════
+   DETAIL MODAL
+═══════════════════════════════════════════ */
+function showDetail(id) {
+  const h = historyData.find(d => d.id === id);
+  if (!h) return;
+  const dt = safeFormatDT(h.createdAt);
+  const isAdmin = currentRole === 'admin';
+
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔍 รายละเอียดรายการ</div>
+
+    <!-- Header info -->
+    <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rad);padding:.75rem 1rem;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="hist-dot" style="background:${h.type === 'in' ? 'var(--g)' : 'var(--r)'}"></div>
+        <span style="font-size:15px;font-weight:700;flex:1">${h.itemName || '-'}</span>
+        ${h.type === 'in'
+          ? '<span class="badge badge-in">📥 นำเข้า</span>'
+          : '<span class="badge badge-out2">📤 เบิก</span>'}
+      </div>
+      ${(h.sn && h.sn !== '-') ? `<div class="hist-sn-v2" style="margin:0">S/N: ${h.sn}</div>` : ''}
+    </div>
+
+    <!-- Detail grid -->
+    <div class="detail-grid">
+      <div class="detail-cell">
+        <div class="detail-lbl">จำนวน</div>
+        <div class="detail-val">${h.qty || 1} ชิ้น</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-lbl">แผนก</div>
+        <div class="detail-val">${h.dept || '-'}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-lbl">ใช้งานที่</div>
+        <div class="detail-val">${h.usedAt || '-'}</div>
+      </div>
+      ${isAdmin ? `
+      <div class="detail-cell">
+        <div class="detail-lbl">ผู้ดำเนินการ</div>
+        <div class="detail-val">${h.userName || '-'}</div>
+      </div>` : ''}
+      <div class="detail-cell">
+        <div class="detail-lbl">เลขที่ใบเบิก</div>
+        <div class="detail-val" style="font-family:var(--mono);font-size:12px">${h.serviceNo || '-'}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-lbl">ประเภทเอกสาร</div>
+        <div class="detail-val">${svcLabel(h.hasService)}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-lbl">เลขอ้างอิง</div>
+        <div class="detail-val" style="font-family:var(--mono);font-size:12px">${h.serviceRef || '-'}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-lbl">รหัสสินค้า</div>
+        <div class="detail-val" style="font-family:var(--mono);font-size:12px">${h.itemId || '-'}</div>
+      </div>
+      <div class="detail-cell" style="grid-column:1/-1">
+        <div class="detail-lbl">วันที่และเวลา</div>
+        <div class="detail-val">${dt || '-'}</div>
+      </div>
+      ${h.note ? `
+      <div class="detail-cell" style="grid-column:1/-1">
+        <div class="detail-lbl">หมายเหตุ</div>
+        <div class="detail-val" style="font-weight:400;color:var(--tx2)">${h.note}</div>
+      </div>` : ''}
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ปิด</button>
+      ${isAdmin ? `<button class="btn btn-primary" onclick="closeModal();showEdit('${h.id}')">✏️ แก้ไข</button>` : ''}
+    </div>`);
+}
+
+/* ═══════════════════════════════════════════
+   EDIT MODAL
+═══════════════════════════════════════════ */
+function showEdit(id) {
+  const h = historyData.find(d => d.id === id);
+  if (!h) return;
+
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ แก้ไขรายการ</div>
+
+    <div class="field">
+      <label>ชื่อสินค้า</label>
+      <input id="e_itemName" value="${(h.itemName || '').replace(/"/g, '&quot;')}" placeholder="ชื่อสินค้า"/>
+    </div>
+
+    <div class="edit-grid-2">
+      <div class="field">
+        <label>Serial Number</label>
+        <input id="e_sn" value="${(h.sn && h.sn !== '-') ? h.sn.replace(/"/g, '&quot;') : ''}" placeholder="S/N (ถ้ามี)"/>
+      </div>
+      <div class="field">
+        <label>จำนวน</label>
+        <input id="e_qty" type="number" min="1" value="${h.qty || 1}"/>
+      </div>
+    </div>
+
+    <div class="edit-grid-2">
+      <div class="field">
+        <label>ใช้งานที่</label>
+        <input id="e_usedAt" value="${(h.usedAt || '').replace(/"/g, '&quot;')}" placeholder="สถานที่ใช้งาน"/>
+      </div>
+      <div class="field">
+        <label>แผนก</label>
+        <input id="e_dept" value="${(h.dept || '').replace(/"/g, '&quot;')}" placeholder="แผนก"/>
+      </div>
+    </div>
+
+    <div class="edit-grid-2">
+      <div class="field">
+        <label>เลขที่ใบเบิก</label>
+        <input id="e_serviceNo" value="${(h.serviceNo || '').replace(/"/g, '&quot;')}" placeholder="WD00000"/>
+      </div>
+      <div class="field">
+        <label>เลขอ้างอิง</label>
+        <input id="e_serviceRef" value="${(h.serviceRef || '').replace(/"/g, '&quot;')}" placeholder="SVC-xxxx"/>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>ประเภทเอกสาร</label>
+      <select id="e_hasService">
+        <option value="no"  ${(h.hasService || 'no') === 'no'  ? 'selected' : ''}>ไม่มี</option>
+        <option value="yes" ${h.hasService === 'yes' ? 'selected' : ''}>✅ ใบ Service</option>
+        <option value="job" ${h.hasService === 'job' ? 'selected' : ''}>📋 Job Order</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>หมายเหตุ</label>
+      <textarea id="e_note" rows="2">${h.note || ''}</textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveEdit('${h.id}')">💾 บันทึก</button>
+    </div>`);
+}
+
+async function saveEdit(id) {
+  const name = document.getElementById('e_itemName').value.trim();
+  if (!name) { showNotif('กรุณากรอกชื่อสินค้า', 'error'); return; }
+
+  const updates = {
+    itemName:   name,
+    sn:         document.getElementById('e_sn').value.trim() || '-',
+    qty:        parseInt(document.getElementById('e_qty').value) || 1,
+    usedAt:     document.getElementById('e_usedAt').value.trim(),
+    dept:       document.getElementById('e_dept').value.trim(),
+    serviceNo:  document.getElementById('e_serviceNo').value.trim(),
+    serviceRef: document.getElementById('e_serviceRef').value.trim(),
+    hasService: document.getElementById('e_hasService').value,
+    note:       document.getElementById('e_note').value.trim(),
+    updatedAt:  firebase.firestore.FieldValue.serverTimestamp(),
+    updatedBy:  currentUser.uid,
+  };
+
+  try {
+    await db.collection('transactions').doc(id).update(updates);
+    // Update local cache instantly
+    const idx = historyData.findIndex(d => d.id === id);
+    if (idx >= 0) historyData[idx] = { ...historyData[idx], ...updates };
+    closeModal();
+    showNotif('แก้ไขสำเร็จ ✅');
+    renderHistory();
+  } catch (e) {
+    showNotif('แก้ไขไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   DELETE SINGLE
+═══════════════════════════════════════════ */
+function confirmDelete(id) {
+  const h = historyData.find(d => d.id === id);
+  if (!h) return;
+  const dt = safeFormatDT(h.createdAt);
+
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="color:var(--r)">🗑️ ลบรายการ</div>
+    <div class="warn-box">
+      <div class="warn-box-title">${h.itemName || '-'}</div>
+      <div class="warn-box-sub">
+        ${h.type === 'in' ? '📥 นำเข้า' : '📤 เบิก'}
+        ${dt ? ' · ' + dt : ''}
+        ${h.sn && h.sn !== '-' ? ' · S/N: ' + h.sn : ''}
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:1rem">
+      การกระทำนี้ไม่สามารถย้อนกลับได้
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="doDeleteSingle('${id}')">🗑️ ยืนยันลบ</button>
+    </div>`);
+}
+
+async function doDeleteSingle(id) {
+  closeModal();
+  try {
+    await db.collection('transactions').doc(id).delete();
+    historyData = historyData.filter(d => d.id !== id);
+    showNotif('ลบรายการสำเร็จ');
+    renderHistory();
+  } catch (e) {
+    showNotif('ลบไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   DELETE ALL (batch)
+═══════════════════════════════════════════ */
+function confirmDeleteAll() {
   const data = getFilteredData();
-  if(!data.length){ showNotif('ไม่มีรายการที่จะลบ','error'); return; }
-  const isFiltered = historyData.length > data.length || filterType!=='all' || searchQ;
+  if (!data.length) { showNotif('ไม่มีรายการที่จะลบ', 'error'); return; }
+  const isFiltered = historyData.length > data.length || filterType !== 'all' || searchQ;
+
   showModal(`
     <div class="modal-handle"></div>
     <div class="modal-title" style="color:var(--r)">🗑️ ลบประวัติ</div>
-    <div style="background:var(--rl);border:1px solid #f0a0a0;border-radius:var(--rad);padding:.75rem 1rem;margin-bottom:1rem">
-      <div style="font-size:13px;font-weight:700">จะลบ ${data.length} รายการ${isFiltered?' (ตามตัวกรองปัจจุบัน)':' (ทั้งหมด)'}</div>
-      <div style="font-size:12px;color:var(--tx2);margin-top:4px">
-        ${filterType==='in'?'📥 เฉพาะรายการนำเข้า':filterType==='out'?'📤 เฉพาะรายการเบิก':'ทุกประเภท'}
-        ${searchQ?' · ค้นหา: "'+searchQ+'"':''}
+    <div class="warn-box">
+      <div class="warn-box-title">จะลบ ${data.length} รายการ${isFiltered ? ' (ตามตัวกรองปัจจุบัน)' : ' (ทั้งหมด)'}</div>
+      <div class="warn-box-sub">
+        ${filterType === 'in' ? '📥 เฉพาะรายการนำเข้า' : filterType === 'out' ? '📤 เฉพาะรายการเบิก' : 'ทุกประเภท'}
+        ${searchQ ? ' · ค้นหา: "' + searchQ + '"' : ''}
       </div>
     </div>
     <div style="font-size:12px;color:var(--tx3);margin-bottom:1rem">การกระทำนี้ไม่สามารถย้อนกลับได้</div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn btn-danger" onclick="doDeleteHistory()">🗑️ ยืนยันลบ</button>
+      <button class="btn btn-danger" onclick="doDeleteAll()">🗑️ ยืนยันลบ</button>
     </div>`);
 }
 
-async function doDeleteHistory(){
+async function doDeleteAll() {
   const data = getFilteredData();
-  if(!data.length) return;
+  if (!data.length) return;
   closeModal();
 
-  // แสดง progress
   document.getElementById('mainContent').innerHTML = `
     <div class="empty-state">
-      <div style="font-size:24px;margin-bottom:8px">🗑️</div>
+      <div style="font-size:28px;margin-bottom:8px">🗑️</div>
       <div style="font-weight:700;margin-bottom:8px">กำลังลบ ${data.length} รายการ...</div>
       <div class="progress-bar" style="width:200px;margin:0 auto">
         <div class="progress-fill" id="delProg" style="width:0%"></div>
       </div>
     </div>`;
 
-  try{
+  try {
     const CHUNK = 400;
     let done = 0;
-    for(let s=0; s<data.length; s+=CHUNK){
+    for (let s = 0; s < data.length; s += CHUNK) {
       const batch = db.batch();
-      data.slice(s, s+CHUNK).forEach(h => batch.delete(db.collection('transactions').doc(h.id)));
+      data.slice(s, s + CHUNK).forEach(h => batch.delete(db.collection('transactions').doc(h.id)));
       await batch.commit();
       done += Math.min(CHUNK, data.length - s);
       const pg = document.getElementById('delProg');
-      if(pg) pg.style.width = Math.round(done/data.length*100) + '%';
+      if (pg) pg.style.width = Math.round(done / data.length * 100) + '%';
     }
-    // อัปเดต local data
-    const deletedIds = new Set(data.map(h=>h.id));
+    const deletedIds = new Set(data.map(h => h.id));
     historyData = historyData.filter(h => !deletedIds.has(h.id));
     showNotif(`ลบ ${data.length} รายการสำเร็จ`);
     renderHistory();
-  }catch(e){
-    showNotif('ลบไม่สำเร็จ: '+e.message,'error');
+  } catch (e) {
+    showNotif('ลบไม่สำเร็จ: ' + e.message, 'error');
     renderHistory();
   }
+}
+
+/* ═══════════════════════════════════════════
+   EXPORT EXCEL
+═══════════════════════════════════════════ */
+function exportHistory() {
+  const data = getFilteredData();
+  if (!data.length) { showNotif('ไม่มีข้อมูลที่จะ Export', 'error'); return; }
+
+  const wb   = XLSX.utils.book_new();
+  const cols = ['ประเภท','เลขที่ใบเบิก','รหัสสินค้า','ชื่อสินค้า','S/N','จำนวน','ใช้งานที่','แผนก','ผู้ดำเนินการ','ใบ Service','เลขอ้างอิง','หมายเหตุ','วันที่'];
+  const colW = [{wch:10},{wch:18},{wch:10},{wch:28},{wch:18},{wch:8},{wch:14},{wch:12},{wch:16},{wch:12},{wch:16},{wch:20},{wch:20}];
+
+  function toRow(h) {
+    const typeTH = h.type === 'in' ? '📥 นำเข้า' : '📤 เบิก';
+    const svcTH  = { no:'ไม่มี', yes:'ใบ Service', job:'Job Order' }[h.hasService] || '';
+    let ds = '';
+    try {
+      if (h.createdAt?.toDate) ds = h.createdAt.toDate().toLocaleString('th-TH');
+      else if (h.createdAt?.seconds) ds = new Date(h.createdAt.seconds * 1000).toLocaleString('th-TH');
+    } catch (e) {}
+    return [typeTH, h.serviceNo||'', h.itemId||'', h.itemName||'', h.sn||'-',
+            h.qty||1, h.usedAt||'', h.dept||'', h.userName||'', svcTH,
+            h.serviceRef||'', h.note||'', ds];
+  }
+
+  const allRows = [cols, ...data.map(toRow)];
+  const ws = XLSX.utils.aoa_to_sheet(allRows);
+  ws['!cols'] = colW;
+  XLSX.utils.book_append_sheet(wb, ws, 'ประวัติ');
+
+  // Separate sheets for in/out
+  const outRows = data.filter(h => h.type === 'out');
+  const inRows  = data.filter(h => h.type === 'in');
+  if (outRows.length) {
+    const ws2 = XLSX.utils.aoa_to_sheet([cols, ...outRows.map(toRow)]);
+    ws2['!cols'] = colW;
+    XLSX.utils.book_append_sheet(wb, ws2, 'เบิกออก');
+  }
+  if (inRows.length) {
+    const ws3 = XLSX.utils.aoa_to_sheet([cols, ...inRows.map(toRow)]);
+    ws3['!cols'] = colW;
+    XLSX.utils.book_append_sheet(wb, ws3, 'นำเข้า');
+  }
+
+  const now = new Date();
+  const ds  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `RYG_History_${ds}.xlsx`);
+  showNotif(`Export ${data.length} รายการสำเร็จ`);
 }
 </script>
 </body>
