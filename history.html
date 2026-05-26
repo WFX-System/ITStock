@@ -160,7 +160,6 @@ initShell('history', (user, role, firestore) => {
 ═══════════════════════════════════════════ */
 function subscribeHistory() {
   if (_histUnsub) { _histUnsub(); _histUnsub = null; }
-  // ลอง orderBy ก่อน — ถ้า index ยังไม่มีจะ error แล้วตกไป fallback
   const q = db.collection('transactions').orderBy('createdAt', 'desc').limit(500);
   _histUnsub = q.onSnapshot(snap => {
     let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -168,9 +167,8 @@ function subscribeHistory() {
     historyData = docs;
     renderHistory();
   }, err => {
-    console.warn('History onSnapshot error (trying fallback):', err.code, err.message);
-    // ถ้า index ยังไม่พร้อม หรือ permission denied → ลอง query แบบไม่ orderBy
-    loadHistoryFallback();
+    console.error('History error:', err);
+    loadHistoryOnce();
   });
 }
 
@@ -182,40 +180,8 @@ async function loadHistoryOnce() {
     historyData = docs;
     renderHistory();
   } catch (e) {
-    console.warn('loadHistoryOnce failed:', e.code, e.message);
-    loadHistoryFallback();
-  }
-}
-
-// Fallback: ดึงข้อมูลโดยไม่ orderBy แล้ว sort ใน JS แทน
-async function loadHistoryFallback() {
-  try {
-    const snap = await db.collection('transactions').limit(500).get();
-    let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (currentRole !== 'admin') docs = docs.filter(h => h.userId === currentUser.uid);
-    // sort ใน JS: มี createdAt → เรียง desc, ไม่มี → ขึ้นก่อน
-    docs.sort((a, b) => {
-      const ta = a.createdAt?.seconds ?? 0;
-      const tb = b.createdAt?.seconds ?? 0;
-      return tb - ta;
-    });
-    historyData = docs;
-    renderHistory();
-    if (docs.length === 0) {
-      // แสดง debug info ช่วยตรวจสอบ
-      document.getElementById('mainContent').innerHTML +=
-        `<div style="font-size:11px;color:var(--tx3);text-align:center;margin-top:8px">
-          ℹ️ ไม่พบข้อมูลใน collection transactions
-        </div>`;
-    }
-  } catch (e) {
-    console.error('loadHistoryFallback failed:', e.code, e.message);
     document.getElementById('mainContent').innerHTML =
-      `<div class="empty-state" style="color:var(--r)">
-        โหลดประวัติไม่สำเร็จ<br>
-        <span style="font-size:11px;font-family:monospace">${e.code}: ${e.message}</span><br>
-        <span style="font-size:11px">กรุณาตรวจสอบ Firestore Rules และ Index</span>
-      </div>`;
+      `<div class="empty-state" style="color:var(--r)">โหลดประวัติไม่สำเร็จ: ${e.message}</div>`;
   }
 }
 
@@ -306,6 +272,7 @@ function renderHistCard(h, isAdmin) {
     ${(h.sn && h.sn !== '-') ? `<div class="hist-sn-v2">S/N: ${h.sn}</div>` : ''}
 
     <div class="hist-meta-v2">
+      ${h.reqBy     ? `<span class="meta-chip">🙋 ${h.reqBy}</span>` : ''}
       ${h.usedAt    ? `<span class="meta-chip">📍 ${h.usedAt}</span>` : ''}
       ${h.dept      ? `<span class="meta-chip">🏢 ${h.dept}</span>` : ''}
       ${isAdmin && h.userName ? `<span class="meta-chip">👤 ${h.userName}</span>` : ''}
@@ -367,6 +334,10 @@ function showDetail(id) {
         <div class="detail-lbl">ใช้งานที่</div>
         <div class="detail-val">${h.usedAt || '-'}</div>
       </div>
+      <div class="detail-cell">
+        <div class="detail-lbl">ผู้เบิก</div>
+        <div class="detail-val">${h.reqBy || '-'}</div>
+      </div>
       ${isAdmin ? `
       <div class="detail-cell">
         <div class="detail-lbl">ผู้ดำเนินการ</div>
@@ -419,6 +390,18 @@ function showEdit(id) {
     <div class="field">
       <label>ชื่อสินค้า</label>
       <input id="e_itemName" value="${(h.itemName || '').replace(/"/g, '&quot;')}" placeholder="ชื่อสินค้า"/>
+    </div>
+
+    <div class="edit-grid-2">
+      <div class="field">
+        <label>ผู้เบิก</label>
+        <input id="e_reqBy" value="${(h.reqBy || '').replace(/"/g, '&quot;')}" placeholder="ชื่อผู้เบิก"/>
+      </div>
+      <div class="field">
+        <label>📅 วันที่เบิก</label>
+        <input id="e_withdrawDate" type="date" value="${h.withdrawDate || ''}"
+          style="font-family:var(--mono);font-size:13px"/>
+      </div>
     </div>
 
     <div class="edit-grid-2">
@@ -479,17 +462,19 @@ async function saveEdit(id) {
   if (!name) { showNotif('กรุณากรอกชื่อสินค้า', 'error'); return; }
 
   const updates = {
-    itemName:   name,
-    sn:         document.getElementById('e_sn').value.trim() || '-',
-    qty:        parseInt(document.getElementById('e_qty').value) || 1,
-    usedAt:     document.getElementById('e_usedAt').value.trim(),
-    dept:       document.getElementById('e_dept').value.trim(),
-    serviceNo:  document.getElementById('e_serviceNo').value.trim(),
-    serviceRef: document.getElementById('e_serviceRef').value.trim(),
-    hasService: document.getElementById('e_hasService').value,
-    note:       document.getElementById('e_note').value.trim(),
-    updatedAt:  firebase.firestore.FieldValue.serverTimestamp(),
-    updatedBy:  currentUser.uid,
+    itemName:     name,
+    reqBy:        document.getElementById('e_reqBy').value.trim(),
+    withdrawDate: document.getElementById('e_withdrawDate').value || '',
+    sn:           document.getElementById('e_sn').value.trim() || '-',
+    qty:          parseInt(document.getElementById('e_qty').value) || 1,
+    usedAt:       document.getElementById('e_usedAt').value.trim(),
+    dept:         document.getElementById('e_dept').value.trim(),
+    serviceNo:    document.getElementById('e_serviceNo').value.trim(),
+    serviceRef:   document.getElementById('e_serviceRef').value.trim(),
+    hasService:   document.getElementById('e_hasService').value,
+    note:         document.getElementById('e_note').value.trim(),
+    updatedAt:    firebase.firestore.FieldValue.serverTimestamp(),
+    updatedBy:    currentUser.uid,
   };
 
   try {
