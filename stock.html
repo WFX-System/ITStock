@@ -758,7 +758,18 @@ async function doQuickWithdraw(itemId) {
   const serviceNo   = hasService === 'yes'
                         ? (document.getElementById('qwServiceNo')?.value?.trim() || '') : '';
   const note        = document.getElementById('qwNote')?.value || '';
-  const txNo        = await genNo();
+  // บรรทัดเดิม:
+const txNo = await genNo();
+
+// แก้เป็น:
+let txNo;
+try {
+  txNo = await genNo();
+} catch(e) {
+  showNotif('genNo error: ' + e.message, 'error');
+  if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันเบิก'; }
+  return;
+}
   const txDate      = new Date(withdrawDate + 'T00:00:00');
 
   const btn = document.getElementById('qwConfirmBtn');
