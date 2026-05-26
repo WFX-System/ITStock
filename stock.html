@@ -251,8 +251,6 @@
 /* ══════════════════════════════════════════════
    ── MODAL POSITION FIX — อยู่กลางหน้าจอ ──────
    ══════════════════════════════════════════════ */
-
-/* overlay ของ shared.js — บังคับกลางหน้าจอทั้ง desktop & mobile */
 .modal-overlay,
 [class*="modal-wrap"],
 [class*="modal-backdrop"] {
@@ -260,8 +258,6 @@
   justify-content: center !important;
   padding: 16px !important;
 }
-
-/* กล่อง modal เอง — ไม่ให้ชนขอบล่าง */
 .modal-sheet,
 .modal-box,
 .modal-container,
@@ -270,7 +266,6 @@
   border-radius: 16px !important;
   max-height: 88vh !important;
   overflow-y: auto !important;
-  /* ยกเลิก bottom-sheet positioning */
   position: relative !important;
   bottom: unset !important;
   top: unset !important;
@@ -344,15 +339,30 @@ const EMOJI_OPTIONS = ['💾','🧠','🔧','🌐','📷','🔌','⚡','🖥️'
   '📱','💻','🔋','📡','🔩','🪛','🛠️','🗂️','📁','📂','💡','🔦','📟','🧰','🗜️','📲',
   '🎮','🖲️','💿','📀','📼','📺','📻','🔬','🔭','🧲','🪝','🔐','🔑','🗝️','🔒'];
 
-// ── Helpers ──────────────────────────────────────
+// ══════════════════════════════════════════════════
+// ── HELPERS ───────────────────────────────────────
+// ══════════════════════════════════════════════════
+
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+
 function isoToDMY(iso) {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
+}
+
+// ── BUG FIX #1: genNo() ไม่มีในไฟล์นี้ → ใช้ genTxNo() แทน ──
+// สร้างเลข Transaction แบบ local ไม่ต้องรอ shared.js
+function genTxNo() {
+  const now = new Date();
+  const yy  = now.getFullYear();
+  const mm  = String(now.getMonth()+1).padStart(2,'0');
+  const dd  = String(now.getDate()).padStart(2,'0');
+  const rand = String(Math.floor(Math.random()*90000)+10000);
+  return `TX-${yy}${mm}${dd}-${rand}`;
 }
 
 // ── Auto-generate next item ID ────────────────────
@@ -362,8 +372,7 @@ function genNextItemId() {
     const m = item.id.match(/^SP(\d+)$/i);
     if (m) max = Math.max(max, parseInt(m[1]));
   });
-  const next = max + 1;
-  return `SP${String(next).padStart(3, '0')}`;
+  return `SP${String(max + 1).padStart(3, '0')}`;
 }
 
 // ── Init ─────────────────────────────────────────
@@ -413,25 +422,32 @@ async function loadUnits() {
   allUnits = snap.docs.map(d=>({docId:d.id,...d.data()}));
 }
 
-const getUnitsOf=id=>allUnits.filter(u=>u.itemId===id);
-const getAvail=id=>allUnits.filter(u=>u.itemId===id&&u.status==='available');
-const getItemQty=id=>getAvail(id).length;
+const getUnitsOf = id => allUnits.filter(u => u.itemId === id);
+const getAvail   = id => allUnits.filter(u => u.itemId === id && u.status === 'available');
+const getItemQty = id => getAvail(id).length;
 
 function getStatus(id){
-  const q=getItemQty(id),item=allItems.find(i=>i.id===id);
-  if(!item)return'ok'; if(q<=0)return'out'; if(q<=(item.min||1))return'low'; return'ok';
+  const q=getItemQty(id), item=allItems.find(i=>i.id===id);
+  if(!item) return 'ok';
+  if(q<=0)  return 'out';
+  if(q<=(item.min||1)) return 'low';
+  return 'ok';
 }
 function statusBadge(id){
   const s=getStatus(id);
-  if(s==='out')return'<span class="badge badge-out">หมดสต็อก</span>';
-  if(s==='low')return'<span class="badge badge-low">ใกล้หมด</span>';
-  return'<span class="badge badge-ok">ปกติ</span>';
+  if(s==='out') return '<span class="badge badge-out">หมดสต็อก</span>';
+  if(s==='low') return '<span class="badge badge-low">ใกล้หมด</span>';
+  return '<span class="badge badge-ok">ปกติ</span>';
 }
-function snBadge(u){ return(u.sn&&u.sn!=='-')?`<span class="badge badge-sn">${u.sn}</span>`:`<span class="unit-nosn">ไม่มี S/N</span>`; }
+function snBadge(u){
+  return (u.sn && u.sn!=='-')
+    ? `<span class="badge badge-sn">${u.sn}</span>`
+    : `<span class="unit-nosn">ไม่มี S/N</span>`;
+}
 function unitStatBadge(s){
-  if(s==='used')return'<span class="badge badge-used2">เบิกแล้ว</span>';
-  if(s==='damaged')return'<span class="badge badge-dmg">ชำรุด</span>';
-  return'<span class="badge badge-avail">พร้อมใช้</span>';
+  if(s==='used')    return '<span class="badge badge-used2">เบิกแล้ว</span>';
+  if(s==='damaged') return '<span class="badge badge-dmg">ชำรุด</span>';
+  return '<span class="badge badge-avail">พร้อมใช้</span>';
 }
 function getCatKey(cat) {
   if (!cat) return 'Other';
@@ -441,7 +457,9 @@ function getCatDef(key) {
   return catGroups.find(c => c.key === key) || { key:'Other', label:'อื่น ๆ', icon:'📋' };
 }
 
-// ── RENDER STOCK ─────────────────────────────────
+// ══════════════════════════════════════════════════
+// ── RENDER STOCK ──────────────────────────────────
+// ══════════════════════════════════════════════════
 function renderStock() {
   const isAdmin = currentRole === 'admin';
   const q = searchQ.toLowerCase();
@@ -450,7 +468,7 @@ function renderStock() {
   );
   if (selectedCat !== '__all__') filtered = filtered.filter(i => getCatKey(i.cat) === selectedCat);
 
-  // ── Category grid ────────────────────────────────
+  // Category grid
   let catGridHTML = `<div class="cat-select-grid">`;
   const totalAvail = allUnits.filter(u=>u.status==='available').length;
   catGridHTML += `
@@ -460,8 +478,8 @@ function renderStock() {
       <span class="csb-count">${totalAvail}</span>
     </button>`;
   catGroups.forEach(grp => {
-    const items = allItems.filter(i => getCatKey(i.cat) === grp.key);
-    const qty = items.reduce((a,i) => a+getItemQty(i.id), 0);
+    const items  = allItems.filter(i => getCatKey(i.cat) === grp.key);
+    const qty    = items.reduce((a,i) => a+getItemQty(i.id), 0);
     const hasOut = items.some(i => getStatus(i.id) === 'out');
     const hasLow = !hasOut && items.some(i => getStatus(i.id) === 'low');
     catGridHTML += `
@@ -473,8 +491,6 @@ function renderStock() {
         <span class="csb-count">${qty}</span>
       </button>`;
   });
-
-  // ── Admin action buttons ข้างท้าย grid ────────────
   if (isAdmin) {
     catGridHTML += `
       <button class="cat-add-item-btn" onclick="openAddItem()" title="เพิ่มประเภทสินค้าใหม่">
@@ -488,7 +504,6 @@ function renderStock() {
   }
   catGridHTML += `</div>`;
 
-  // ── หัวหน้า + Search bar ──────
   let html = `
   <div class="flex jb items-c section-gap" style="flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
     <div style="font-size:15px;font-weight:700">📦 สต็อกสินค้า</div>
@@ -524,11 +539,11 @@ function selectCat(key) {
 }
 
 function renderItemRow(item, isAdmin){
-  const units=getUnitsOf(item.id);
-  const qty=getItemQty(item.id);
-  const isExp=expandedItem===item.id;
-  const catDef=getCatDef(getCatKey(item.cat));
-  return`
+  const units  = getUnitsOf(item.id);
+  const qty    = getItemQty(item.id);
+  const isExp  = expandedItem === item.id;
+  const catDef = getCatDef(getCatKey(item.cat));
+  return `
   <div>
     <div class="item-row ${isExp?'expanded':''}" onclick="toggleExpand('${item.id}')">
       <div style="min-width:0">
@@ -580,14 +595,15 @@ function renderItemRow(item, isAdmin){
   </div>`;
 }
 
-function toggleExpand(id){ expandedItem=expandedItem===id?null:id; renderStock(); }
+function toggleExpand(id){ expandedItem = expandedItem===id ? null : id; renderStock(); }
 
-// ══════════════════════════════════════════════
-// ── QUICK WITHDRAW MODAL ─────────────────────
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// ── QUICK WITHDRAW MODAL ──────────────────────────
+// ══════════════════════════════════════════════════
 function openQuickWithdraw(itemId) {
   const item = allItems.find(i => i.id === itemId);
   if (!item) return;
+  // BUG FIX #4: reset state ทุกครั้งที่เปิด modal ใหม่
   qwDate = todayISO();
   qwSelectedUnits = [];
   const avail = getAvail(itemId);
@@ -616,7 +632,7 @@ function renderQWModal(item, avail) {
       </div>
       <div class="field">
         <label>แผนก</label>
-        <select id="qwDept">
+        <select id="qwDept" onchange="qwToggleDeptOther()">
           <option value="">— เลือก —</option>
           <option value="IT">IT</option>
           <option value="__other__">อื่นๆ</option>
@@ -680,16 +696,16 @@ function renderQWModal(item, avail) {
         ✅ ยืนยันเบิก (<span id="qwCount">0</span> ชิ้น)
       </button>
     </div>`, true);
-
-  // dept "อื่นๆ" toggle
-  const deptSel = document.getElementById('qwDept');
-  if (deptSel) deptSel.addEventListener('change', () => {
-    const other = document.getElementById('qwDeptOther');
-    if (other) other.style.display = deptSel.value === '__other__' ? 'block' : 'none';
-  });
 }
 
-// ── Toggle service number field ───────────────────
+// BUG FIX #3: แยก dept toggle ออกมาเป็นฟังก์ชันชัดเจน (เดิมผูกกับ addEventListener ที่อาจ miss)
+function qwToggleDeptOther() {
+  const sel   = document.getElementById('qwDept');
+  const other = document.getElementById('qwDeptOther');
+  if (!sel || !other) return;
+  other.style.display = sel.value === '__other__' ? 'block' : 'none';
+}
+
 function qwToggleServiceNo() {
   const sel  = document.getElementById('qwHasService');
   const wrap = document.getElementById('qwServiceNoWrap');
@@ -704,8 +720,11 @@ function qwToggleServiceNo() {
 }
 
 function qwToggleUnit(docId, checked) {
-  if (checked) { if (!qwSelectedUnits.includes(docId)) qwSelectedUnits.push(docId); }
-  else { qwSelectedUnits = qwSelectedUnits.filter(x => x !== docId); }
+  if (checked) {
+    if (!qwSelectedUnits.includes(docId)) qwSelectedUnits.push(docId);
+  } else {
+    qwSelectedUnits = qwSelectedUnits.filter(x => x !== docId);
+  }
   const cnt = document.getElementById('qwCount');
   if (cnt) cnt.textContent = qwSelectedUnits.length;
   const btn = document.getElementById('qwConfirmBtn');
@@ -746,33 +765,30 @@ function qwGetDept() {
   return sel.value;
 }
 
+// ══════════════════════════════════════════════════
+// ── BUG FIX #1 #2 #3: doQuickWithdraw แก้ทั้งหมด ─
+// ══════════════════════════════════════════════════
 async function doQuickWithdraw(itemId) {
   if (!qwSelectedUnits.length) { showNotif('เลือกชิ้นส่วนก่อน', 'error'); return; }
-  const item        = allItems.find(i => i.id === itemId);
-  const withdrawDate= document.getElementById('qwDateHidden')?.value || qwDate;
-  const reqBy       = document.getElementById('qwReqBy')?.value || '';
-  const dept        = qwGetDept();
-  const usedAt      = document.getElementById('qwUsedAt')?.value || '';
-  const serviceRef  = document.getElementById('qwServiceRef')?.value || '';
-  const hasService  = document.getElementById('qwHasService')?.value || 'no';
-  const serviceNo   = hasService === 'yes'
-                        ? (document.getElementById('qwServiceNo')?.value?.trim() || '') : '';
-  const note        = document.getElementById('qwNote')?.value || '';
-  // บรรทัดเดิม:
-const txNo = await genNo();
 
-// แก้เป็น:
-let txNo;
-try {
-  txNo = await genNo();
-} catch(e) {
-  showNotif('genNo error: ' + e.message, 'error');
-  if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันเบิก'; }
-  return;
-}
-  const txDate      = new Date(withdrawDate + 'T00:00:00');
-
+  // BUG FIX #2: declare btn ก่อนใช้ใน catch
   const btn = document.getElementById('qwConfirmBtn');
+
+  const item         = allItems.find(i => i.id === itemId);
+  const withdrawDate = document.getElementById('qwDateHidden')?.value || qwDate;
+  const reqBy        = document.getElementById('qwReqBy')?.value?.trim() || '';
+  const dept         = qwGetDept();
+  const usedAt       = document.getElementById('qwUsedAt')?.value?.trim() || '';
+  const serviceRef   = document.getElementById('qwServiceRef')?.value?.trim() || '';
+  const hasService   = document.getElementById('qwHasService')?.value || 'no';
+  const serviceNo    = hasService === 'yes'
+                         ? (document.getElementById('qwServiceNo')?.value?.trim() || '') : '';
+  const note         = document.getElementById('qwNote')?.value?.trim() || '';
+
+  // BUG FIX #1: ใช้ genTxNo() แทน genNo() ที่ไม่มีในไฟล์นี้
+  const txNo  = genTxNo();
+  const txDate = new Date(withdrawDate + 'T00:00:00');
+
   if (btn) { btn.disabled = true; btn.textContent = 'กำลังเบิก...'; }
 
   try {
@@ -811,9 +827,10 @@ try {
     });
     await batch.commit();
 
+    // อัปเดต local state
     qwSelectedUnits.forEach(uid => {
       const u = allUnits.find(x => x.docId === uid);
-      if (u) { u.status = 'used'; u.usedAtLabel = usedAt; }
+      if (u) { u.status = 'used'; u.usedAtLabel = usedAt; u.usedTxId = txNo; }
     });
 
     closeModal();
@@ -822,20 +839,19 @@ try {
     renderStock();
   } catch(e) {
     showNotif('เบิกไม่สำเร็จ: ' + e.message, 'error');
+    // BUG FIX #2: btn ถูก declare ไว้แล้วด้านบน จึงใช้ได้เสมอ
     if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันเบิก'; }
   }
 }
 
-// ══════════════════════════════════════════════
-// ── MANAGE CATEGORIES ────────────────────────
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// ── MANAGE CATEGORIES ─────────────────────────────
+// ══════════════════════════════════════════════════
 let editCatKey=null, editCatIcon='📋';
 
-function openManageCats(){
-  renderManageCatsModal();
-}
+function openManageCats(){ renderManageCatsModal(); }
 function renderManageCatsModal(){
-  const rows = catGroups.map((c,i) => {
+  const rows = catGroups.map((c) => {
     const itemCnt = allItems.filter(it=>getCatKey(it.cat)===c.key).length;
     return `
     <div class="cat-list-row">
@@ -963,7 +979,9 @@ async function doDeleteCat(key){
   renderStock(); openManageCats();
 }
 
+// ══════════════════════════════════════════════════
 // ── ADD UNITS MODAL ───────────────────────────────
+// ══════════════════════════════════════════════════
 function openAddUnits(itemId){
   const item=allItems.find(i=>i.id===itemId);
   addMode='qty'; pendingUnits=[{sn:'',detail:'',note:''}];
@@ -1014,7 +1032,7 @@ function setAddMode(mode,itemId){
   document.getElementById('addModeBody').innerHTML=mode==='qty'?renderQtyMode(itemId):renderSNMode(itemId);
 }
 function adjustQty(d){
-  const el=document.getElementById('qtyVal');if(!el)return;
+  const el=document.getElementById('qtyVal'); if(!el) return;
   el.value=Math.max(1,(parseInt(el.value)||1)+d);
 }
 async function doSaveQty(itemId){
@@ -1051,12 +1069,14 @@ function addPendingRow(itemId){
   pendingUnits.push({sn:'',detail:'',note:''});
   document.getElementById('pendingList').innerHTML=pendingUnits.map((u,i)=>snRowHTML(u,i,itemId)).join('');
   const b=document.getElementById('savePendingBtn');
-  if(b)b.textContent=`💾 บันทึก ${pendingUnits.length} ชิ้น`;
+  if(b) b.textContent=`💾 บันทึก ${pendingUnits.length} ชิ้น`;
 }
 function removePendingRow(idx){
   if(pendingUnits.length===1){showNotif('ต้องมีอย่างน้อย 1 แถว','error');return;}
   pendingUnits.splice(idx,1);
   document.getElementById('pendingList').innerHTML=pendingUnits.map((u,i)=>snRowHTML(u,i,'_')).join('');
+  const b=document.getElementById('savePendingBtn');
+  if(b) b.textContent=`💾 บันทึก ${pendingUnits.length} ชิ้น`;
 }
 async function doSaveUnits(itemId){
   const item=allItems.find(i=>i.id===itemId);
@@ -1083,9 +1103,11 @@ async function doSaveUnits(itemId){
   closeModal(); showNotif(`เพิ่ม ${pendingUnits.length} ชิ้นสำเร็จ`); renderStock();
 }
 
+// ══════════════════════════════════════════════════
 // ── EDIT UNIT ─────────────────────────────────────
+// ══════════════════════════════════════════════════
 function openEditUnit(uid){
-  const u=allUnits.find(x=>x.docId===uid);if(!u)return;
+  const u=allUnits.find(x=>x.docId===uid); if(!u) return;
   showModal(`
     <div class="modal-handle"></div>
     <div class="modal-title">✏️ แก้ไขชิ้นส่วน</div>
@@ -1095,8 +1117,8 @@ function openEditUnit(uid){
     <div class="field"><label>สถานะ</label>
       <select id="euS">
         <option value="available" ${u.status==='available'?'selected':''}>✅ พร้อมใช้</option>
-        <option value="damaged" ${u.status==='damaged'?'selected':''}>🔧 ชำรุด</option>
-        <option value="used" ${u.status==='used'?'selected':''}>📤 เบิกแล้ว</option>
+        <option value="damaged"   ${u.status==='damaged'  ?'selected':''}>🔧 ชำรุด</option>
+        <option value="used"      ${u.status==='used'     ?'selected':''}>📤 เบิกแล้ว</option>
       </select></div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">ยกเลิก</button>
@@ -1105,21 +1127,25 @@ function openEditUnit(uid){
 }
 async function doSaveUnit(uid){
   const u=allUnits.find(x=>x.docId===uid);
-  const data={sn:document.getElementById('euSN').value.trim()||'-',
+  const data={
+    sn:    document.getElementById('euSN').value.trim()||'-',
     detail:document.getElementById('euD').value.trim(),
-    note:document.getElementById('euN').value.trim(),
-    status:document.getElementById('euS').value};
+    note:  document.getElementById('euN').value.trim(),
+    status:document.getElementById('euS').value
+  };
   await db.collection('units').doc(uid).update(data);
   Object.assign(u,data); closeModal(); showNotif('บันทึกสำเร็จ'); renderStock();
 }
 async function markDamaged(uid){
-  if(!confirm('ทำเครื่องหมาย "ชำรุด" สำหรับชิ้นนี้?'))return;
+  if(!confirm('ทำเครื่องหมาย "ชำรุด" สำหรับชิ้นนี้?')) return;
   await db.collection('units').doc(uid).update({status:'damaged'});
-  const u=allUnits.find(x=>x.docId===uid);if(u)u.status='damaged';
+  const u=allUnits.find(x=>x.docId===uid); if(u) u.status='damaged';
   showNotif('อัปเดตสถานะแล้ว'); renderStock();
 }
 
-// ── ADD/EDIT ITEM TYPE ────────────────────────────
+// ══════════════════════════════════════════════════
+// ── ADD / EDIT ITEM TYPE ──────────────────────────
+// ══════════════════════════════════════════════════
 function openAddItem(){
   const nextId = genNextItemId();
   showModal(`
@@ -1175,15 +1201,21 @@ function openEditItem(id){
 }
 async function doEditItem(id){
   const item=allItems.find(i=>i.id===id);
-  const data={name:document.getElementById('eName').value,cat:document.getElementById('eCat').value,
-    loc:document.getElementById('eLoc').value,min:parseInt(document.getElementById('eMin').value)||1};
+  const data={
+    name:document.getElementById('eName').value,
+    cat: document.getElementById('eCat').value,
+    loc: document.getElementById('eLoc').value,
+    min: parseInt(document.getElementById('eMin').value)||1
+  };
   await db.collection('items').doc(id).update(data);
   Object.assign(item,data); closeModal(); showNotif('บันทึกสำเร็จ'); renderStock();
 }
 
+// ══════════════════════════════════════════════════
 // ── DELETE ITEM ───────────────────────────────────
+// ══════════════════════════════════════════════════
 function confirmDeleteItem(id){
-  const item=allItems.find(i=>i.id===id);if(!item)return;
+  const item=allItems.find(i=>i.id===id); if(!item) return;
   const units=allUnits.filter(u=>u.itemId===id);
   const avail=units.filter(u=>u.status==='available').length;
   showModal(`
@@ -1202,7 +1234,7 @@ function confirmDeleteItem(id){
     </div>`);
 }
 async function doDeleteItem(id){
-  const item=allItems.find(i=>i.id===id);if(!item)return;
+  const item=allItems.find(i=>i.id===id); if(!item) return;
   const units=allUnits.filter(u=>u.itemId===id);
   try{
     const CHUNK=400;
@@ -1364,9 +1396,9 @@ function setImportMode(mode){
 function handleDrop(e){
   e.preventDefault();
   document.getElementById('dropZone').classList.remove('drag');
-  const file=e.dataTransfer.files[0];if(file)parseExcelFile(file);
+  const file=e.dataTransfer.files[0]; if(file) parseExcelFile(file);
 }
-function handleFileSelect(input){const file=input.files[0];if(file)parseExcelFile(file);}
+function handleFileSelect(input){ const file=input.files[0]; if(file) parseExcelFile(file); }
 function parseExcelFile(file){
   const reader=new FileReader();
   reader.onload=e=>{
@@ -1400,7 +1432,7 @@ function parseStockRows(raw){
     const row=raw[i];
     const idRaw=String(row[0]||'').trim();
     const nameRaw=String(row[1]||'').trim();
-    if(!idRaw||!nameRaw||idRaw.startsWith('='))continue;
+    if(!idRaw||!nameRaw||idRaw.startsWith('=')) continue;
     const id=idRaw.toUpperCase();
     const exists=!!allItems.find(item=>item.id===id);
     const cat=String(row[2]||'Other').trim();
@@ -1423,7 +1455,7 @@ function parseUnitRows(raw){
   for(let i=dataStart;i<raw.length;i++){
     const row=raw[i];
     const itemId=String(row[0]||'').trim().toUpperCase();
-    if(!itemId||itemId.startsWith('='))continue;
+    if(!itemId||itemId.startsWith('=')) continue;
     const sn=String(row[1]||'-').trim()||'-';
     const detail=String(row[2]||'').trim();
     const note=String(row[3]||'').trim();
@@ -1479,7 +1511,7 @@ function renderImportPreviewUnits(){
   btn.disabled=ok===0; btn.textContent=`✅ นำเข้า ${ok} ชิ้น`;
 }
 async function doImport(){
-  if(!importRows.length)return;
+  if(!importRows.length) return;
   const btn=document.getElementById('importConfirmBtn');
   btn.disabled=true; btn.textContent='กำลังนำเข้า...';
   document.getElementById('importPreviewArea').insertAdjacentHTML('afterbegin',
@@ -1505,8 +1537,8 @@ async function doImportItems(){
     await batch.commit();
     done+=Math.min(CHUNK,toAdd.length-s);
     const pct=Math.round(done/toAdd.length*100);
-    const pg=document.getElementById('importProg');if(pg)pg.style.width=pct+'%';
-    const pt=document.getElementById('importProgText');if(pt)pt.textContent=`นำเข้า ${done}/${toAdd.length}...`;
+    const pg=document.getElementById('importProg'); if(pg) pg.style.width=pct+'%';
+    const pt=document.getElementById('importProgText'); if(pt) pt.textContent=`นำเข้า ${done}/${toAdd.length}...`;
   }
   await loadItems(); await loadUnits();
   showNotif(`นำเข้าสำเร็จ ${toAdd.length} รายการ`);
@@ -1514,7 +1546,7 @@ async function doImportItems(){
 }
 async function doImportUnits(){
   const toAdd=importRows.filter(r=>r.status!=='err');
-  let done=0,totalUnits=0;
+  let done=0, totalUnits=0;
   const CHUNK=400;
   for(let s=0;s<toAdd.length;s+=CHUNK){
     const batch=db.batch();
@@ -1537,8 +1569,8 @@ async function doImportUnits(){
     await batch.commit();
     done+=Math.min(CHUNK,toAdd.length-s);
     const pct=Math.round(done/toAdd.length*100);
-    const pg=document.getElementById('importProg');if(pg)pg.style.width=pct+'%';
-    const pt=document.getElementById('importProgText');if(pt)pt.textContent=`นำเข้า ${done}/${toAdd.length}...`;
+    const pg=document.getElementById('importProg'); if(pg) pg.style.width=pct+'%';
+    const pt=document.getElementById('importProgText'); if(pt) pt.textContent=`นำเข้า ${done}/${toAdd.length}...`;
   }
   await loadUnits();
   showNotif(`นำเข้าสำเร็จ ${toAdd.length} รายการ (${totalUnits} ชิ้น)`);
