@@ -787,7 +787,8 @@ async function doQuickWithdraw(itemId) {
 
   // BUG FIX #1: ใช้ genTxNo() แทน genNo() ที่ไม่มีในไฟล์นี้
   const txNo  = genTxNo();
-  const txDate = new Date(withdrawDate + 'T00:00:00');
+  // ใช้เวลาจริงตอนกดยืนยัน — withdrawDate เก็บแค่วันที่สำหรับใบเบิก
+  const nowTs = firebase.firestore.Timestamp.fromDate(new Date());
 
   if (btn) { btn.disabled = true; btn.textContent = 'กำลังเบิก...'; }
 
@@ -799,7 +800,7 @@ async function doQuickWithdraw(itemId) {
         status: 'used',
         usedAtLabel: usedAt,
         usedTxId: txNo,
-        usedAt: firebase.firestore.Timestamp.fromDate(txDate),
+        usedAt: nowTs,
         usedBy: currentUser.displayName,
       });
       batch.set(db.collection('transactions').doc(), {
@@ -822,7 +823,7 @@ async function doQuickWithdraw(itemId) {
         userId: currentUser.uid,
         userEmail: currentUser.email,
         userName: currentUser.displayName,
-        createdAt: firebase.firestore.Timestamp.fromDate(txDate),
+        createdAt: nowTs,
       });
     });
     await batch.commit();
