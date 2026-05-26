@@ -160,6 +160,7 @@ initShell('history', (user, role, firestore) => {
 ═══════════════════════════════════════════ */
 function subscribeHistory() {
   if (_histUnsub) { _histUnsub(); _histUnsub = null; }
+  // ลอง orderBy ก่อน — ถ้า index ยังไม่มีจะ error แล้วตกไป fallback
   const q = db.collection('transactions').orderBy('createdAt', 'desc').limit(500);
   _histUnsub = q.onSnapshot(snap => {
     let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -167,8 +168,9 @@ function subscribeHistory() {
     historyData = docs;
     renderHistory();
   }, err => {
-    console.error('History error:', err);
-    loadHistoryOnce();
+    console.warn('History onSnapshot error (trying fallback):', err.code, err.message);
+    // ถ้า index ยังไม่พร้อม หรือ permission denied → ลอง query แบบไม่ orderBy
+    loadHistoryFallback();
   });
 }
 
@@ -180,8 +182,40 @@ async function loadHistoryOnce() {
     historyData = docs;
     renderHistory();
   } catch (e) {
+    console.warn('loadHistoryOnce failed:', e.code, e.message);
+    loadHistoryFallback();
+  }
+}
+
+// Fallback: ดึงข้อมูลโดยไม่ orderBy แล้ว sort ใน JS แทน
+async function loadHistoryFallback() {
+  try {
+    const snap = await db.collection('transactions').limit(500).get();
+    let docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (currentRole !== 'admin') docs = docs.filter(h => h.userId === currentUser.uid);
+    // sort ใน JS: มี createdAt → เรียง desc, ไม่มี → ขึ้นก่อน
+    docs.sort((a, b) => {
+      const ta = a.createdAt?.seconds ?? 0;
+      const tb = b.createdAt?.seconds ?? 0;
+      return tb - ta;
+    });
+    historyData = docs;
+    renderHistory();
+    if (docs.length === 0) {
+      // แสดง debug info ช่วยตรวจสอบ
+      document.getElementById('mainContent').innerHTML +=
+        `<div style="font-size:11px;color:var(--tx3);text-align:center;margin-top:8px">
+          ℹ️ ไม่พบข้อมูลใน collection transactions
+        </div>`;
+    }
+  } catch (e) {
+    console.error('loadHistoryFallback failed:', e.code, e.message);
     document.getElementById('mainContent').innerHTML =
-      `<div class="empty-state" style="color:var(--r)">โหลดประวัติไม่สำเร็จ: ${e.message}</div>`;
+      `<div class="empty-state" style="color:var(--r)">
+        โหลดประวัติไม่สำเร็จ<br>
+        <span style="font-size:11px;font-family:monospace">${e.code}: ${e.message}</span><br>
+        <span style="font-size:11px">กรุณาตรวจสอบ Firestore Rules และ Index</span>
+      </div>`;
   }
 }
 
