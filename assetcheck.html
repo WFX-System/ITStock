@@ -86,6 +86,11 @@
 .import-zone p{font-size:13px;color:var(--tx3);line-height:1.8;}
 .comp-body{display:block;}
 .comp-body.collapsed{display:none;}
+.comp-status-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.comp-status-ok{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7;}
+.comp-status-issue{background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;}
+.comp-status-partial{background:#FEF9C3;color:#78350F;border:1px solid #FDE68A;}
+.comp-status-pending{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB;}
 mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .empty-pg{text-align:center;padding:4rem 2rem;color:var(--tx3);}
 .empty-pg .icon{font-size:48px;margin-bottom:1rem;}
@@ -443,18 +448,34 @@ function renderAll(){
 
     const totalItems=comp.items.length;
     const doneN=comp.items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length;
+    const issueN=comp.items.filter((_,i)=>{const st=checkState[stateKey(ck,i)]||{};return !!(st.assetCodeActual||st.modelActual||st.snActual);}).length;
     const pct=totalItems?Math.round(doneN/totalItems*100):0;
     const allDone=doneN===totalItems;
+
+    // Badge logic
+    let badgeCls, badgeTxt, nameColor;
+    if(issueN>0){
+      badgeCls='comp-status-issue'; badgeTxt=`⚠️ มีปัญหา ${issueN} รายการ`; nameColor='#991B1B';
+    } else if(allDone && totalItems>0){
+      badgeCls='comp-status-ok'; badgeTxt='✅ เช็คครบ ไม่มีปัญหา'; nameColor='#065F46';
+    } else if(doneN>0){
+      badgeCls='comp-status-partial'; badgeTxt=`⏳ กำลังเช็ค ${doneN}/${totalItems}`; nameColor='';
+    } else {
+      badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค'; nameColor='';
+    }
 
     html+=`
 <div class="comp-group">
   <div class="comp-header" onclick="toggleComp(${cid})">
-    <div style="width:34px;height:34px;background:${allDone?'var(--g)':'var(--bg)'};
+    <div style="width:34px;height:34px;background:${allDone&&!issueN?'var(--g)':(issueN?'#FEE2E2':'var(--bg)')};
       border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;
-      border:1.5px solid ${allDone?'var(--g)':'var(--bdrm)'};flex-shrink:0;">🖥️</div>
+      border:1.5px solid ${allDone&&!issueN?'var(--g)':(issueN?'#FCA5A5':'var(--bdrm)')};flex-shrink:0;">🖥️</div>
     <div style="flex:1;min-width:0;">
-      <div class="comp-name">${highlight(comp.computerName,q)}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:1px;">
+      <div class="comp-name" style="${nameColor?`color:${nameColor};`:''}">
+        ${highlight(comp.computerName,q)}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:2px;">
+        <span class="comp-status-badge ${badgeCls}">${badgeTxt}</span>
         ${comp.ip?`<span class="comp-ip">${esc(comp.ip)}</span>`:''}
         ${comp.employee?`<span class="comp-meta">👤 ${highlight(comp.employee,q)}</span>`:''}
         ${comp.dept?`<span class="comp-meta">📍 ${highlight(comp.dept,q)}</span>`:''}
