@@ -173,14 +173,6 @@ let currentUser=null, currentRole='user', db=null;
 // checkState : { [stateKey]: { checked, checkedAt, checkedBy, issueNote, updatedInRegistry, updatedAt } }
 let checkData={}, checkState={};
 
-// ── Patch NAV ──────────────────────────────────────
-if(typeof NAV_ITEMS!=='undefined'){
-  if(!NAV_ITEMS.some(n=>n.id==='assetcheck')){
-    const di=NAV_ITEMS.findIndex(n=>n.id==='dispose');
-    NAV_ITEMS.splice(di+1,0,{id:'assetcheck',label:'เช็คทรัพย์สิน',icon:'🔍',href:'assetcheck.html',adminOnly:false});
-  }
-}
-
 // ── Init shell ─────────────────────────────────────
 initShell('assetcheck', async(user,role,firestore)=>{
   currentUser=user; currentRole=role; db=firestore;
