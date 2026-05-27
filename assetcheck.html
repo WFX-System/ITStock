@@ -468,9 +468,8 @@ function renderAll(){
       badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค'; nameColor='';
     }
 
-    // FIX: comp-body ย่อเป็น default (ไม่มี class expanded)
-    // ถ้ามีปัญหาหรือกำลังเช็คอยู่ ให้ขยายอัตโนมัติ
-    const autoExpand = issueN > 0 || doneN > 0;
+    // ย่อทุก group เป็น default เสมอ ต้องคลิ๊กเองเพื่อขยาย
+    const autoExpand = false;
 
     html+=`
 <div class="comp-group">
