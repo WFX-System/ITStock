@@ -89,6 +89,7 @@ const NAV_ITEMS = [
   { id: 'withdraw',  label: 'เบิก',     icon: '📤', href: 'withdraw.html', adminOnly: false },
   { id: 'qr',        label: 'QR',       icon: '📷', href: 'qr.html',       adminOnly: false },
   { id: 'history',   label: 'ประวัติ',  icon: '🕐', href: 'history.html',  adminOnly: false },
+  { id: 'dispose',   label: 'ตัดทรัพย์', icon: '♻️', href: 'dispose.html',  adminOnly: false },
   { id: 'users',     label: 'ผู้ใช้',   icon: '👥', href: 'users.html',    adminOnly: true  },
 ];
 
