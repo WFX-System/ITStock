@@ -200,39 +200,57 @@ let checkData={}, checkState={};
 
 initShell('assetcheck', async(user,role,firestore)=>{
   currentUser=user; currentRole=role; db=firestore;
-  await loadFromFirestore();
-  renderAll();
+  startRealtimeSync();
 });
 
 // ── Firestore ──────────────────────────────────────
+// shared doc เดียวกันสำหรับทุก admin
 function _sessionRef(){
-  return db.collection('assetSessions').doc(currentUser.uid);
+  return db.collection('assetSessions').doc('shared');
 }
 
-let _saveTimer=null;
+let _saveTimer=null, _isSaving=false;
 function saveStorage(){
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(async()=>{
+    _isSaving=true;
     try{
       await _sessionRef().set({
         checkData:  JSON.stringify(checkData),
         checkState: JSON.stringify(checkState),
         updatedAt:  firebase.firestore.FieldValue.serverTimestamp(),
         updatedBy:  currentUser?.uid||'',
+        updatedByName: currentUser?.displayName||currentUser?.email||'',
       },{merge:true});
     }catch(e){ console.warn('Firestore save error:',e); }
+    finally{ setTimeout(()=>{ _isSaving=false; }, 1000); }
   }, 600);
 }
 
-async function loadFromFirestore(){
-  try{
-    const snap=await _sessionRef().get();
+// real-time listener — อัปเดตทุก admin อัตโนมัติ
+let _unsubscribe=null;
+function startRealtimeSync(){
+  if(_unsubscribe) _unsubscribe();
+  _unsubscribe=_sessionRef().onSnapshot(snap=>{
+    // ถ้าเราเพิ่งเซฟอยู่ ไม่ต้อง re-render (ข้อมูลเป็นของเราอยู่แล้ว)
+    if(_isSaving) return;
     if(snap.exists){
       const d=snap.data();
-      if(d.checkData)  checkData=JSON.parse(d.checkData);
-      if(d.checkState) checkState=JSON.parse(d.checkState);
+      try{
+        if(d.checkData)  checkData=JSON.parse(d.checkData);
+        if(d.checkState) checkState=JSON.parse(d.checkState);
+      }catch(e){ console.warn('Parse error:',e); }
+    } else {
+      checkData={}; checkState={};
     }
-  }catch(e){ console.warn('Firestore load error:',e); checkData={}; checkState={}; }
+    _ckIndex={}; _ckIndexRev={};
+    renderAll();
+    // แสดงว่าใครอัปเดตล่าสุด
+    if(snap.exists && snap.data().updatedByName && snap.data().updatedBy !== currentUser?.uid){
+      const name=snap.data().updatedByName;
+      showNotif(`🔄 ${name} อัปเดตข้อมูลแล้ว`,'info');
+    }
+  }, err=>console.warn('Snapshot error:',err));
 }
 
 // ── ID helpers ─────────────────────────────────────
