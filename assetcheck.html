@@ -372,7 +372,7 @@ function calcStats(){
       const st=checkState[stateKey(ck,i)]||{};
       total++;
       if(st.checked)checked++;
-      if(st.issueNote)issue++;
+      if(st.assetCodeActual||st.modelActual||st.snActual)issue++;
       if(st.updatedInRegistry)reg++;
     });
   });
@@ -425,7 +425,7 @@ function renderAll(){
       }
       if(filter==='pending') return !st.checked;
       if(filter==='checked') return  st.checked;
-      if(filter==='issue')   return  !!st.issueNote;
+      if(filter==='issue')   return  !!(st.assetCodeActual||st.modelActual||st.snActual);
       return true;
     });
 
@@ -463,19 +463,19 @@ function renderAll(){
       <thead><tr>
         <th style="width:28px;">#</th>
         <th>อุปกรณ์ / ยี่ห้อ</th>
-        <th>Asset Code / เลขทะเบียน</th>
-        <th>รุ่น / SN ในระบบ</th>
-        <th style="min-width:180px;">SN หรือข้อมูลที่พบจริง<br><span style="font-weight:400;font-size:9px;text-transform:none;">(กรอกเฉพาะถ้าต่างจากในระบบ — ข้อมูลเดิมไม่ถูกลบ)</span></th>
-        <th style="min-width:140px;">การดำเนินการ</th>
+        <th>ในระบบ<br><span style="font-weight:400;font-size:9px;text-transform:none;">Asset Code / เลขทะเบียน / รุ่น / SN</span></th>
+        <th style="min-width:130px;">Asset Code จริง<br><span style="font-weight:400;font-size:9px;text-transform:none;">กรอกถ้าต่างจากในระบบ</span></th>
+        <th style="min-width:130px;">รุ่นจริง<br><span style="font-weight:400;font-size:9px;text-transform:none;">กรอกถ้าต่างจากในระบบ</span></th>
+        <th style="min-width:130px;">SN จริง<br><span style="font-weight:400;font-size:9px;text-transform:none;">กรอกถ้าต่างจากในระบบ</span></th>
+        <th style="min-width:130px;">การดำเนินการ</th>
       </tr></thead>
       <tbody>`;
 
     filtered.forEach(({item,i})=>{
       const sk=stateKey(ck,i);
       const st=checkState[sk]||{};
-      const hasIssue=!!st.issueNote;
+      const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
       const rowCls=st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'');
-      const encodedSk=encodeURIComponent(sk); // safe for onclick string
       html+=`
       <tr class="asset-row ${rowCls}" id="arow_${cid}_${i}">
         <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
@@ -486,17 +486,26 @@ function renderAll(){
         <td>
           <span class="code-badge">${highlight(item.assetCode,q)}</span>
           ${item.regNo?`<div style="font-size:10px;color:var(--tx3);margin-top:2px;">📋 ${esc(item.regNo)}</div>`:''}
-        </td>
-        <td>
-          <div style="font-size:11px;font-weight:600;">${highlight(item.model,q)}</div>
+          <div style="font-size:11px;font-weight:600;margin-top:3px;">${highlight(item.model,q)}</div>
           <div class="sn-text">${highlight(item.sn,q)}</div>
         </td>
         <td>
-          <input class="issue-input ${hasIssue?'has-val':''}" type="text"
-            value="${esc(st.issueNote||'')}"
-            placeholder="เช่น SN จริง: XXXXXXX หรือ รุ่นไม่ตรง..."
-            oninput="onIssueChange('${esc(sk)}',${cid},${i},this)"/>
-          ${hasIssue?`<div class="issue-note">⚠️ ${esc(st.issueNote)}</div>`:''}
+          <input class="issue-input ${st.assetCodeActual?'has-val':''}" type="text"
+            value="${esc(st.assetCodeActual||'')}"
+            placeholder="Asset Code จริง..."
+            oninput="onFieldChange('${esc(sk)}','assetCodeActual',${cid},${i},this)"/>
+        </td>
+        <td>
+          <input class="issue-input ${st.modelActual?'has-val':''}" type="text"
+            value="${esc(st.modelActual||'')}"
+            placeholder="รุ่นจริง..."
+            oninput="onFieldChange('${esc(sk)}','modelActual',${cid},${i},this)"/>
+        </td>
+        <td>
+          <input class="issue-input ${st.snActual?'has-val':''}" type="text"
+            value="${esc(st.snActual||'')}"
+            placeholder="SN จริง..."
+            oninput="onFieldChange('${esc(sk)}','snActual',${cid},${i},this)"/>
         </td>
         <td>
           <div style="display:flex;flex-direction:column;gap:5px;">
@@ -574,31 +583,23 @@ function toggleReg(sk,cid,i){
   saveStorage(); renderAll();
 }
 
-let _issueTimer=null;
-function onIssueChange(sk,cid,i,input){
+let _fieldTimer=null;
+function onFieldChange(sk,field,cid,i,input){
   const val=input.value.trim();
   input.classList.toggle('has-val',val.length>0);
-  clearTimeout(_issueTimer);
-  _issueTimer=setTimeout(()=>{
+  clearTimeout(_fieldTimer);
+  _fieldTimer=setTimeout(()=>{
     if(!checkState[sk])checkState[sk]={};
-    checkState[sk].issueNote=val;
+    if(val) checkState[sk][field]=val;
+    else delete checkState[sk][field];
     saveStorage();
     updateSummary();
     // Update row class live
     const row=document.getElementById(`arow_${cid}_${i}`);
     if(row){
-      const st=checkState[sk];
-      row.className=`asset-row ${st.checked?(val?'row-issue':'row-ok'):(val?'row-issue':'')}`;
-    }
-    // Update issue note display live
-    const noteEl=input.nextElementSibling;
-    if(noteEl&&noteEl.classList.contains('issue-note')){
-      if(val){ noteEl.textContent='⚠️ '+val; }
-      else noteEl.textContent='';
-    } else if(val){
-      const d=document.createElement('div');
-      d.className='issue-note'; d.textContent='⚠️ '+val;
-      input.after(d);
+      const st=checkState[sk]||{};
+      const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
+      row.className=`asset-row ${st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'')}`;
     }
   },400);
 }
