@@ -487,7 +487,7 @@ function renderAll(){
               <button class="btn-reg ${st.updatedInRegistry?'active':''}"
                 onclick="toggleReg('${esc(sk)}',${cid},${i})"
                 title="แก้ไขในทะเบียนทรัพย์สินแล้ว">
-                ${st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน'}
+                ${st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในระบบแล้ว'}
               </button>
             </div>
             ${st.checkedAt?`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`:''}
