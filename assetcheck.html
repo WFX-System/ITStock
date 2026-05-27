@@ -600,7 +600,7 @@ function renderAll(){
 }
 
 // ══════════════════════════════════════════════════
-//  Actions
+//  Actions — อัปเดต DOM in-place ไม่ re-render ทั้งหน้า
 // ══════════════════════════════════════════════════
 function toggleComp(cid){
   const body=document.getElementById('body'+cid);
@@ -625,7 +625,6 @@ function collapseAll(){
 function toggleIssuePanel(sk, cid, i){
   const panel=document.getElementById(`ipanel_${cid}_${i}`);
   if(!panel)return;
-  // getComputedStyle เพื่อรู้ค่า display จริง (รวม CSS class ด้วย)
   const computed=window.getComputedStyle(panel).display;
   const isOpen=computed!=='none';
   panel.style.display=isOpen?'none':'table-row';
@@ -633,10 +632,87 @@ function toggleIssuePanel(sk, cid, i){
   if(btn) btn.style.borderColor=isOpen?'':'var(--r)';
 }
 
+// ── helper: อัปเดต header ของ comp กลุ่มที่เปลี่ยนไป ──
+function _updateCompHeader(ck){
+  const cid=_ckIndex[ck];
+  if(cid===undefined)return;
+  const comp=checkData[ck];
+  const totalItems=comp.items.length;
+  const doneN=comp.items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length;
+  const issueN=comp.items.filter((_,i)=>{const st=checkState[stateKey(ck,i)]||{};return !!(st.assetCodeActual||st.modelActual||st.snActual);}).length;
+  const pct=totalItems?Math.round(doneN/totalItems*100):0;
+  const allDone=doneN===totalItems;
+
+  let badgeCls,badgeTxt,nameColor;
+  if(issueN>0){badgeCls='comp-status-issue';badgeTxt=`⚠️ มีปัญหา ${issueN} รายการ`;nameColor='#991B1B';}
+  else if(allDone&&totalItems>0){badgeCls='comp-status-ok';badgeTxt='✅ เช็คครบ ไม่มีปัญหา';nameColor='#065F46';}
+  else if(doneN>0){badgeCls='comp-status-partial';badgeTxt=`⏳ กำลังเช็ค ${doneN}/${totalItems}`;nameColor='';}
+  else{badgeCls='comp-status-pending';badgeTxt='○ ยังไม่ได้เช็ค';nameColor='';}
+
+  // progress bar + counter
+  const fill=document.querySelector(`#body${cid}`?.replace(/\d+/,'')+`#body${cid}`)?.previousElementSibling?.querySelector('.prog-fill');
+  const header=document.querySelector(`#body${cid}`)?.previousElementSibling;
+  if(header){
+    const progFill=header.querySelector('.prog-fill');
+    if(progFill) progFill.style.width=pct+'%';
+    const progLbl=header.querySelector('.prog-lbl');
+    if(progLbl) progLbl.textContent=`${doneN}/${totalItems}`;
+    const nameEl=header.querySelector('.comp-name');
+    if(nameEl) nameEl.style.color=nameColor||'';
+    const badge=header.querySelector('.comp-status-badge');
+    if(badge){badge.className=`comp-status-badge ${badgeCls}`;badge.textContent=badgeTxt;}
+    // icon bg
+    const icon=header.querySelector('div[style*="border-radius:8px"]');
+    if(icon){
+      icon.style.background=allDone&&!issueN?'var(--g)':(issueN?'#FEE2E2':'var(--bg)');
+      icon.style.borderColor=allDone&&!issueN?'var(--g)':(issueN?'#FCA5A5':'var(--bdrm)');
+    }
+  }
+}
+
+// ── helper: อัปเดต DOM ของแถวเดียว ──
+function _updateRow(sk, cid, i){
+  const st=checkState[sk]||{};
+  const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
+  const row=document.getElementById(`arow_${cid}_${i}`);
+  if(!row)return;
+
+  // row color
+  row.className=`asset-row ${st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'')}`;
+
+  // btn-chk
+  const btnChk=row.querySelector('.btn-chk');
+  if(btnChk){
+    btnChk.classList.toggle('active',!!st.checked);
+    btnChk.textContent=st.checked?'✅ เช็คแล้ว':'☐ เช็คแล้ว';
+  }
+  // btn-issue
+  const btnIssue=row.querySelector('.btn-issue');
+  if(btnIssue){
+    btnIssue.classList.toggle('active',hasIssue);
+    btnIssue.textContent=`⚠️ ${hasIssue?'มีปัญหา':'มีปัญหา?'}`;
+  }
+  // btn-reg
+  const btnReg=row.querySelector('.btn-reg');
+  if(btnReg){
+    btnReg.classList.toggle('active',!!st.updatedInRegistry);
+    btnReg.textContent=st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน';
+  }
+  // timestamps
+  const actionCell=row.querySelector('td:last-child');
+  if(actionCell){
+    let dates=actionCell.querySelector('.dates-wrap');
+    if(!dates){dates=document.createElement('div');dates.className='dates-wrap';actionCell.querySelector('div').appendChild(dates);}
+    dates.innerHTML='';
+    if(st.checkedAt) dates.innerHTML+=`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`;
+    if(st.checkedBy) dates.innerHTML+=`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`;
+    if(st.updatedInRegistry&&st.updatedAt) dates.innerHTML+=`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`;
+  }
+}
+
 function toggleChecked(sk,cid,i){
   const cur=(checkState[sk]||{}).checked;
-  const action=cur?'ยกเลิกการเช็ค?':'ยืนยันว่าเช็คแล้ว?';
-  if(!confirm(action))return;
+  if(!confirm(cur?'ยกเลิกการเช็ค?':'ยืนยันว่าเช็คแล้ว?'))return;
   if(!checkState[sk])checkState[sk]={};
   const st=checkState[sk];
   st.checked=!cur;
@@ -644,20 +720,26 @@ function toggleChecked(sk,cid,i){
     st.checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
     st.checkedBy=currentUser?.displayName||currentUser?.email||'';
   } else { delete st.checkedAt; delete st.checkedBy; }
-  saveStorage(); renderAll();
+  saveStorage();
+  _updateRow(sk,cid,i);
+  // หา ck จาก stateKey
+  const ck=sk.split('||')[0];
+  _updateCompHeader(ck);
+  updateSummary();
 }
 
 function toggleReg(sk,cid,i){
   const cur=(checkState[sk]||{}).updatedInRegistry;
-  const action=cur?'ยกเลิกการแก้ในระบบ?':'ยืนยันว่าแก้ในระบบแล้ว?';
-  if(!confirm(action))return;
+  if(!confirm(cur?'ยกเลิกการแก้ในระบบ?':'ยืนยันว่าแก้ในระบบแล้ว?'))return;
   if(!checkState[sk])checkState[sk]={};
   const st=checkState[sk];
   st.updatedInRegistry=!cur;
   if(st.updatedInRegistry)
     st.updatedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   else delete st.updatedAt;
-  saveStorage(); renderAll();
+  saveStorage();
+  _updateRow(sk,cid,i);
+  updateSummary();
 }
 
 let _fieldTimer=null;
@@ -670,28 +752,17 @@ function onFieldChange(sk,field,cid,i,input){
     if(val) checkState[sk][field]=val;
     else delete checkState[sk][field];
     saveStorage();
+    _updateRow(sk,cid,i);
+    const ck=sk.split('||')[0];
+    _updateCompHeader(ck);
     updateSummary();
-    // อัปเดต row class และปุ่ม issue แบบ live
-    const row=document.getElementById(`arow_${cid}_${i}`);
-    if(row){
-      const st=checkState[sk]||{};
-      const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
-      row.className=`asset-row ${st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'')}`;
-      const btn=row.querySelector('.btn-issue');
-      if(btn){
-        btn.classList.toggle('active',hasIssue);
-        btn.textContent=`⚠️ ${hasIssue?'มีปัญหา':'มีปัญหา?'}`;
-      }
-    }
   },400);
 }
 
 async function confirmClearAll(){
   if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย'))return;
   checkData={}; checkState={}; _ckIndex={}; _ckIndexRev={};
-  try{
-    await _sessionRef().delete();
-  }catch(e){ console.warn('Firestore delete error:',e); }
+  try{ await _sessionRef().delete(); }catch(e){ console.warn('Firestore delete error:',e); }
   renderAll(); showNotif('ลบข้อมูลทั้งหมดแล้ว');
 }
 </script>
