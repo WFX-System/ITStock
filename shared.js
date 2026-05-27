@@ -86,11 +86,9 @@ const firestore = firebase.firestore();
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'หน้าหลัก',     icon: '🏠', href: 'index.html',      adminOnly: false },
   { id: 'stock',     label: 'สต็อก',         icon: '📦', href: 'stock.html',      adminOnly: false },
-  { id: 'withdraw',  label: 'เบิก',          icon: '📤', href: 'withdraw.html',   adminOnly: false },
   { id: 'history',   label: 'ประวัติ',       icon: '🕐', href: 'history.html',    adminOnly: false },
   { id: 'dispose',   label: 'ตัดทรัพย์',     icon: '♻️', href: 'dispose.html',    adminOnly: false },
   { id: 'assetcheck',label: 'เช็คทรัพย์สิน', icon: '🔍', href: 'assetcheck.html', adminOnly: false },
-  { id: 'qr',        label: 'QR',            icon: '📷', href: 'qr.html',         adminOnly: false },
   { id: 'users',     label: 'ผู้ใช้',        icon: '👥', href: 'users.html',      adminOnly: true  },
 ];
 
