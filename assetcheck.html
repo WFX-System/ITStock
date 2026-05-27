@@ -152,6 +152,12 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
         <option value="checked">✅ เช็คแล้ว</option>
         <option value="issue">⚠️ พบปัญหา</option>
       </select>
+      <select id="sortSel" class="btn btn-sm" style="padding:6px 10px;font-size:12px;width:auto;cursor:pointer;" onchange="renderAll()">
+        <option value="name">🔤 เรียงตามชื่อเครื่อง</option>
+        <option value="progress_asc">📈 ยังไม่เช็ค → เสร็จ</option>
+        <option value="progress_desc">📉 เสร็จ → ยังไม่เช็ค</option>
+        <option value="issue">⚠️ พบปัญหาก่อน</option>
+      </select>
       <button class="btn btn-sm" onclick="expandAll()">📂 ขยายทั้งหมด</button>
       <button class="btn btn-sm" onclick="collapseAll()">📁 ย่อทั้งหมด</button>
     </div>
@@ -395,8 +401,27 @@ function renderAll(){
   const list=document.getElementById('assetList');
   if(!hasData){list.innerHTML='';return;}
 
+  // ── Sort ────────────────────────────────────────
+  const sort=document.getElementById('sortSel')?.value||'name';
+  const sortedCks=Object.keys(checkData).sort((a,b)=>{
+    if(sort==='name') return a.localeCompare(b,'th');
+    const getProgress=(ck)=>{
+      const items=checkData[ck].items;
+      if(!items.length)return 0;
+      return items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length/items.length;
+    };
+    const getIssue=(ck)=>checkData[ck].items.some((_,i)=>{
+      const st=checkState[stateKey(ck,i)]||{};
+      return !!(st.assetCodeActual||st.modelActual||st.snActual);
+    })?1:0;
+    if(sort==='progress_asc') return getProgress(a)-getProgress(b);
+    if(sort==='progress_desc') return getProgress(b)-getProgress(a);
+    if(sort==='issue') return getIssue(b)-getIssue(a)||a.localeCompare(b,'th');
+    return 0;
+  });
+
   let html=''; let visCount=0;
-  Object.keys(checkData).forEach(ck=>{
+  sortedCks.forEach(ck=>{
     const comp=checkData[ck];
     const cid=getCkId(ck);
 
@@ -487,7 +512,7 @@ function renderAll(){
               <button class="btn-reg ${st.updatedInRegistry?'active':''}"
                 onclick="toggleReg('${esc(sk)}',${cid},${i})"
                 title="แก้ไขในทะเบียนทรัพย์สินแล้ว">
-                ${st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในระบบแล้ว'}
+                ${st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน'}
               </button>
             </div>
             ${st.checkedAt?`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`:''}
@@ -579,17 +604,21 @@ function collapseAll(){
 function toggleIssuePanel(sk, cid, i){
   const panel=document.getElementById(`ipanel_${cid}_${i}`);
   if(!panel)return;
-  const isOpen=panel.style.display!=='none' && panel.style.display!=='';
-  panel.style.display=isOpen?'none':'';
-  // อัปเดต style ปุ่ม
+  // getComputedStyle เพื่อรู้ค่า display จริง (รวม CSS class ด้วย)
+  const computed=window.getComputedStyle(panel).display;
+  const isOpen=computed!=='none';
+  panel.style.display=isOpen?'none':'table-row';
   const btn=document.querySelector(`#arow_${cid}_${i} .btn-issue`);
-  if(btn && !isOpen) btn.style.borderColor='var(--r)';
+  if(btn) btn.style.borderColor=isOpen?'':'var(--r)';
 }
 
 function toggleChecked(sk,cid,i){
+  const cur=(checkState[sk]||{}).checked;
+  const action=cur?'ยกเลิกการเช็ค?':'ยืนยันว่าเช็คแล้ว?';
+  if(!confirm(action))return;
   if(!checkState[sk])checkState[sk]={};
   const st=checkState[sk];
-  st.checked=!st.checked;
+  st.checked=!cur;
   if(st.checked){
     st.checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
     st.checkedBy=currentUser?.displayName||currentUser?.email||'';
@@ -598,9 +627,12 @@ function toggleChecked(sk,cid,i){
 }
 
 function toggleReg(sk,cid,i){
+  const cur=(checkState[sk]||{}).updatedInRegistry;
+  const action=cur?'ยกเลิกการแก้ในระบบ?':'ยืนยันว่าแก้ในระบบแล้ว?';
+  if(!confirm(action))return;
   if(!checkState[sk])checkState[sk]={};
   const st=checkState[sk];
-  st.updatedInRegistry=!st.updatedInRegistry;
+  st.updatedInRegistry=!cur;
   if(st.updatedInRegistry)
     st.updatedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   else delete st.updatedAt;
