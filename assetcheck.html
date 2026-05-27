@@ -11,166 +11,75 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="shared.js"></script>
-<!-- SheetJS for Excel import -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-/* ── Page-specific styles ── */
-.toolbar {
-  display:flex; flex-wrap:wrap; align-items:center; gap:8px;
-  margin-bottom:1rem;
-}
-.search-box {
-  flex:1; min-width:180px; max-width:320px;
-  padding:8px 12px; border:1.5px solid var(--bdrm); border-radius:var(--rad);
-  font-size:13px; background:var(--surf); color:var(--tx1);
-}
-.search-box:focus { outline:none; border-color:var(--g); box-shadow:0 0 0 3px var(--gll); }
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:1rem;}
+.search-box{flex:1;min-width:180px;max-width:300px;padding:8px 12px;border:1.5px solid var(--bdrm);
+  border-radius:var(--rad);font-size:13px;background:var(--surf);color:var(--tx1);}
+.search-box:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 3px var(--gll);}
 
-/* ── Computer group card ── */
-.comp-group {
-  background:var(--surf);
-  border:1px solid var(--bdr);
-  border-radius:var(--radlg);
-  margin-bottom:1rem;
-  overflow:hidden;
-}
-.comp-header {
-  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-  padding:.75rem 1rem;
-  background:linear-gradient(135deg, var(--gll) 0%, var(--surf) 100%);
-  border-bottom:1px solid var(--bdr);
-  cursor:pointer; user-select:none;
-}
-.comp-header:hover { background:linear-gradient(135deg,#d6f0e8,var(--surf)); }
-.comp-name { font-size:14px; font-weight:700; color:var(--tx1); }
-.comp-ip   { font-size:11px; color:var(--tx3); font-family:var(--mono); }
-.comp-meta { font-size:11px; color:var(--tx3); }
-.comp-toggle { margin-left:auto; font-size:12px; color:var(--tx3); flex-shrink:0; }
-.comp-progress { display:flex; align-items:center; gap:6px; margin-left:auto; }
-.progress-bar-wrap {
-  width:80px; height:6px; background:var(--bdr); border-radius:3px; overflow:hidden;
-}
-.progress-bar-fill { height:100%; background:var(--g); border-radius:3px; transition:width .3s; }
-.progress-label { font-size:10px; font-weight:700; color:var(--tx3); white-space:nowrap; }
+.comp-group{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);margin-bottom:1rem;overflow:hidden;}
+.comp-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:.75rem 1rem;
+  background:linear-gradient(135deg,var(--gll) 0%,var(--surf) 100%);border-bottom:1px solid var(--bdr);
+  cursor:pointer;user-select:none;}
+.comp-header:hover{filter:brightness(.97);}
+.comp-name{font-size:14px;font-weight:700;}
+.comp-meta{font-size:11px;color:var(--tx3);}
+.comp-ip{font-size:11px;color:var(--tx3);font-family:var(--mono);}
+.prog-wrap{width:80px;height:6px;background:var(--bdr);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
+.prog-lbl{font-size:10px;font-weight:700;color:var(--tx3);white-space:nowrap;}
 
-/* ── Asset item row ── */
-.asset-table { width:100%; border-collapse:collapse; }
-.asset-table th {
-  padding:8px 10px; font-size:10px; font-weight:700; text-transform:uppercase;
-  letter-spacing:.04em; color:var(--tx3);
-  background:var(--bg); border-bottom:1px solid var(--bdr);
-  text-align:left; white-space:nowrap;
-}
-.asset-row {
-  border-bottom:1px solid var(--bdr);
-  transition:background .15s;
-}
-.asset-row:last-child { border-bottom:none; }
-.asset-row.checked { background:#F0FFF8; }
-.asset-row.has-issue { background:#FFF8F0; }
-.asset-row td { padding:8px 10px; vertical-align:middle; font-size:12px; }
+.asset-table{width:100%;border-collapse:collapse;}
+.asset-table th{padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--tx3);background:var(--bg);border-bottom:1px solid var(--bdr);
+  text-align:left;white-space:nowrap;}
+.asset-row{border-bottom:1px solid var(--bdr);transition:background .15s;}
+.asset-row:last-child{border-bottom:none;}
+.asset-row.row-ok{background:#F0FFF8;}
+.asset-row.row-issue{background:#FFF5F0;}
+.asset-row td{padding:8px 10px;vertical-align:top;font-size:12px;}
+.code-badge{font-family:var(--mono);font-size:10px;background:var(--bg);border:1px solid var(--bdr);
+  border-radius:4px;padding:2px 6px;display:inline-block;white-space:nowrap;}
+.sn-text{font-family:var(--mono);font-size:11px;color:var(--tx2);}
 
-.item-type  { font-size:11px; font-weight:700; color:var(--tx2); white-space:nowrap; }
-.item-brand { font-size:11px; color:var(--tx3); }
-.code-badge {
-  font-family:var(--mono); font-size:10px;
-  background:var(--bg); border:1px solid var(--bdr);
-  border-radius:4px; padding:2px 6px; white-space:nowrap;
-}
-.sn-text  { font-family:var(--mono); font-size:11px; color:var(--tx2); }
-.sn-note  { font-family:var(--mono); font-size:10px; color:var(--r); margin-top:2px; }
+.issue-input{width:100%;padding:5px 8px;border:1.5px solid var(--bdrm);border-radius:var(--radsm);
+  font-size:11px;font-family:var(--mono);background:var(--surf);color:var(--tx1);transition:border-color .15s;}
+.issue-input:focus{outline:none;border-color:var(--am);box-shadow:0 0 0 2px var(--aml);}
+.issue-input.has-val{border-color:var(--r);background:#FFF5F0;}
+.issue-note{font-size:10px;color:var(--r);margin-top:3px;font-family:var(--mono);}
 
-/* ── Issue input inline ── */
-.issue-wrap { display:flex; flex-direction:column; gap:4px; min-width:140px; }
-.issue-input {
-  width:100%; padding:5px 8px;
-  border:1.5px solid var(--bdrm); border-radius:var(--radsm);
-  font-size:11px; font-family:var(--mono);
-  background:var(--surf); color:var(--tx1);
-  transition:border-color .15s;
-}
-.issue-input:focus { outline:none; border-color:var(--am); box-shadow:0 0 0 2px var(--aml); }
-.issue-input.has-val { border-color:var(--r); background:var(--rl); }
+.btn-chk{padding:5px 10px;border-radius:var(--radsm);font-size:11px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
+  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
+.btn-chk:hover{background:var(--gll);border-color:var(--g);color:var(--g);}
+.btn-chk.active{background:var(--g);border-color:var(--g);color:#fff;}
+.btn-reg{padding:4px 8px;border-radius:var(--radsm);font-size:10px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
+  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;}
+.btn-reg:hover{background:var(--aml);border-color:var(--am);color:var(--am);}
+.btn-reg.active{background:var(--am);border-color:var(--am);color:#fff;}
 
-/* ── Action buttons ── */
-.check-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.check-date{font-size:10px;color:var(--tx3);margin-top:3px;}
+.summary-bar{display:flex;gap:16px;flex-wrap:wrap;padding:.8rem 1.2rem;
+  background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);margin-bottom:1rem;}
+.sum-item{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px;}
+.sum-num{font-size:22px;font-weight:700;line-height:1;}
+.sum-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-align:center;}
 
-.btn-check {
-  padding:5px 10px; border-radius:var(--radsm);
-  font-size:11px; font-weight:700; cursor:pointer;
-  border:1.5px solid var(--bdrm); background:var(--surf);
-  transition:all .15s; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;
-}
-.btn-check:hover { background:var(--gll); border-color:var(--g); color:var(--g); }
-.btn-check.done { background:var(--g); border-color:var(--g); color:#fff; }
-
-.btn-updated {
-  padding:4px 8px; border-radius:var(--radsm);
-  font-size:10px; font-weight:700; cursor:pointer;
-  border:1.5px solid var(--bdrm); background:var(--surf);
-  transition:all .15s; white-space:nowrap;
-  display:inline-flex; align-items:center; gap:3px;
-}
-.btn-updated:hover { background:var(--aml); border-color:var(--am); color:var(--am); }
-.btn-updated.done { background:var(--am); border-color:var(--am); color:#fff; }
-
-.check-date { font-size:10px; color:var(--tx3); white-space:nowrap; }
-
-/* ── Status badge ── */
-.status-dot {
-  width:8px; height:8px; border-radius:50%; flex-shrink:0; display:inline-block;
-}
-.status-ok    { background:var(--g); }
-.status-issue { background:var(--r); }
-.status-pending { background:var(--bdrm); }
-
-/* ── Summary bar ── */
-.summary-bar {
-  display:flex; gap:12px; flex-wrap:wrap;
-  padding:.75rem 1rem;
-  background:var(--surf); border:1px solid var(--bdr);
-  border-radius:var(--radlg); margin-bottom:1rem;
-}
-.sum-item { display:flex; flex-direction:column; align-items:center; gap:2px; min-width:60px; }
-.sum-num  { font-size:20px; font-weight:700; line-height:1; }
-.sum-lbl  { font-size:10px; color:var(--tx3); font-weight:600; }
-
-/* ── Import zone ── */
-.import-zone {
-  border:2px dashed var(--bdrm); border-radius:var(--radlg);
-  padding:2rem; text-align:center;
-  background:var(--bg); transition:all .2s; cursor:pointer;
-  margin-bottom:1rem;
-}
-.import-zone.drag-over { border-color:var(--g); background:var(--gll); }
-.import-zone-icon { font-size:32px; margin-bottom:.5rem; }
-.import-zone p { font-size:13px; color:var(--tx3); line-height:1.6; }
-
-/* ── Mobile responsive ── */
-@media (max-width:640px) {
-  .asset-table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .comp-header { gap:6px; }
-  .comp-progress { width:100%; justify-content:flex-end; margin-left:0; }
-  .check-actions { justify-content:flex-start; }
-}
-
-/* ── Collapsible body ── */
-.comp-body { display:block; }
-.comp-body.collapsed { display:none; }
-
-/* ── Highlighted search ── */
-mark { background:#FFF176; border-radius:2px; }
-
-/* ── Empty state ── */
-.empty-state-page {
-  text-align:center; padding:4rem 2rem; color:var(--tx3);
-}
-.empty-state-page .icon { font-size:48px; margin-bottom:1rem; }
-.empty-state-page p { font-size:14px; line-height:1.7; }
+.import-zone{border:2px dashed var(--bdrm);border-radius:var(--radlg);padding:2.5rem;
+  text-align:center;background:var(--bg);transition:all .2s;cursor:pointer;margin-bottom:1rem;}
+.import-zone.drag-over{border-color:var(--g);background:var(--gll);}
+.import-zone-icon{font-size:36px;margin-bottom:.6rem;}
+.import-zone p{font-size:13px;color:var(--tx3);line-height:1.8;}
+.comp-body{display:block;}
+.comp-body.collapsed{display:none;}
+mark{background:#FFF176;border-radius:2px;padding:0 1px;}
+.empty-pg{text-align:center;padding:4rem 2rem;color:var(--tx3);}
+.empty-pg .icon{font-size:48px;margin-bottom:1rem;}
 </style>
 </head>
 <body>
-<!-- Loading -->
 <div id="loadingScreen">
   <div style="width:52px;height:52px;background:#1D9E75;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>
   <div style="font-size:15px;font-weight:700;">RYG Stock System</div>
@@ -178,7 +87,6 @@ mark { background:#FFF176; border-radius:2px; }
 </div>
 
 <div id="mainApp">
-  <!-- Topbar -->
   <div class="topbar">
     <div class="topbar-logo">📦</div>
     <span class="topbar-title">RYG Stock</span>
@@ -192,70 +100,51 @@ mark { background:#FFF176; border-radius:2px; }
   </div>
   <div class="nav-tabs" id="navTabs"></div>
 
-  <!-- Content -->
   <div class="content">
 
-    <!-- Page header -->
-    <div class="flex jb items-c section-gap" style="flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
+    <!-- Header row -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
       <div>
         <div style="font-size:16px;font-weight:700;">🔍 ตรวจเช็คทรัพย์สิน</div>
-        <div style="font-size:12px;color:var(--tx3);margin-top:2px;" id="pageSubtitle">กรุณา import ไฟล์รายการทรัพย์สินก่อน</div>
+        <div id="pageSubtitle" style="font-size:12px;color:var(--tx3);margin-top:2px;">กรุณา Import ไฟล์รายการทรัพย์สินก่อน</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-sm" onclick="downloadTemplate()" title="ดาวน์โหลดไฟล์ตัวอย่าง">
-          📥 ตัวอย่าง
-        </button>
-        <label class="btn btn-sm btn-primary" style="cursor:pointer;" title="Import ไฟล์ Excel">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-sm" onclick="downloadTemplate()">📥 ตัวอย่าง</button>
+        <label class="btn btn-sm btn-primary" style="cursor:pointer;">
           📂 Import Excel
-          <input type="file" id="importFile" accept=".xls,.xlsx" onchange="handleImport(this)" style="display:none"/>
+          <input type="file" id="importFile" accept=".xls,.xlsx" style="display:none" onchange="handleImport(this)"/>
         </label>
-        <button class="btn btn-sm btn-danger" onclick="confirmClearAll()" id="btnClearAll" style="display:none">
+        <button class="btn btn-sm btn-danger" id="btnClearAll" onclick="confirmClearAll()" style="display:none;">
           🗑️ ลบทั้งหมด
         </button>
       </div>
     </div>
 
-    <!-- Summary -->
+    <!-- Summary (hidden until data loaded) -->
     <div class="summary-bar" id="summaryBar" style="display:none">
-      <div class="sum-item">
-        <div class="sum-num" id="sumTotal" style="color:var(--tx1)">0</div>
-        <div class="sum-lbl">ทรัพย์สินทั้งหมด</div>
-      </div>
-      <div class="sum-item">
-        <div class="sum-num" id="sumChecked" style="color:var(--g)">0</div>
-        <div class="sum-lbl">เช็คแล้ว</div>
-      </div>
-      <div class="sum-item">
-        <div class="sum-num" id="sumIssue" style="color:var(--r)">0</div>
-        <div class="sum-lbl">มีปัญหา</div>
-      </div>
-      <div class="sum-item">
-        <div class="sum-num" id="sumUpdated" style="color:var(--am)">0</div>
-        <div class="sum-lbl">แก้ในทะเบียนแล้ว</div>
-      </div>
-      <div class="sum-item">
-        <div class="sum-num" id="sumComputers" style="color:var(--tx2)">0</div>
-        <div class="sum-lbl">เครื่อง</div>
-      </div>
+      <div class="sum-item"><div class="sum-num" id="sumComp" style="color:var(--tx2)">0</div><div class="sum-lbl">เครื่อง</div></div>
+      <div class="sum-item"><div class="sum-num" id="sumTotal" style="color:var(--tx2)">0</div><div class="sum-lbl">รายการทั้งหมด</div></div>
+      <div class="sum-item"><div class="sum-num" id="sumChecked" style="color:var(--g)">0</div><div class="sum-lbl">เช็คแล้ว</div></div>
+      <div class="sum-item"><div class="sum-num" id="sumIssue" style="color:var(--r)">0</div><div class="sum-lbl">พบปัญหา</div></div>
+      <div class="sum-item"><div class="sum-num" id="sumReg" style="color:var(--am)">0</div><div class="sum-lbl">แก้ในทะเบียนแล้ว</div></div>
     </div>
 
-    <!-- Toolbar: search + filter -->
-    <div class="toolbar" id="mainToolbar" style="display:none">
+    <!-- Toolbar -->
+    <div class="toolbar" id="toolbarRow" style="display:none">
       <input class="search-box" type="text" id="searchInput"
-        placeholder="🔎 ค้นหา ชื่อเครื่อง / Asset Code / รุ่น / SN..."
+        placeholder="🔎 ค้นหาชื่อเครื่อง / Asset Code / รุ่น / SN..."
         oninput="renderAll()"/>
-      <select class="btn btn-sm" id="filterStatus" onchange="renderAll()"
-        style="padding:6px 10px;font-size:12px;width:auto;cursor:pointer;">
-        <option value="">ทั้งหมด</option>
+      <select id="filterSel" class="btn btn-sm" style="padding:6px 10px;font-size:12px;width:auto;cursor:pointer;" onchange="renderAll()">
+        <option value="">แสดงทั้งหมด</option>
         <option value="pending">⏳ ยังไม่ได้เช็ค</option>
         <option value="checked">✅ เช็คแล้ว</option>
-        <option value="issue">⚠️ มีปัญหา</option>
+        <option value="issue">⚠️ พบปัญหา</option>
       </select>
       <button class="btn btn-sm" onclick="expandAll()">📂 ขยายทั้งหมด</button>
       <button class="btn btn-sm" onclick="collapseAll()">📁 ย่อทั้งหมด</button>
     </div>
 
-    <!-- Import zone (shown when no data) -->
+    <!-- Import drop zone (hidden after import) -->
     <div class="import-zone" id="importZone"
       ondragover="event.preventDefault();this.classList.add('drag-over')"
       ondragleave="this.classList.remove('drag-over')"
@@ -263,221 +152,192 @@ mark { background:#FFF176; border-radius:2px; }
       onclick="document.getElementById('importFile').click()">
       <div class="import-zone-icon">📊</div>
       <p><strong>คลิกหรือลากไฟล์ Excel มาวางที่นี่</strong><br>
-      รองรับไฟล์ .xls และ .xlsx<br>
-      <span style="font-size:11px;color:var(--bdrm);">โครงสร้าง: Computer name | อุปกรณ์ | ยี่ห้อ | Asset Code | รุ่น | SN</span></p>
+      รองรับ .xls และ .xlsx<br>
+      <span style="font-size:11px;color:#bbb;">โครงสร้าง: Computer name | อุปกรณ์ | ยี่ห้อ | Asset Code | รุ่น | SN</span></p>
     </div>
 
-    <!-- Asset list container -->
+    <!-- Asset list -->
     <div id="assetList"></div>
 
   </div><!-- /content -->
-
   <nav class="bottom-nav" id="bottomNav"></nav>
 </div>
-
 <div id="notif"></div>
 
-<!-- ═══════════════════ SCRIPT ═══════════════════ -->
 <script>
-// ── State ──────────────────────────────────────────────
-let currentUser = null, currentRole = 'user', db = null;
-// checkData: { [compKey]: { computerName, ip, employee, dept, items:[{...}] } }
-let checkData  = {};
-// checkState: { [itemKey]: { checked, checkedAt, checkedBy, issueNote, updatedInRegistry, updatedAt } }
-let checkState = {};
+// ══════════════════════════════════════════════════
+//  State
+// ══════════════════════════════════════════════════
+let currentUser=null, currentRole='user', db=null;
+// checkData  : { [ck]: { computerName, ip, employee, dept, items:[{type,brand,assetCode,model,sn,regNo}] } }
+// checkState : { [stateKey]: { checked, checkedAt, checkedBy, issueNote, updatedInRegistry, updatedAt } }
+let checkData={}, checkState={};
 
-const STORE_KEY_DATA  = 'ryg_assetcheck_data';
-const STORE_KEY_STATE = 'ryg_assetcheck_state';
-
-// ── Init ───────────────────────────────────────────────
-// Add assetcheck to nav (not adminOnly so all can access)
-// We patch NAV_ITEMS before initShell
-if (typeof NAV_ITEMS !== 'undefined') {
-  const hasCheck = NAV_ITEMS.some(n => n.id === 'assetcheck');
-  if (!hasCheck) {
-    const dispIdx = NAV_ITEMS.findIndex(n => n.id === 'dispose');
-    NAV_ITEMS.splice(dispIdx + 1, 0, {
-      id: 'assetcheck', label: 'เช็คทรัพย์สิน', icon: '🔍',
-      href: 'assetcheck.html', adminOnly: false
-    });
+// ── Patch NAV ──────────────────────────────────────
+if(typeof NAV_ITEMS!=='undefined'){
+  if(!NAV_ITEMS.some(n=>n.id==='assetcheck')){
+    const di=NAV_ITEMS.findIndex(n=>n.id==='dispose');
+    NAV_ITEMS.splice(di+1,0,{id:'assetcheck',label:'เช็คทรัพย์สิน',icon:'🔍',href:'assetcheck.html',adminOnly:false});
   }
 }
 
-initShell('assetcheck', async (user, role, firestore) => {
-  currentUser = user; currentRole = role; db = firestore;
-  loadFromStorage();
+// ── Init shell ─────────────────────────────────────
+initShell('assetcheck', async(user,role,firestore)=>{
+  currentUser=user; currentRole=role; db=firestore;
+  await loadFromFirestore();
   renderAll();
 });
 
-// ── Storage helpers ────────────────────────────────────
-function saveToStorage() {
-  try {
-    localStorage.setItem(STORE_KEY_DATA,  JSON.stringify(checkData));
-    localStorage.setItem(STORE_KEY_STATE, JSON.stringify(checkState));
-  } catch(e) { console.warn('Storage save failed:', e); }
+// ── Firestore helpers ─────────────────────────────
+// Doc path: assetSessions/{uid}  → fields: checkData (JSON string), checkState (JSON string)
+function _sessionRef(){
+  return db.collection('assetSessions').doc(currentUser.uid);
 }
 
-function loadFromStorage() {
-  try {
-    const d = localStorage.getItem(STORE_KEY_DATA);
-    const s = localStorage.getItem(STORE_KEY_STATE);
-    if (d) checkData  = JSON.parse(d);
-    if (s) checkState = JSON.parse(s);
-  } catch(e) { checkData = {}; checkState = {}; }
+let _saveTimer=null;
+function saveStorage(){
+  // Debounce writes to avoid hammering Firestore on rapid keystrokes
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(async()=>{
+    try{
+      await _sessionRef().set({
+        checkData:  JSON.stringify(checkData),
+        checkState: JSON.stringify(checkState),
+        updatedAt:  firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy:  currentUser?.uid||'',
+      },{merge:true});
+    }catch(e){ console.warn('Firestore save error:',e); }
+  }, 600);
 }
 
-// ── Item key ──────────────────────────────────────────
-function itemKey(compKey, idx) {
-  return `${compKey}__${idx}`;
+async function loadFromFirestore(){
+  try{
+    const snap=await _sessionRef().get();
+    if(snap.exists){
+      const d=snap.data();
+      if(d.checkData)  checkData=JSON.parse(d.checkData);
+      if(d.checkState) checkState=JSON.parse(d.checkState);
+    }
+  }catch(e){ console.warn('Firestore load error:',e); checkData={}; checkState={}; }
 }
 
-// ── Parse imported data ───────────────────────────────
-function parseExcelData(workbook) {
-  // Try to parse as HTML-based XLS (the format from this system)
-  // We'll handle both real xlsx and the HTML-disguised xls
-  const result = {};
-
-  // Get first sheet
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
-  const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-
-  let currentComp = null;
-  let compKey = null;
-  let itemsStarted = false;
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i].map(c => String(c).trim());
-
-    // Detect computer name row: "Computer name:" in any cell
-    const compIdx = row.findIndex(c => c === 'Computer name:' || c === 'Computer name');
-    if (compIdx !== -1) {
-      compKey = row[compIdx + 1] || `COMP_${i}`;
-      const ip = row[compIdx + 3] || '';
-      // Next row has employee info
-      const nextRow = rows[i + 1] ? rows[i + 1].map(c => String(c).trim()) : [];
-      const employee = nextRow[1] || '';
-      const dept     = nextRow[3] || '';
-      if (!result[compKey]) {
-        result[compKey] = { computerName: compKey, ip, employee, dept, items: [] };
-      }
-      currentComp = result[compKey];
-      itemsStarted = false;
-      continue;
-    }
-
-    // Detect header row for items
-    if (row.includes('Asset Code') && row.includes('Sn')) {
-      itemsStarted = true;
-      continue;
-    }
-
-    // Parse item rows
-    if (currentComp && itemsStarted) {
-      // Skip blank or partial rows
-      const hasContent = row.some(c => c.length > 0);
-      if (!hasContent) continue;
-
-      // Row format: [อุปกรณ์, ยี่ห้อ, AssetCode, ?, รุ่น, SN, สถานะ, เลขทะเบียน]
-      const type      = row[0] || '';
-      const brand     = row[1] || '';
-      const assetCode = row[2] || '';
-      const model     = row[4] || row[3] || '';
-      const sn        = row[5] || row[4] || '';
-      const regNo     = row[7] || '';
-
-      if (!type || type === 'อุปกรณ์' || type === 'ประเภท') continue;
-      if (['ยี่ห้อ','Asset Code','Sn','ผลิตภัณฑ์'].includes(type)) continue;
-
-      currentComp.items.push({ type, brand, assetCode, model, sn, regNo });
-    }
+// ── Safe ID for DOM ────────────────────────────────
+// Use index-based keys to avoid CSS.escape issues with dots/slashes
+let _ckIndex={};  // ck -> numeric index
+let _ckIndexRev={}; // numeric index -> ck
+function getCkId(ck){
+  if(_ckIndex[ck]===undefined){
+    const n=Object.keys(_ckIndex).length;
+    _ckIndex[ck]=n; _ckIndexRev[n]=ck;
   }
+  return _ckIndex[ck];
+}
+function stateKey(ck,idx){return `${ck}||${idx}`;}
 
-  // Remove computers with no items (likely parse artifacts)
-  Object.keys(result).forEach(k => {
-    if (result[k].items.length === 0) delete result[k];
-  });
-
-  return result;
+// ── HTML escape ────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function highlight(s,q){
+  if(!q)return esc(s);
+  const e=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return esc(s).replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`);
 }
 
-// ── Import handler ────────────────────────────────────
-function handleImport(input) {
-  const file = input.files[0];
-  if (!file) return;
-  input.value = '';
-  readFile(file);
+// ══════════════════════════════════════════════════
+//  Import
+// ══════════════════════════════════════════════════
+function handleImport(input){
+  const f=input.files[0]; if(!f)return; input.value=''; readExcelFile(f);
+}
+function handleDrop(e){
+  e.preventDefault(); document.getElementById('importZone').classList.remove('drag-over');
+  const f=e.dataTransfer.files[0]; if(f)readExcelFile(f);
 }
 
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById('importZone').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) readFile(file);
-}
-
-function readFile(file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  const reader = new FileReader();
-
-  reader.onload = (e) => {
-    try {
+function readExcelFile(file){
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    try{
+      // SheetJS handles HTML-disguised XLS natively
       let wb;
-      if (ext === 'xls') {
-        // May be HTML-masquerading as XLS
-        try {
-          wb = XLSX.read(e.target.result, { type: 'binary' });
-        } catch(err) {
-          // Try HTML parser fallback
-          const text = new TextDecoder('utf-8', { fatal:false }).decode(
-            new Uint8Array(e.target.result)
-          );
-          wb = XLSX.read(text, { type: 'string' });
-        }
-      } else {
-        wb = XLSX.read(e.target.result, { type: 'binary' });
+      const data=ev.target.result;
+      try{ wb=XLSX.read(data,{type:'binary'}); }
+      catch(err){
+        // Try as UTF-8 string (HTML XLS)
+        const text=new TextDecoder('utf-8',{fatal:false}).decode(new Uint8Array(
+          new Uint8Array(data.length).map((_,i)=>data.charCodeAt(i))
+        ));
+        wb=XLSX.read(text,{type:'string'});
       }
-
-      const parsed = parseExcelData(wb);
-      const count  = Object.keys(parsed).length;
-
-      if (count === 0) {
-        showNotif('ไม่พบข้อมูลในไฟล์ กรุณาตรวจสอบโครงสร้าง', 'error');
-        return;
-      }
-
-      // Merge: keep existing checkState, add new data
-      checkData = parsed;
-      // Clean up orphaned state keys
-      const validKeys = new Set();
-      Object.keys(checkData).forEach(ck => {
-        checkData[ck].items.forEach((_, idx) => validKeys.add(itemKey(ck, idx)));
-      });
-      Object.keys(checkState).forEach(k => {
-        if (!validKeys.has(k)) delete checkState[k];
-      });
-
-      saveToStorage();
-      renderAll();
-      showNotif(`Import สำเร็จ ${count} เครื่อง`);
-    } catch(err) {
-      showNotif('อ่านไฟล์ไม่สำเร็จ: ' + err.message, 'error');
-    }
+      const parsed=parseWorkbook(wb);
+      const n=Object.keys(parsed).length;
+      if(n===0){showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error');return;}
+      checkData=parsed;
+      // Clean orphaned states
+      const valid=new Set();
+      Object.keys(checkData).forEach(ck=>checkData[ck].items.forEach((_,i)=>valid.add(stateKey(ck,i))));
+      Object.keys(checkState).forEach(k=>{if(!valid.has(k))delete checkState[k];});
+      _ckIndex={}; _ckIndexRev={};
+      saveStorage(); renderAll();
+      showNotif(`Import สำเร็จ พบ ${n} เครื่อง`);
+    }catch(err){showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error');}
   };
-
   reader.readAsBinaryString(file);
 }
 
-// ── Download template ─────────────────────────────────
-function downloadTemplate() {
-  // Create sample data matching expected format
-  const wb = XLSX.utils.book_new();
-  const data = [
+function parseWorkbook(wb){
+  const result={};
+  const sheetName=wb.SheetNames[0];
+  const ws=wb.Sheets[sheetName];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+  let currentComp=null, ck=null, inItems=false;
+  for(let i=0;i<rows.length;i++){
+    const row=rows[i].map(c=>String(c).trim());
+
+    // Detect Computer name row
+    const ci=row.findIndex(c=>c==='Computer name:');
+    if(ci!==-1){
+      ck=row[ci+1]||`COMP_${i}`;
+      const ip=row[ci+3]||'';
+      // Employee in next row: [ชื่อ-สกุล, NAME, ตำแหน่ง, DEPT]
+      const nr=(rows[i+1]||[]).map(c=>String(c).trim());
+      const emp=nr[1]||'', dept=nr[3]||'';
+      if(!result[ck]) result[ck]={computerName:ck,ip,employee:emp,dept,items:[]};
+      currentComp=result[ck]; inItems=false;
+      continue;
+    }
+
+    // Detect column header row
+    if(row.includes('Asset Code')&&(row.includes('Sn')||row.includes('SN'))){
+      inItems=true; continue;
+    }
+
+    if(currentComp&&inItems){
+      const has=row.some(c=>c.length>0); if(!has)continue;
+      const t=row[0];
+      if(!t||['อุปกรณ์','ประเภท','ยี่ห้อ'].includes(t))continue;
+      if(t==='Asset Code'||t.includes('Asset'))continue;
+      const brand=row[1]||'', assetCode=row[2]||'';
+      const model=row[4]||row[3]||'', sn=row[5]||row[4]||'', regNo=row[7]||row[6]||'';
+      if(assetCode||sn||model) currentComp.items.push({type:t,brand,assetCode,model,sn,regNo});
+    }
+  }
+  // Remove empties
+  Object.keys(result).forEach(k=>{if(!result[k].items.length)delete result[k];});
+  return result;
+}
+
+// ══════════════════════════════════════════════════
+//  Template download
+// ══════════════════════════════════════════════════
+function downloadTemplate(){
+  const wb=XLSX.utils.book_new();
+  const d=[
     ['ลำดับ','1',''],
     ['HO'],
     ['ผู้รับผิดชอบดูแลอุปกรณ์',''],
     ['Computer name:','ACC001-RYG','IP Address','192.168.101.100',''],
-    ['ชื่อ-สกุล','สมชาย ตัวอย่าง','ตำแหน่ง','พนักงาน'],
+    ['ชื่อ-สกุล','สมชาย ตัวอย่าง','ตำแหน่ง','พนักงาน IT'],
     ['อุปกรณ์'],
     ['อุปกรณ์','ยี่ห้อ','Asset Code','','ผลิตภัณฑ์/รุ่น/ขนาด','Sn','สถานะ','เลขทะเบียน'],
     ['Computer Set','Dell','OF21-0001','','Optiplex 3080','S/N : ABC123456','ใช้งาน','64/001'],
@@ -487,7 +347,7 @@ function downloadTemplate() {
     ['ลำดับ','2',''],
     ['HO'],
     ['ผู้รับผิดชอบดูแลอุปกรณ์',''],
-    ['Computer name:','ACC002-RYG','IP Address','192.168.101.101',''],
+    ['Computer name:','MMD001-RYG','IP Address','192.168.101.101',''],
     ['ชื่อ-สกุล','สมหญิง ตัวอย่าง','ตำแหน่ง','ผู้จัดการ'],
     ['อุปกรณ์'],
     ['อุปกรณ์','ยี่ห้อ','Asset Code','','ผลิตภัณฑ์/รุ่น/ขนาด','Sn','สถานะ','เลขทะเบียน'],
@@ -495,299 +355,261 @@ function downloadTemplate() {
     ['Printer','HP','FNITD-0001','','LaserJet Pro M12a','S/N : MNO678901','ใช้งาน','65/011'],
     [''],
   ];
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, 'AssetList');
-  XLSX.writeFile(wb, 'assetcheck_template.xlsx');
+  const ws=XLSX.utils.aoa_to_sheet(d);
+  ws['!cols']=[{wch:15},{wch:20},{wch:15},{wch:5},{wch:22},{wch:22},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'AssetList');
+  XLSX.writeFile(wb,'assetcheck_template.xlsx');
   showNotif('ดาวน์โหลดไฟล์ตัวอย่างแล้ว');
 }
 
-// ── Confirm clear all ─────────────────────────────────
-function confirmClearAll() {
-  if (!confirm('ลบข้อมูลทั้งหมดออก?\nผลการเช็คทั้งหมดจะหายไปด้วย ต้อง import ไฟล์ใหม่')) return;
-  checkData  = {};
-  checkState = {};
-  saveToStorage();
-  renderAll();
-  showNotif('ลบข้อมูลทั้งหมดแล้ว');
-}
-
-// ── Expand / Collapse ─────────────────────────────────
-function expandAll() {
-  document.querySelectorAll('.comp-body').forEach(el => el.classList.remove('collapsed'));
-  document.querySelectorAll('.comp-toggle').forEach(el => el.textContent = '▲');
-}
-function collapseAll() {
-  document.querySelectorAll('.comp-body').forEach(el => el.classList.add('collapsed'));
-  document.querySelectorAll('.comp-toggle').forEach(el => el.textContent = '▼');
-}
-function toggleComp(compKey) {
-  const body   = document.getElementById(`body_${CSS.escape(compKey)}`);
-  const toggle = document.getElementById(`toggle_${CSS.escape(compKey)}`);
-  if (!body) return;
-  const collapsed = body.classList.toggle('collapsed');
-  if (toggle) toggle.textContent = collapsed ? '▼' : '▲';
-}
-
-// ── Stats ─────────────────────────────────────────────
-function calcStats() {
-  let total=0, checked=0, issue=0, updated=0;
-  Object.keys(checkData).forEach(ck => {
-    checkData[ck].items.forEach((_, idx) => {
-      const k = itemKey(ck, idx);
-      const st = checkState[k] || {};
+// ══════════════════════════════════════════════════
+//  Stats
+// ══════════════════════════════════════════════════
+function calcStats(){
+  let total=0,checked=0,issue=0,reg=0;
+  Object.keys(checkData).forEach(ck=>{
+    checkData[ck].items.forEach((_,i)=>{
+      const st=checkState[stateKey(ck,i)]||{};
       total++;
-      if (st.checked) checked++;
-      if (st.issueNote) issue++;
-      if (st.updatedInRegistry) updated++;
+      if(st.checked)checked++;
+      if(st.issueNote)issue++;
+      if(st.updatedInRegistry)reg++;
     });
   });
-  return { total, checked, issue, updated, computers: Object.keys(checkData).length };
+  return{total,checked,issue,reg,computers:Object.keys(checkData).length};
 }
 
-// ── Highlight search ──────────────────────────────────
-function highlight(text, query) {
-  if (!query) return escHtml(text);
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return escHtml(text).replace(new RegExp(escaped, 'gi'),
-    m => `<mark>${m}</mark>`);
+function updateSummary(){
+  const s=calcStats();
+  const el=id=>document.getElementById(id);
+  if(el('sumComp'))    el('sumComp').textContent=s.computers;
+  if(el('sumTotal'))   el('sumTotal').textContent=s.total;
+  if(el('sumChecked')) el('sumChecked').textContent=s.checked;
+  if(el('sumIssue'))   el('sumIssue').textContent=s.issue;
+  if(el('sumReg'))     el('sumReg').textContent=s.reg;
+  if(el('pageSubtitle'))
+    el('pageSubtitle').textContent=`${s.computers} เครื่อง · เช็คแล้ว ${s.checked}/${s.total} รายการ`;
 }
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 
-// ── Render all ────────────────────────────────────────
-function renderAll() {
-  const hasData = Object.keys(checkData).length > 0;
-  const stats   = calcStats();
-  const query   = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
-  const filter  = document.getElementById('filterStatus')?.value || '';
+// ══════════════════════════════════════════════════
+//  Render
+// ══════════════════════════════════════════════════
+function renderAll(){
+  _ckIndex={}; _ckIndexRev={};
+  const hasData=Object.keys(checkData).length>0;
+  const q=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();
+  const filter=document.getElementById('filterSel')?.value||'';
 
-  // Toggle UI sections
-  document.getElementById('importZone').style.display   = hasData ? 'none' : 'block';
-  document.getElementById('summaryBar').style.display   = hasData ? 'flex' : 'none';
-  document.getElementById('mainToolbar').style.display  = hasData ? 'flex' : 'none';
-  document.getElementById('btnClearAll').style.display  = hasData ? '' : 'none';
+  document.getElementById('importZone').style.display  =hasData?'none':'block';
+  document.getElementById('summaryBar').style.display  =hasData?'flex':'none';
+  document.getElementById('toolbarRow').style.display  =hasData?'flex':'none';
+  document.getElementById('btnClearAll').style.display =hasData?'':'none';
 
-  if (hasData) {
-    document.getElementById('pageSubtitle').textContent =
-      `${stats.computers} เครื่อง · ${stats.checked}/${stats.total} รายการที่เช็คแล้ว`;
-    document.getElementById('sumTotal').textContent    = stats.total;
-    document.getElementById('sumChecked').textContent  = stats.checked;
-    document.getElementById('sumIssue').textContent    = stats.issue;
-    document.getElementById('sumUpdated').textContent  = stats.updated;
-    document.getElementById('sumComputers').textContent= stats.computers;
-  }
+  if(hasData) updateSummary();
 
-  const list = document.getElementById('assetList');
-  if (!hasData) { list.innerHTML = ''; return; }
+  const list=document.getElementById('assetList');
+  if(!hasData){list.innerHTML='';return;}
 
-  let html = '';
-  let visibleComps = 0;
-
-  Object.keys(checkData).forEach(ck => {
-    const comp  = checkData[ck];
-    const items = comp.items;
+  let html=''; let visCount=0;
+  Object.keys(checkData).forEach(ck=>{
+    const comp=checkData[ck];
+    const cid=getCkId(ck);
 
     // Filter items
-    const filteredItems = items.map((item, idx) => ({ item, idx })).filter(({ item, idx }) => {
-      const k  = itemKey(ck, idx);
-      const st = checkState[k] || {};
-
-      // Search filter
-      if (query) {
-        const haystack = [ck, comp.computerName, comp.ip, item.type, item.brand,
-                          item.assetCode, item.model, item.sn].join(' ').toLowerCase();
-        if (!haystack.includes(query)) return false;
+    const filtered=comp.items.map((item,i)=>({item,i})).filter(({item,i})=>{
+      const st=checkState[stateKey(ck,i)]||{};
+      if(q){
+        const hay=[ck,comp.ip,comp.employee,comp.dept,item.type,item.brand,
+                   item.assetCode,item.model,item.sn,item.regNo].join(' ').toLowerCase();
+        if(!hay.includes(q))return false;
       }
-
-      // Status filter
-      if (filter === 'pending')  return !st.checked;
-      if (filter === 'checked')  return  st.checked;
-      if (filter === 'issue')    return  !!st.issueNote;
-
+      if(filter==='pending') return !st.checked;
+      if(filter==='checked') return  st.checked;
+      if(filter==='issue')   return  !!st.issueNote;
       return true;
     });
 
-    if (filteredItems.length === 0) return;
-    visibleComps++;
+    if(!filtered.length)return;
+    visCount++;
 
-    // Compute comp progress
-    const total  = items.length;
-    const doneN  = items.filter((_, idx) => (checkState[itemKey(ck,idx)]||{}).checked).length;
-    const pct    = total > 0 ? Math.round(doneN/total*100) : 0;
-    const allDone = doneN === total;
+    const totalItems=comp.items.length;
+    const doneN=comp.items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length;
+    const pct=totalItems?Math.round(doneN/totalItems*100):0;
+    const allDone=doneN===totalItems;
 
-    // ─── Computer header ───
-    html += `
-    <div class="comp-group" id="grp_${escHtml(ck)}">
-      <div class="comp-header" onclick="toggleComp('${escHtml(ck)}')">
-        <div style="flex-shrink:0;width:32px;height:32px;background:${allDone?'var(--g)':'var(--bg)'};
-          border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;
-          border:1.5px solid ${allDone?'var(--g)':'var(--bdrm)'};">🖥️</div>
-        <div style="min-width:0">
-          <div class="comp-name">${highlight(comp.computerName, query)}</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            ${comp.ip ? `<span class="comp-ip">${escHtml(comp.ip)}</span>` : ''}
-            ${comp.employee ? `<span class="comp-meta">👤 ${escHtml(comp.employee)}</span>` : ''}
-            ${comp.dept ? `<span class="comp-meta">📍 ${escHtml(comp.dept)}</span>` : ''}
-          </div>
-        </div>
-        <div class="comp-progress">
-          <div class="progress-bar-wrap">
-            <div class="progress-bar-fill" style="width:${pct}%"></div>
-          </div>
-          <span class="progress-label">${doneN}/${total}</span>
-          <span id="toggle_${escHtml(ck)}" class="comp-toggle">▲</span>
-        </div>
+    html+=`
+<div class="comp-group">
+  <div class="comp-header" onclick="toggleComp(${cid})">
+    <div style="width:34px;height:34px;background:${allDone?'var(--g)':'var(--bg)'};
+      border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;
+      border:1.5px solid ${allDone?'var(--g)':'var(--bdrm)'};flex-shrink:0;">🖥️</div>
+    <div style="flex:1;min-width:0;">
+      <div class="comp-name">${highlight(comp.computerName,q)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:1px;">
+        ${comp.ip?`<span class="comp-ip">${esc(comp.ip)}</span>`:''}
+        ${comp.employee?`<span class="comp-meta">👤 ${highlight(comp.employee,q)}</span>`:''}
+        ${comp.dept?`<span class="comp-meta">📍 ${highlight(comp.dept,q)}</span>`:''}
       </div>
-      <div class="comp-body" id="body_${escHtml(ck)}">
-        <div style="overflow-x:auto">
-        <table class="asset-table">
-          <thead>
-            <tr>
-              <th style="width:30px">#</th>
-              <th>อุปกรณ์ / ยี่ห้อ</th>
-              <th>Asset Code</th>
-              <th>รุ่น / SN ในระบบ</th>
-              <th>SN / ข้อมูลที่พบจริง (ถ้าต่าง)</th>
-              <th style="min-width:130px">การดำเนินการ</th>
-            </tr>
-          </thead>
-          <tbody>`;
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <span class="prog-lbl">${doneN}/${totalItems}</span>
+      <span id="tog${cid}" style="font-size:12px;color:var(--tx3);">▲</span>
+    </div>
+  </div>
+  <div class="comp-body" id="body${cid}">
+    <div style="overflow-x:auto;">
+    <table class="asset-table">
+      <thead><tr>
+        <th style="width:28px;">#</th>
+        <th>อุปกรณ์ / ยี่ห้อ</th>
+        <th>Asset Code / เลขทะเบียน</th>
+        <th>รุ่น / SN ในระบบ</th>
+        <th style="min-width:180px;">SN หรือข้อมูลที่พบจริง<br><span style="font-weight:400;font-size:9px;text-transform:none;">(กรอกเฉพาะถ้าต่างจากในระบบ — ข้อมูลเดิมไม่ถูกลบ)</span></th>
+        <th style="min-width:140px;">การดำเนินการ</th>
+      </tr></thead>
+      <tbody>`;
 
-    filteredItems.forEach(({ item, idx }) => {
-      const k  = itemKey(ck, idx);
-      const st = checkState[k] || {};
-      const hasIssue = !!st.issueNote;
-      const rowClass = st.checked ? (hasIssue ? 'has-issue' : 'checked') : '';
-
-      html += `
-            <tr class="asset-row ${rowClass}" id="row_${k}">
-              <td style="color:var(--tx3);font-size:11px;">${idx+1}</td>
-              <td>
-                <div class="item-type">${highlight(item.type, query)}</div>
-                <div class="item-brand">${highlight(item.brand, query)}</div>
-              </td>
-              <td>
-                <span class="code-badge">${highlight(item.assetCode, query)}</span>
-                ${item.regNo ? `<div style="font-size:10px;color:var(--tx3);margin-top:2px;">ทะเบียน: ${escHtml(item.regNo)}</div>` : ''}
-              </td>
-              <td>
-                <div style="font-size:11px;font-weight:600">${highlight(item.model, query)}</div>
-                <div class="sn-text">${highlight(item.sn, query)}</div>
-              </td>
-              <td>
-                <div class="issue-wrap">
-                  <input class="issue-input ${st.issueNote?'has-val':''}" type="text"
-                    placeholder="กรอกเฉพาะถ้าข้อมูลไม่ตรง เช่น SN จริง: XXXXX"
-                    value="${escHtml(st.issueNote||'')}"
-                    oninput="onIssueChange('${k}', this)"
-                    title="ระบุข้อมูลที่พบจริง (ไม่ลบข้อมูลเดิม)"/>
-                  ${st.issueNote ? `<div class="sn-note">⚠️ พบความต่าง: ${escHtml(st.issueNote)}</div>` : ''}
-                </div>
-              </td>
-              <td>
-                <div class="check-actions">
-                  <button class="btn-check ${st.checked?'done':''}"
-                    onclick="toggleChecked('${k}')" title="เช็คแล้ว">
-                    ${st.checked ? '✅ เช็คแล้ว' : '☐ เช็คแล้ว'}
-                  </button>
-                  <button class="btn-updated ${st.updatedInRegistry?'done':''}"
-                    onclick="toggleUpdated('${k}')" title="แก้ไขในทะเบียนแล้ว">
-                    ${st.updatedInRegistry ? '📋 แก้แล้ว' : '📋 แก้ใน\nทะเบียน'}
-                  </button>
-                </div>
-                ${st.checkedAt ? `<div class="check-date">🕐 ${escHtml(st.checkedAt)}</div>` : ''}
-                ${st.checkedBy ? `<div class="check-date">👤 ${escHtml(st.checkedBy)}</div>` : ''}
-              </td>
-            </tr>`;
+    filtered.forEach(({item,i})=>{
+      const sk=stateKey(ck,i);
+      const st=checkState[sk]||{};
+      const hasIssue=!!st.issueNote;
+      const rowCls=st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'');
+      const encodedSk=encodeURIComponent(sk); // safe for onclick string
+      html+=`
+      <tr class="asset-row ${rowCls}" id="arow_${cid}_${i}">
+        <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
+        <td>
+          <div style="font-size:12px;font-weight:700;">${highlight(item.type,q)}</div>
+          <div style="font-size:11px;color:var(--tx3);">${highlight(item.brand,q)}</div>
+        </td>
+        <td>
+          <span class="code-badge">${highlight(item.assetCode,q)}</span>
+          ${item.regNo?`<div style="font-size:10px;color:var(--tx3);margin-top:2px;">📋 ${esc(item.regNo)}</div>`:''}
+        </td>
+        <td>
+          <div style="font-size:11px;font-weight:600;">${highlight(item.model,q)}</div>
+          <div class="sn-text">${highlight(item.sn,q)}</div>
+        </td>
+        <td>
+          <input class="issue-input ${hasIssue?'has-val':''}" type="text"
+            value="${esc(st.issueNote||'')}"
+            placeholder="เช่น SN จริง: XXXXXXX หรือ รุ่นไม่ตรง..."
+            oninput="onIssueChange('${esc(sk)}',${cid},${i},this)"/>
+          ${hasIssue?`<div class="issue-note">⚠️ ${esc(st.issueNote)}</div>`:''}
+        </td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              <button class="btn-chk ${st.checked?'active':''}"
+                onclick="toggleChecked('${esc(sk)}',${cid},${i})">
+                ${st.checked?'✅ เช็คแล้ว':'☐ เช็คแล้ว'}
+              </button>
+              <button class="btn-reg ${st.updatedInRegistry?'active':''}"
+                onclick="toggleReg('${esc(sk)}',${cid},${i})"
+                title="แก้ไขในทะเบียนทรัพย์สินแล้ว">
+                ${st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน'}
+              </button>
+            </div>
+            ${st.checkedAt?`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`:''}
+            ${st.checkedBy?`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`:''}
+            ${st.updatedInRegistry&&st.updatedAt?`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`:''}
+          </div>
+        </td>
+      </tr>`;
     });
 
-    html += `
-          </tbody>
-        </table>
-        </div>
-      </div>
-    </div>`;
+    html+=`
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>`;
   });
 
-  if (visibleComps === 0) {
-    html = `<div class="empty-state-page">
-      <div class="icon">🔍</div>
-      <p>ไม่พบรายการที่ตรงกับเงื่อนไข<br>ลองปรับตัวกรองหรือคำค้นหา</p>
-    </div>`;
+  if(!visCount){
+    html=`<div class="empty-pg"><div class="icon">🔍</div>
+      <p>ไม่พบรายการที่ตรงกับเงื่อนไข<br>ลองปรับตัวกรองหรือคำค้นหา</p></div>`;
   }
-
-  list.innerHTML = html;
+  list.innerHTML=html;
 }
 
-// ── Toggle checked ────────────────────────────────────
-function toggleChecked(k) {
-  if (!checkState[k]) checkState[k] = {};
-  const st = checkState[k];
-  st.checked = !st.checked;
-  if (st.checked) {
-    st.checkedAt = new Date().toLocaleString('th-TH', {
-      day:'2-digit', month:'2-digit', year:'2-digit',
-      hour:'2-digit', minute:'2-digit'
-    });
-    st.checkedBy = currentUser?.displayName || currentUser?.email || '';
-  } else {
-    delete st.checkedAt;
-    delete st.checkedBy;
-  }
-  saveToStorage();
-  renderAll();
-  updateSummary();
+// ══════════════════════════════════════════════════
+//  Actions
+// ══════════════════════════════════════════════════
+function toggleComp(cid){
+  const body=document.getElementById('body'+cid);
+  const tog =document.getElementById('tog'+cid);
+  if(!body)return;
+  const col=body.classList.toggle('collapsed');
+  if(tog) tog.textContent=col?'▼':'▲';
+}
+function expandAll(){ Object.keys(_ckIndexRev).forEach(n=>{
+  const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
+  if(b)b.classList.remove('collapsed'); if(t)t.textContent='▲';
+});}
+function collapseAll(){ Object.keys(_ckIndexRev).forEach(n=>{
+  const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
+  if(b)b.classList.add('collapsed'); if(t)t.textContent='▼';
+});}
+
+function toggleChecked(sk,cid,i){
+  if(!checkState[sk])checkState[sk]={};
+  const st=checkState[sk];
+  st.checked=!st.checked;
+  if(st.checked){
+    st.checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+    st.checkedBy=currentUser?.displayName||currentUser?.email||'';
+  } else { delete st.checkedAt; delete st.checkedBy; }
+  saveStorage(); renderAll(); // full re-render to update progress bar
 }
 
-// ── Toggle updated in registry ────────────────────────
-function toggleUpdated(k) {
-  if (!checkState[k]) checkState[k] = {};
-  const st = checkState[k];
-  st.updatedInRegistry = !st.updatedInRegistry;
-  if (st.updatedInRegistry) {
-    st.updatedAt = new Date().toLocaleString('th-TH', {
-      day:'2-digit', month:'2-digit', year:'2-digit',
-      hour:'2-digit', minute:'2-digit'
-    });
-  } else {
-    delete st.updatedAt;
-  }
-  saveToStorage();
-  renderAll();
+function toggleReg(sk,cid,i){
+  if(!checkState[sk])checkState[sk]={};
+  const st=checkState[sk];
+  st.updatedInRegistry=!st.updatedInRegistry;
+  if(st.updatedInRegistry)
+    st.updatedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+  else delete st.updatedAt;
+  saveStorage(); renderAll();
 }
 
-// ── Issue note change ─────────────────────────────────
-let _issueTimer = null;
-function onIssueChange(k, input) {
-  const val = input.value.trim();
-  input.classList.toggle('has-val', val.length > 0);
+let _issueTimer=null;
+function onIssueChange(sk,cid,i,input){
+  const val=input.value.trim();
+  input.classList.toggle('has-val',val.length>0);
   clearTimeout(_issueTimer);
-  _issueTimer = setTimeout(() => {
-    if (!checkState[k]) checkState[k] = {};
-    checkState[k].issueNote = val;
-    saveToStorage();
-    // Update row background live
-    const row = document.getElementById(`row_${k}`);
-    if (row) {
-      const st = checkState[k];
-      row.className = `asset-row ${st.checked ? (val ? 'has-issue' : 'checked') : (val ? 'has-issue' : '')}`;
-    }
+  _issueTimer=setTimeout(()=>{
+    if(!checkState[sk])checkState[sk]={};
+    checkState[sk].issueNote=val;
+    saveStorage();
     updateSummary();
-  }, 400);
+    // Update row class live
+    const row=document.getElementById(`arow_${cid}_${i}`);
+    if(row){
+      const st=checkState[sk];
+      row.className=`asset-row ${st.checked?(val?'row-issue':'row-ok'):(val?'row-issue':'')}`;
+    }
+    // Update issue note display live
+    const noteEl=input.nextElementSibling;
+    if(noteEl&&noteEl.classList.contains('issue-note')){
+      if(val){ noteEl.textContent='⚠️ '+val; }
+      else noteEl.textContent='';
+    } else if(val){
+      const d=document.createElement('div');
+      d.className='issue-note'; d.textContent='⚠️ '+val;
+      input.after(d);
+    }
+  },400);
 }
 
-// ── Update summary numbers only (lightweight) ─────────
-function updateSummary() {
-  const stats = calcStats();
-  const el = id => document.getElementById(id);
-  if (el('sumTotal'))    el('sumTotal').textContent    = stats.total;
-  if (el('sumChecked'))  el('sumChecked').textContent  = stats.checked;
-  if (el('sumIssue'))    el('sumIssue').textContent    = stats.issue;
-  if (el('sumUpdated'))  el('sumUpdated').textContent  = stats.updated;
-  if (el('pageSubtitle')) el('pageSubtitle').textContent =
-    `${stats.computers} เครื่อง · ${stats.checked}/${stats.total} รายการที่เช็คแล้ว`;
+async function confirmClearAll(){
+  if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย'))return;
+  checkData={}; checkState={}; _ckIndex={}; _ckIndexRev={};
+  try{
+    await _sessionRef().delete();
+  }catch(e){ console.warn('Firestore delete error:',e); }
+  renderAll(); showNotif('ลบข้อมูลทั้งหมดแล้ว');
 }
 </script>
 </body>
