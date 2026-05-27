@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>RYG Stock — ตัดทรัพย์สิน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="shared.js"></script>
+<style>
+/* ─── Page-specific styles ─── */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center;}
+.filter-bar input,.filter-bar select{width:auto;flex:1;min-width:140px;padding:8px 12px;font-size:13px;}
+.filter-bar .btn{white-space:nowrap;flex-shrink:0;}
+
+/* Year tabs */
+.year-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;}
+.year-tab{
+  padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);
+  cursor:pointer;transition:all .15s;font-family:var(--font);
+}
+.year-tab:hover{border-color:var(--g);color:var(--g);}
+.year-tab.active{background:var(--g);color:#fff;border-color:var(--g);}
+
+/* Year group card */
+.year-group{margin-bottom:1rem;border:1px solid var(--bdr);border-radius:16px;overflow:hidden;}
+.year-header{
+  display:flex;align-items:center;gap:10px;padding:.7rem 1rem;
+  background:var(--surf);cursor:pointer;user-select:none;transition:background .12s;
+}
+.year-header:hover{background:var(--gll);}
+.year-header.open{background:var(--gll);border-bottom:1px solid var(--gl);}
+.year-icon{font-size:18px;}
+.year-label{font-size:14px;font-weight:700;flex:1;}
+.year-count{font-size:12px;color:var(--tx3);}
+.year-arrow{font-size:11px;color:var(--tx3);transition:transform .2s;}
+.year-header.open .year-arrow{transform:rotate(90deg);}
+.year-body{display:none;}
+.year-body.open{display:block;}
+
+/* Dispose item row */
+.dis-row{
+  display:flex;align-items:center;gap:10px;padding:.65rem 1rem;
+  border-bottom:1px solid var(--bdr);transition:background .1s;cursor:pointer;
+}
+.dis-row:last-child{border-bottom:none;}
+.dis-row:hover{background:#F8FAFC;}
+.dis-thumb{
+  width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;
+  background:var(--bg);border:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;
+}
+.dis-thumb img{width:100%;height:100%;object-fit:cover;border-radius:7px;}
+.dis-info{flex:1;min-width:0;}
+.dis-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dis-sn{font-size:11px;font-family:var(--mono);color:#1D4ED8;margin-top:1px;}
+.dis-ref{font-size:11px;font-family:var(--mono);color:var(--gd);background:var(--gll);border-radius:4px;padding:1px 5px;display:inline-block;margin-top:2px;}
+.dis-meta{font-size:11px;color:var(--tx3);}
+.dis-actions{display:flex;gap:4px;flex-shrink:0;}
+
+/* Status badge */
+.badge-dis{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.badge-dis-disposed{background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;}
+.badge-dis-pending{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A;}
+.badge-dis-approved{background:var(--gll);color:var(--gd);border:1px solid var(--gl);}
+
+/* Image upload zone */
+.img-upload-zone{
+  border:2px dashed var(--bdrm);border-radius:10px;padding:1rem;text-align:center;
+  cursor:pointer;transition:.2s;background:var(--bg);margin-bottom:.75rem;
+}
+.img-upload-zone:hover,.img-upload-zone.drag{border-color:var(--g);background:var(--gll);}
+.img-upload-zone .uz-icon{font-size:26px;margin-bottom:4px;}
+.img-upload-zone .uz-text{font-size:12px;color:var(--tx3);}
+
+/* Image preview grid */
+.img-preview-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;}
+.img-preview-thumb{
+  position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;
+  border:1px solid var(--bdrm);cursor:pointer;flex-shrink:0;
+}
+.img-preview-thumb img{width:100%;height:100%;object-fit:cover;}
+.img-preview-del{
+  position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;
+  background:rgba(0,0,0,.6);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border:none;
+}
+.img-uploading{opacity:.5;pointer-events:none;}
+
+/* Detail modal image gallery */
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-bottom:1rem;}
+.gallery-item{
+  position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;cursor:pointer;
+  border:1px solid var(--bdr);background:var(--bg);
+}
+.gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .2s;}
+.gallery-item:hover img{transform:scale(1.05);}
+
+/* Lightbox */
+.lightbox{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;
+  align-items:center;justify-content:center;padding:20px;
+}
+.lightbox.open{display:flex;}
+.lightbox img{max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain;}
+.lightbox-close{
+  position:absolute;top:16px;right:20px;color:#fff;font-size:28px;cursor:pointer;
+  background:none;border:none;line-height:1;
+}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;}
+.stat-box{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:.75rem;text-align:center;}
+.stat-num{font-size:22px;font-weight:700;color:var(--g);font-family:var(--mono);}
+.stat-lbl{font-size:11px;color:var(--tx3);margin-top:2px;}
+
+/* Reason badge colors */
+.reason-chip{
+  display:inline-block;font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:20px;
+  background:#F3F4F6;color:var(--tx2);border:1px solid var(--bdrm);
+}
+
+/* Import row style */
+.import-dis-row{
+  display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;
+  background:var(--bg);margin-bottom:4px;font-size:12px;
+}
+.import-dis-num{font-size:12px;color:var(--tx3);min-width:20px;}
+.import-dis-ref{font-family:var(--mono);font-size:11px;color:#1D4ED8;flex:1;}
+.import-dis-sn{font-family:var(--mono);font-size:11px;color:var(--gd);}
+
+/* Responsive */
+@media(max-width:640px){
+  .stats-bar{grid-template-columns:repeat(3,1fr);}
+  .filter-bar{gap:6px;}
+  .filter-bar input,.filter-bar select{min-width:0;}
+}
+</style>
+</head>
+<body>
+<div id="loadingScreen">
+  <div style="width:52px;height:52px;background:#1D9E75;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">📦</div>
+  <div style="font-size:15px;font-weight:700;">RYG Stock System</div>
+  <div class="spinner"></div>
+</div>
+
+<div id="mainApp">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">📦</div>
+    <span class="topbar-title">RYG Stock</span>
+    <div class="user-mini">
+      <img id="uAvatar" class="user-ava" src="" onerror="this.style.display='none'" alt=""/>
+      <span id="uFallback" class="user-ava"></span>
+      <span id="uName" class="user-name-top"></span>
+      <span id="uRole" class="badge-role badge-admin"></span>
+      <button class="btn-topout" onclick="doLogout()">ออก</button>
+    </div>
+  </div>
+  <div class="nav-tabs" id="navTabs"></div>
+  <div class="content" id="mainContent">
+    <div class="empty-state">กำลังโหลด...</div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+</div>
+
+<div id="notif"></div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt=""/>
+</div>
+
+<script>
+// ─── ImgBB API Key ─────────────────────────────
+// ใส่ ImgBB API key ของคุณที่นี่
+const IMGBB_KEY = 'YOUR_IMGBB_API_KEY';
+
+// ─── State ────────────────────────────────────
+let currentUser = null, currentRole = 'user', db = null;
+let allDisposed = [];
+let filteredDisposed = [];
+let selectedYear = 'all';
+let searchQ = '';
+let filterStatus = 'all';
+let uploadedUrls = []; // สำหรับฟอร์มเพิ่มรายการ
+
+// ─── Init ─────────────────────────────────────
+initShell('dispose', async (user, role, firestore) => {
+  currentUser = user;
+  currentRole = role;
+  db = firestore;
+  renderPage();
+  await loadDisposed();
+});
+
+// ─── Navigation patch — add dispose to shared NAV if not present ───
+// (เพิ่มในตัวเอง ไม่แตะ shared.js)
+const _origRenderNav = typeof _renderNav === 'function' ? _renderNav : null;
+
+// ─── Load data ────────────────────────────────
+async function loadDisposed() {
+  try {
+    const snap = await db.collection('disposed')
+      .orderBy('disposedAt', 'desc')
+      .get();
+    allDisposed = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    applyFilter();
+    renderPage();
+  } catch (e) {
+    document.getElementById('mainContent').innerHTML =
+      `<div class="empty-state" style="color:var(--r)">โหลดไม่สำเร็จ: ${e.message}</div>`;
+  }
+}
+
+// ─── Filter / group ───────────────────────────
+function applyFilter() {
+  let list = [...allDisposed];
+  if (filterStatus !== 'all') list = list.filter(d => d.status === filterStatus);
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    list = list.filter(d =>
+      (d.assetNo||'').toLowerCase().includes(q) ||
+      (d.serial||'').toLowerCase().includes(q) ||
+      (d.name||'').toLowerCase().includes(q) ||
+      (d.docNo||'').toLowerCase().includes(q) ||
+      (d.remark||'').toLowerCase().includes(q)
+    );
+  }
+  if (selectedYear !== 'all') {
+    list = list.filter(d => getYear(d.disposedAt) === parseInt(selectedYear));
+  }
+  filteredDisposed = list;
+}
+
+function getYear(ts) {
+  if (!ts) return new Date().getFullYear();
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
+    return d.getFullYear();
+  } catch { return new Date().getFullYear(); }
+}
+
+function groupByYear(list) {
+  const map = {};
+  list.forEach(d => {
+    const y = getYear(d.disposedAt);
+    if (!map[y]) map[y] = [];
+    map[y].push(d);
+  });
+  return map;
+}
+
+function getAvailableYears() {
+  const ySet = new Set(allDisposed.map(d => getYear(d.disposedAt)));
+  return [...ySet].sort((a, b) => b - a);
+}
+
+// ─── Render page ──────────────────────────────
+function renderPage() {
+  const years = getAvailableYears();
+  const totalCount = allDisposed.length;
+  const pendingCount = allDisposed.filter(d => d.status === 'pending').length;
+  const approvedCount = allDisposed.filter(d => d.status === 'approved').length;
+
+  const isAdmin = currentRole === 'admin';
+
+  document.getElementById('mainContent').innerHTML = `
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-box">
+      <div class="stat-num">${totalCount}</div>
+      <div class="stat-lbl">ทั้งหมด</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" style="color:var(--am)">${pendingCount}</div>
+      <div class="stat-lbl">รอดำเนินการ</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" style="color:var(--g)">${approvedCount}</div>
+      <div class="stat-lbl">อนุมัติแล้ว</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="flex jb items-c section-gap" style="gap:8px;flex-wrap:wrap;">
+    <span style="font-size:15px;font-weight:700;">♻️ ตัดทรัพย์สิน</span>
+    <div style="display:flex;gap:6px;">
+      ${isAdmin ? `<button class="btn btn-sm" onclick="openImportModal()" title="นำเข้าจากไฟล์">📄 นำเข้า</button>` : ''}
+      <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ เพิ่มรายการ</button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <input type="search" id="searchInput" placeholder="🔍 ค้นหา รหัส / S/N / ชื่อ..." value="${searchQ}"
+      oninput="onSearch(this.value)"/>
+    <select id="statusFilter" onchange="onStatusFilter(this.value)">
+      <option value="all" ${filterStatus==='all'?'selected':''}>สถานะทั้งหมด</option>
+      <option value="pending" ${filterStatus==='pending'?'selected':''}>⏳ รอดำเนินการ</option>
+      <option value="approved" ${filterStatus==='approved'?'selected':''}>✅ อนุมัติแล้ว</option>
+      <option value="disposed" ${filterStatus==='disposed'?'selected':''}>🗑️ ตัดออกแล้ว</option>
+    </select>
+  </div>
+
+  <!-- Year tabs -->
+  <div class="year-tabs">
+    <button class="year-tab ${selectedYear==='all'?'active':''}" onclick="selectYear('all')">
+      ทั้งหมด (${allDisposed.length})
+    </button>
+    ${years.map(y => {
+      const cnt = allDisposed.filter(d => getYear(d.disposedAt) === y).length;
+      return `<button class="year-tab ${selectedYear==y?'active':''}" onclick="selectYear('${y}')">
+        ${y} (${cnt})
+      </button>`;
+    }).join('')}
+  </div>
+
+  <!-- List -->
+  <div id="disposeList"></div>`;
+
+  renderList();
+}
+
+function renderList() {
+  applyFilter();
+  const container = document.getElementById('disposeList');
+  if (!container) return;
+
+  if (filteredDisposed.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <div style="font-size:32px;margin-bottom:8px">♻️</div>
+      <div>ไม่พบรายการตัดทรัพย์สิน</div>
+    </div>`;
+    return;
+  }
+
+  if (selectedYear !== 'all') {
+    // Single year — no grouping header needed
+    container.innerHTML = `<div class="card">${filteredDisposed.map(d => renderDisRow(d)).join('')}</div>`;
+    return;
+  }
+
+  // Group by year
+  const grouped = groupByYear(filteredDisposed);
+  const years = Object.keys(grouped).sort((a, b) => b - a);
+
+  container.innerHTML = years.map((y, idx) => {
+    const items = grouped[y];
+    const open = idx === 0; // first year open by default
+    return `<div class="year-group">
+      <div class="year-header ${open?'open':''}" onclick="toggleYear(this)">
+        <span class="year-icon">📅</span>
+        <span class="year-label">ปี ${y}</span>
+        <span class="year-count">${items.length} รายการ</span>
+        <span class="year-arrow">▶</span>
+      </div>
+      <div class="year-body ${open?'open':''}">
+        ${items.map(d => renderDisRow(d)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDisRow(d) {
+  const thumb = d.images && d.images.length > 0
+    ? `<div class="dis-thumb"><img src="${d.images[0]}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='📦'"/></div>`
+    : `<div class="dis-thumb">📦</div>`;
+
+  const statusMap = {
+    pending:  ['badge-dis-pending',  '⏳ รอดำเนินการ'],
+    approved: ['badge-dis-approved', '✅ อนุมัติแล้ว'],
+    disposed: ['badge-dis-disposed', '🗑️ ตัดออกแล้ว'],
+  };
+  const [sc, sl] = statusMap[d.status||'pending'] || statusMap.pending;
+
+  const imgCount = d.images ? d.images.length : 0;
+
+  return `<div class="dis-row" onclick="openDetail('${d.docId}')">
+    ${thumb}
+    <div class="dis-info">
+      <div class="dis-name">${d.name || '(ไม่ระบุชื่อ)'}</div>
+      ${d.assetNo ? `<div class="dis-ref">${d.assetNo}</div>` : ''}
+      ${d.serial ? `<div class="dis-sn">S/N: ${d.serial}</div>` : ''}
+      <div class="dis-meta">
+        ${d.docNo ? `เอกสาร: ${d.docNo} · ` : ''}
+        ${formatDT(d.disposedAt)}
+        ${imgCount > 0 ? ` · 📷 ${imgCount}` : ''}
+      </div>
+    </div>
+    <div class="dis-actions">
+      <span class="badge-dis ${sc}">${sl}</span>
+    </div>
+  </div>`;
+}
+
+// ─── Year toggle ──────────────────────────────
+function toggleYear(header) {
+  const body = header.nextElementSibling;
+  const isOpen = header.classList.contains('open');
+  header.classList.toggle('open', !isOpen);
+  body.classList.toggle('open', !isOpen);
+}
+
+function selectYear(y) {
+  selectedYear = y;
+  renderPage();
+}
+
+// ─── Search / Filter ──────────────────────────
+function onSearch(val) {
+  searchQ = val.trim();
+  renderList();
+}
+
+function onStatusFilter(val) {
+  filterStatus = val;
+  renderList();
+}
+
+// ─── Add Modal ────────────────────────────────
+function openAddModal() {
+  uploadedUrls = [];
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">➕ เพิ่มรายการตัดทรัพย์สิน</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem;">
+      <div>
+        <label class="form-label">รหัสทรัพย์สิน</label>
+        <input id="fAssetNo" placeholder="เช่น OF20-0494" style="margin-top:4px"/>
+      </div>
+      <div>
+        <label class="form-label">เลขที่เอกสาร</label>
+        <input id="fDocNo" placeholder="เช่น FNITD-25-000147" style="margin-top:4px"/>
+      </div>
+    </div>
+
+    <div style="margin-bottom:.75rem;">
+      <label class="form-label">ชื่อ/รายละเอียดทรัพย์สิน</label>
+      <input id="fName" placeholder="ชื่ออุปกรณ์หรือรายละเอียด" style="margin-top:4px"/>
+    </div>
+
+    <div style="margin-bottom:.75rem;">
+      <label class="form-label">Serial Number (S/N)</label>
+      <input id="fSerial" placeholder="S/N ของอุปกรณ์" style="margin-top:4px" style="font-family:var(--mono)"/>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem;">
+      <div>
+        <label class="form-label">สาเหตุการตัด</label>
+        <select id="fReason" style="margin-top:4px">
+          <option value="ชำรุด">ชำรุด / เสื่อมสภาพ</option>
+          <option value="สูญหาย">สูญหาย</option>
+          <option value="หมดอายุ">หมดอายุการใช้งาน</option>
+          <option value="อัพเกรด">อัพเกรด / เปลี่ยนใหม่</option>
+          <option value="อื่นๆ">อื่น ๆ</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">สถานะ</label>
+        <select id="fStatus" style="margin-top:4px">
+          <option value="pending">⏳ รอดำเนินการ</option>
+          <option value="approved">✅ อนุมัติแล้ว</option>
+          <option value="disposed">🗑️ ตัดออกแล้ว</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom:.75rem;">
+      <label class="form-label">หมายเหตุ</label>
+      <textarea id="fRemark" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)" rows="2" style="margin-top:4px"></textarea>
+    </div>
+
+    <!-- Image upload -->
+    <div style="margin-bottom:.75rem;">
+      <label class="form-label">📷 รูปภาพสภาพอุปกรณ์ (ImgBB)</label>
+      <div class="img-upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleImgDrop(event)">
+        <div class="uz-icon">🖼️</div>
+        <div class="uz-text">คลิกหรือลากไฟล์มาวาง<br><span style="font-size:10px;color:var(--tx3)">JPG, PNG ขนาดไม่เกิน 10MB</span></div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="handleFileSelect(this)"/>
+      <div id="imgPreview" class="img-preview-grid"></div>
+      <div id="uploadStatus" style="font-size:11px;color:var(--tx3);"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveDispose()">💾 บันทึกรายการ</button>
+    </div>
+  `);
+}
+
+// ─── Import Modal (batch from text) ───────────
+function openImportModal() {
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">📄 นำเข้าข้อมูลตัดทรัพย์สิน</div>
+    <div style="margin-bottom:.75rem;">
+      <label class="form-label">วางข้อมูล (รหัส / S/N)</label>
+      <textarea id="importText" rows="8" placeholder="รูปแบบตัวอย่าง:
+1. FNITD-25-000147    S/N : SGH343QLLS
+2. OF20-0494    S/N : 5N4XC2S
+3. S/N : AUD03101V
+
+รองรับรูปแบบ:
+• เลขที่  รหัสทรัพย์  S/N : xxxxxxx
+• รหัสทรัพย์  S/N : xxxxxxx
+• S/N : xxxxxxx (ไม่มีรหัสทรัพย์)" style="font-family:var(--mono);font-size:12px;margin-top:4px"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem;">
+      <div>
+        <label class="form-label">สาเหตุการตัด (ทั้งหมด)</label>
+        <select id="importReason">
+          <option value="ชำรุด">ชำรุด / เสื่อมสภาพ</option>
+          <option value="สูญหาย">สูญหาย</option>
+          <option value="หมดอายุ">หมดอายุการใช้งาน</option>
+          <option value="อัพเกรด">อัพเกรด / เปลี่ยนใหม่</option>
+          <option value="อื่นๆ">อื่น ๆ</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">สถานะ (ทั้งหมด)</label>
+        <select id="importStatus">
+          <option value="pending">⏳ รอดำเนินการ</option>
+          <option value="approved">✅ อนุมัติแล้ว</option>
+          <option value="disposed">🗑️ ตัดออกแล้ว</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:.5rem" onclick="previewImport()">🔍 ตรวจสอบข้อมูล</button>
+    <div id="importPreview"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:2" id="importConfirmBtn" disabled onclick="doImport()">นำเข้า</button>
+    </div>
+  `);
+}
+
+let parsedImportRows = [];
+
+function previewImport() {
+  const raw = document.getElementById('importText').value.trim();
+  if (!raw) { showNotif('กรุณาวางข้อมูล', 'error'); return; }
+
+  parsedImportRows = parseImportText(raw);
+  const preview = document.getElementById('importPreview');
+
+  if (!parsedImportRows.length) {
+    preview.innerHTML = `<div class="fz12" style="color:var(--r)">ไม่พบข้อมูลที่อ่านได้</div>`;
+    return;
+  }
+
+  preview.innerHTML = `
+    <div class="import-summary" style="margin-bottom:.5rem;">
+      พบ ${parsedImportRows.length} รายการ
+    </div>
+    <div style="max-height:200px;overflow-y:auto;background:var(--bg);border-radius:8px;padding:8px;">
+      ${parsedImportRows.map((r, i) => `
+        <div class="import-dis-row">
+          <span class="import-dis-num">${i+1}.</span>
+          <div style="flex:1;min-width:0;">
+            ${r.assetNo ? `<div class="import-dis-ref">${r.assetNo}</div>` : '<div style="font-size:11px;color:var(--tx3)">(ไม่มีรหัส)</div>'}
+            ${r.serial ? `<div class="import-dis-sn">S/N: ${r.serial}</div>` : ''}
+          </div>
+          <span style="font-size:10px;color:var(--g)">✓</span>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('importConfirmBtn').disabled = false;
+  document.getElementById('importConfirmBtn').textContent = `✅ นำเข้า ${parsedImportRows.length} รายการ`;
+}
+
+function parseImportText(raw) {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const results = [];
+
+  lines.forEach(line => {
+    // Remove leading number like "1." "1)" "1 "
+    let cleaned = line.replace(/^\d+[\.\)]\s*/, '').trim();
+
+    // Extract S/N
+    const snMatch = cleaned.match(/S\/N\s*[:：]\s*([A-Z0-9]+)/i);
+    const serial = snMatch ? snMatch[1].trim() : '';
+
+    // Remove S/N part to get asset no
+    let assetPart = cleaned.replace(/S\/N\s*[:：]\s*[A-Z0-9]+/i, '').trim();
+    // Remove trailing / leading separators
+    assetPart = assetPart.replace(/[\s\-\/]+$/, '').replace(/^[\s\-\/]+/, '').trim();
+
+    // Asset no: must look like real code (contains letters+digits or slash)
+    const assetNo = assetPart.match(/[A-Z0-9]{2,}/i) ? assetPart : '';
+
+    if (serial || assetNo) {
+      results.push({ assetNo, serial, name: assetNo || serial });
+    }
+  });
+
+  return results;
+}
+
+async function doImport() {
+  if (!parsedImportRows.length) return;
+  const reason = document.getElementById('importReason').value;
+  const status = document.getElementById('importStatus').value;
+  const btn = document.getElementById('importConfirmBtn');
+  btn.disabled = true; btn.textContent = 'กำลังนำเข้า...';
+
+  try {
+    const batch = db.batch();
+    parsedImportRows.forEach(r => {
+      const ref = db.collection('disposed').doc();
+      batch.set(ref, {
+        assetNo: r.assetNo || '',
+        serial: r.serial || '',
+        name: r.name || r.assetNo || '',
+        reason,
+        status,
+        images: [],
+        remark: '',
+        docNo: '',
+        disposedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdBy: currentUser.displayName || currentUser.email,
+        createdByUid: currentUser.uid,
+      });
+    });
+    await batch.commit();
+    showNotif(`นำเข้าสำเร็จ ${parsedImportRows.length} รายการ`);
+    closeModal();
+    await loadDisposed();
+  } catch (e) {
+    showNotif('นำเข้าไม่สำเร็จ: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'ลองใหม่';
+  }
+}
+
+// ─── Image Upload (ImgBB) ─────────────────────
+function handleImgDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+  files.forEach(uploadToImgBB);
+}
+
+function handleFileSelect(input) {
+  const files = [...input.files];
+  files.forEach(uploadToImgBB);
+  input.value = '';
+}
+
+async function uploadToImgBB(file) {
+  if (!IMGBB_KEY || IMGBB_KEY === 'YOUR_IMGBB_API_KEY') {
+    showNotif('กรุณาตั้งค่า ImgBB API Key ในโค้ด', 'error');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) { showNotif('ไฟล์ใหญ่เกิน 10MB', 'error'); return; }
+
+  // Add placeholder
+  const pid = 'p' + Date.now() + Math.random().toString(36).slice(2);
+  const preview = document.getElementById('imgPreview');
+  if (preview) {
+    preview.insertAdjacentHTML('beforeend', `
+      <div class="img-preview-thumb img-uploading" id="thumb_${pid}">
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--tx3)">⏳</div>
+      </div>`);
+  }
+
+  const statusEl = document.getElementById('uploadStatus');
+  if (statusEl) statusEl.textContent = 'กำลังอัปโหลด...';
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+      method: 'POST', body: formData
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error?.message || 'Upload failed');
+
+    const url = data.data.url;
+    uploadedUrls.push(url);
+
+    // Replace placeholder
+    const thumb = document.getElementById(`thumb_${pid}`);
+    if (thumb) {
+      thumb.classList.remove('img-uploading');
+      thumb.innerHTML = `
+        <img src="${url}" alt=""/>
+        <button class="img-preview-del" onclick="removeImg('${url}',this.closest('.img-preview-thumb'))">✕</button>`;
+    }
+    if (statusEl) statusEl.textContent = `อัปโหลดสำเร็จ ${uploadedUrls.length} รูป`;
+  } catch (e) {
+    const thumb = document.getElementById(`thumb_${pid}`);
+    if (thumb) thumb.remove();
+    showNotif('อัปโหลดไม่สำเร็จ: ' + e.message, 'error');
+    if (statusEl) statusEl.textContent = '';
+  }
+}
+
+function removeImg(url, el) {
+  uploadedUrls = uploadedUrls.filter(u => u !== url);
+  if (el) el.remove();
+}
+
+// ─── Save ─────────────────────────────────────
+async function saveDispose() {
+  const assetNo  = document.getElementById('fAssetNo')?.value.trim() || '';
+  const docNo    = document.getElementById('fDocNo')?.value.trim() || '';
+  const name     = document.getElementById('fName')?.value.trim() || '';
+  const serial   = document.getElementById('fSerial')?.value.trim() || '';
+  const reason   = document.getElementById('fReason')?.value || 'ชำรุด';
+  const status   = document.getElementById('fStatus')?.value || 'pending';
+  const remark   = document.getElementById('fRemark')?.value.trim() || '';
+
+  if (!assetNo && !serial && !name) {
+    showNotif('กรุณากรอกรหัสทรัพย์สิน หรือ S/N อย่างน้อยหนึ่งอย่าง', 'error');
+    return;
+  }
+
+  try {
+    await db.collection('disposed').add({
+      assetNo, docNo, name: name || assetNo || serial,
+      serial, reason, status, remark,
+      images: [...uploadedUrls],
+      disposedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: currentUser.displayName || currentUser.email,
+      createdByUid: currentUser.uid,
+    });
+    showNotif('บันทึกสำเร็จ');
+    closeModal();
+    await loadDisposed();
+  } catch (e) {
+    showNotif('บันทึกไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+// ─── Detail Modal ─────────────────────────────
+function openDetail(docId) {
+  const d = allDisposed.find(x => x.docId === docId);
+  if (!d) return;
+
+  const statusMap = {
+    pending:  ['badge-dis-pending',  '⏳ รอดำเนินการ'],
+    approved: ['badge-dis-approved', '✅ อนุมัติแล้ว'],
+    disposed: ['badge-dis-disposed', '🗑️ ตัดออกแล้ว'],
+  };
+  const [sc, sl] = statusMap[d.status||'pending'] || statusMap.pending;
+  const isAdmin = currentRole === 'admin';
+
+  showModal(`
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;gap:8px;">
+      <div>
+        <div class="modal-title" style="margin-bottom:4px;">♻️ ${d.name || '(ไม่ระบุชื่อ)'}</div>
+        <span class="badge-dis ${sc}">${sl}</span>
+      </div>
+      ${isAdmin ? `<button class="btn btn-sm" onclick="openEditModal('${docId}')">✏️ แก้ไข</button>` : ''}
+    </div>
+
+    <!-- Info grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;">
+      ${d.assetNo ? `<div class="info-row"><div class="fz11 txmute">รหัสทรัพย์สิน</div><div class="fw7 fz12">${d.assetNo}</div></div>` : ''}
+      ${d.docNo   ? `<div class="info-row"><div class="fz11 txmute">เลขที่เอกสาร</div><div class="fw7 fz12">${d.docNo}</div></div>` : ''}
+      ${d.serial  ? `<div class="info-row"><div class="fz11 txmute">S/N</div><div class="fw7 fz12" style="font-family:var(--mono);font-size:11px">${d.serial}</div></div>` : ''}
+      ${d.reason  ? `<div class="info-row"><div class="fz11 txmute">สาเหตุ</div><div><span class="reason-chip">${d.reason}</span></div></div>` : ''}
+    </div>
+
+    ${d.remark ? `<div style="background:var(--bg);border-radius:8px;padding:.6rem .8rem;margin-bottom:1rem;font-size:12px;color:var(--tx2)">
+      <span class="fz11 txmute">หมายเหตุ:</span><br>${d.remark}
+    </div>` : ''}
+
+    <!-- Images -->
+    ${d.images && d.images.length > 0 ? `
+    <div style="margin-bottom:.75rem;">
+      <div class="fz11 txmute" style="margin-bottom:6px;">📷 รูปภาพ (${d.images.length})</div>
+      <div class="gallery-grid">
+        ${d.images.map(url => `
+          <div class="gallery-item" onclick="openLightbox('${url}')">
+            <img src="${url}" alt="" loading="lazy" onerror="this.parentNode.style.display='none'"/>
+          </div>`).join('')}
+      </div>
+    </div>` : `<div style="padding:.75rem;background:var(--bg);border-radius:8px;text-align:center;font-size:12px;color:var(--tx3);margin-bottom:.75rem">ยังไม่มีรูปภาพ</div>`}
+
+    <!-- Upload images to existing record -->
+    ${isAdmin ? `
+    <div style="margin-bottom:.75rem;">
+      <div class="fz11 txmute" style="margin-bottom:4px;">เพิ่มรูปภาพ</div>
+      <div class="img-upload-zone" style="padding:.6rem" onclick="document.getElementById('detailFileInput').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDetailDrop(event,'${docId}')">
+        <div style="font-size:13px;color:var(--tx3)">📎 คลิกหรือลากรูปมาวาง</div>
+      </div>
+      <input type="file" id="detailFileInput" accept="image/*" multiple style="display:none"
+        onchange="handleDetailFileSelect(this,'${docId}')"/>
+      <div id="detailUploadStatus" style="font-size:11px;color:var(--tx3);margin-top:4px;"></div>
+    </div>` : ''}
+
+    <div style="font-size:11px;color:var(--tx3);">
+      บันทึกโดย ${d.createdBy||'?'} · ${formatDT(d.disposedAt)}
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal()">ปิด</button>
+      ${isAdmin ? `<button class="btn" style="flex:1;border-color:var(--r);color:var(--r)" onclick="deleteDispose('${docId}')">🗑️ ลบ</button>` : ''}
+    </div>
+  `);
+}
+
+// ─── Upload to existing record ─────────────────
+function handleDetailDrop(e, docId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag');
+  const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+  files.forEach(f => uploadToRecord(f, docId));
+}
+
+function handleDetailFileSelect(input, docId) {
+  [...input.files].forEach(f => uploadToRecord(f, docId));
+  input.value = '';
+}
+
+async function uploadToRecord(file, docId) {
+  if (!IMGBB_KEY || IMGBB_KEY === 'YOUR_IMGBB_API_KEY') {
+    showNotif('กรุณาตั้งค่า ImgBB API Key', 'error'); return;
+  }
+  const statusEl = document.getElementById('detailUploadStatus');
+  if (statusEl) statusEl.textContent = 'กำลังอัปโหลด...';
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+      method: 'POST', body: formData
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error?.message || 'Upload failed');
+    const url = data.data.url;
+
+    // Update Firestore
+    const ref = db.collection('disposed').doc(docId);
+    await ref.update({ images: firebase.firestore.FieldValue.arrayUnion(url) });
+
+    // Update local
+    const d = allDisposed.find(x => x.docId === docId);
+    if (d) { if (!d.images) d.images = []; d.images.push(url); }
+
+    showNotif('อัปโหลดและบันทึกสำเร็จ');
+    if (statusEl) statusEl.textContent = '';
+    // Re-open detail
+    openDetail(docId);
+  } catch (e) {
+    showNotif('อัปโหลดไม่สำเร็จ: ' + e.message, 'error');
+    if (statusEl) statusEl.textContent = '';
+  }
+}
+
+// ─── Edit Modal ───────────────────────────────
+function openEditModal(docId) {
+  const d = allDisposed.find(x => x.docId === docId);
+  if (!d) return;
+
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ แก้ไขรายการ</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem;">
+      <div>
+        <label class="form-label">รหัสทรัพย์สิน</label>
+        <input id="eAssetNo" value="${d.assetNo||''}" style="margin-top:4px"/>
+      </div>
+      <div>
+        <label class="form-label">เลขที่เอกสาร</label>
+        <input id="eDocNo" value="${d.docNo||''}" style="margin-top:4px"/>
+      </div>
+    </div>
+    <div style="margin-bottom:.75rem;">
+      <label class="form-label">ชื่อ/รายละเอียด</label>
+      <input id="eName" value="${d.name||''}" style="margin-top:4px"/>
+    </div>
+    <div style="margin-bottom:.75rem;">
+      <label class="form-label">Serial Number</label>
+      <input id="eSerial" value="${d.serial||''}" style="margin-top:4px"/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem;">
+      <div>
+        <label class="form-label">สาเหตุ</label>
+        <select id="eReason" style="margin-top:4px">
+          ${['ชำรุด','สูญหาย','หมดอายุ','อัพเกรด','อื่นๆ'].map(r =>
+            `<option ${d.reason===r?'selected':''}>${r}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">สถานะ</label>
+        <select id="eStatus" style="margin-top:4px">
+          <option value="pending" ${d.status==='pending'?'selected':''}>⏳ รอดำเนินการ</option>
+          <option value="approved" ${d.status==='approved'?'selected':''}>✅ อนุมัติแล้ว</option>
+          <option value="disposed" ${d.status==='disposed'?'selected':''}>🗑️ ตัดออกแล้ว</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:.75rem;">
+      <label class="form-label">หมายเหตุ</label>
+      <textarea id="eRemark" rows="2" style="margin-top:4px">${d.remark||''}</textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="openDetail('${docId}')">← กลับ</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveEdit('${docId}')">💾 บันทึก</button>
+    </div>
+  `);
+}
+
+async function saveEdit(docId) {
+  const updates = {
+    assetNo: document.getElementById('eAssetNo').value.trim(),
+    docNo:   document.getElementById('eDocNo').value.trim(),
+    name:    document.getElementById('eName').value.trim(),
+    serial:  document.getElementById('eSerial').value.trim(),
+    reason:  document.getElementById('eReason').value,
+    status:  document.getElementById('eStatus').value,
+    remark:  document.getElementById('eRemark').value.trim(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedBy: currentUser.displayName || currentUser.email,
+  };
+  try {
+    await db.collection('disposed').doc(docId).update(updates);
+    // Update local
+    const d = allDisposed.find(x => x.docId === docId);
+    if (d) Object.assign(d, updates);
+    showNotif('บันทึกสำเร็จ');
+    closeModal();
+    renderList();
+  } catch (e) {
+    showNotif('บันทึกไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+// ─── Delete ───────────────────────────────────
+async function deleteDispose(docId) {
+  const d = allDisposed.find(x => x.docId === docId);
+  if (!d) return;
+  if (!confirm(`ลบรายการ "${d.name || d.assetNo}" ออกจากระบบ?\nไม่สามารถย้อนกลับได้`)) return;
+  try {
+    await db.collection('disposed').doc(docId).delete();
+    allDisposed = allDisposed.filter(x => x.docId !== docId);
+    showNotif('ลบสำเร็จ');
+    closeModal();
+    renderPage();
+  } catch (e) {
+    showNotif('ลบไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+// ─── Lightbox ─────────────────────────────────
+function openLightbox(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// ─── Patch NAV_ITEMS to include dispose ───────
+// แทรก "ตัดทรัพย์สิน" เข้า NAV_ITEMS ถ้ายังไม่มี
+if (typeof NAV_ITEMS !== 'undefined' && !NAV_ITEMS.find(n => n.id === 'dispose')) {
+  const histIdx = NAV_ITEMS.findIndex(n => n.id === 'history');
+  NAV_ITEMS.splice(histIdx >= 0 ? histIdx + 1 : NAV_ITEMS.length, 0, {
+    id: 'dispose', label: 'ตัดทรัพย์', icon: '♻️', href: 'dispose.html', adminOnly: false
+  });
+}
+</script>
+</body>
+</html>
