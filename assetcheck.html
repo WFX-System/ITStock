@@ -35,7 +35,6 @@
   letter-spacing:.04em;color:var(--tx3);background:var(--bg);border-bottom:1px solid var(--bdr);
   text-align:left;white-space:nowrap;}
 .asset-row{border-bottom:1px solid var(--bdr);transition:background .15s;}
-.asset-row:last-child{border-bottom:none;}
 .asset-row.row-ok{background:#F0FFF8;}
 .asset-row.row-issue{background:#FFF5F0;}
 .asset-row td{padding:8px 10px;vertical-align:top;font-size:12px;}
@@ -44,21 +43,34 @@
 .sn-text{font-family:var(--mono);font-size:11px;color:var(--tx2);}
 
 .issue-input{width:100%;padding:5px 8px;border:1.5px solid var(--bdrm);border-radius:var(--radsm);
-  font-size:11px;font-family:var(--mono);background:var(--surf);color:var(--tx1);transition:border-color .15s;}
+  font-size:11px;font-family:var(--mono);background:var(--surf);color:var(--tx1);
+  transition:border-color .15s;box-sizing:border-box;}
 .issue-input:focus{outline:none;border-color:var(--am);box-shadow:0 0 0 2px var(--aml);}
 .issue-input.has-val{border-color:var(--r);background:#FFF5F0;}
-.issue-note{font-size:10px;color:var(--r);margin-top:3px;font-family:var(--mono);}
 
 .btn-chk{padding:5px 10px;border-radius:var(--radsm);font-size:11px;font-weight:700;
   cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
   transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
 .btn-chk:hover{background:var(--gll);border-color:var(--g);color:var(--g);}
 .btn-chk.active{background:var(--g);border-color:var(--g);color:#fff;}
+
+.btn-issue{padding:5px 10px;border-radius:var(--radsm);font-size:11px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
+  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;}
+.btn-issue:hover{background:#FFF0EC;border-color:var(--r);color:var(--r);}
+.btn-issue.active{background:var(--r);border-color:var(--r);color:#fff;}
+
 .btn-reg{padding:4px 8px;border-radius:var(--radsm);font-size:10px;font-weight:700;
   cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
   transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;}
 .btn-reg:hover{background:var(--aml);border-color:var(--am);color:var(--am);}
 .btn-reg.active{background:var(--am);border-color:var(--am);color:#fff;}
+
+.issue-panel-row{display:none;}
+.issue-panel-row td{padding:0;}
+.issue-panel-inner{background:#FFF5F0;border-top:1px solid #FFCDB8;padding:10px;
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.issue-panel-inner label{font-size:10px;color:var(--r);font-weight:700;display:block;margin-bottom:3px;}
 
 .check-date{font-size:10px;color:var(--tx3);margin-top:3px;}
 .summary-bar{display:flex;gap:16px;flex-wrap:wrap;padding:.8rem 1.2rem;
@@ -120,7 +132,7 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
       </div>
     </div>
 
-    <!-- Summary (hidden until data loaded) -->
+    <!-- Summary -->
     <div class="summary-bar" id="summaryBar" style="display:none">
       <div class="sum-item"><div class="sum-num" id="sumComp" style="color:var(--tx2)">0</div><div class="sum-lbl">เครื่อง</div></div>
       <div class="sum-item"><div class="sum-num" id="sumTotal" style="color:var(--tx2)">0</div><div class="sum-lbl">รายการทั้งหมด</div></div>
@@ -144,7 +156,7 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
       <button class="btn btn-sm" onclick="collapseAll()">📁 ย่อทั้งหมด</button>
     </div>
 
-    <!-- Import drop zone (hidden after import) -->
+    <!-- Import drop zone -->
     <div class="import-zone" id="importZone"
       ondragover="event.preventDefault();this.classList.add('drag-over')"
       ondragleave="this.classList.remove('drag-over')"
@@ -159,7 +171,7 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
     <!-- Asset list -->
     <div id="assetList"></div>
 
-  </div><!-- /content -->
+  </div>
   <nav class="bottom-nav" id="bottomNav"></nav>
 </div>
 <div id="notif"></div>
@@ -169,26 +181,21 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 //  State
 // ══════════════════════════════════════════════════
 let currentUser=null, currentRole='user', db=null;
-// checkData  : { [ck]: { computerName, ip, employee, dept, items:[{type,brand,assetCode,model,sn,regNo}] } }
-// checkState : { [stateKey]: { checked, checkedAt, checkedBy, issueNote, updatedInRegistry, updatedAt } }
 let checkData={}, checkState={};
 
-// ── Init shell ─────────────────────────────────────
 initShell('assetcheck', async(user,role,firestore)=>{
   currentUser=user; currentRole=role; db=firestore;
   await loadFromFirestore();
   renderAll();
 });
 
-// ── Firestore helpers ─────────────────────────────
-// Doc path: assetSessions/{uid}  → fields: checkData (JSON string), checkState (JSON string)
+// ── Firestore ──────────────────────────────────────
 function _sessionRef(){
   return db.collection('assetSessions').doc(currentUser.uid);
 }
 
 let _saveTimer=null;
 function saveStorage(){
-  // Debounce writes to avoid hammering Firestore on rapid keystrokes
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(async()=>{
     try{
@@ -213,10 +220,8 @@ async function loadFromFirestore(){
   }catch(e){ console.warn('Firestore load error:',e); checkData={}; checkState={}; }
 }
 
-// ── Safe ID for DOM ────────────────────────────────
-// Use index-based keys to avoid CSS.escape issues with dots/slashes
-let _ckIndex={};  // ck -> numeric index
-let _ckIndexRev={}; // numeric index -> ck
+// ── ID helpers ─────────────────────────────────────
+let _ckIndex={}, _ckIndexRev={};
 function getCkId(ck){
   if(_ckIndex[ck]===undefined){
     const n=Object.keys(_ckIndex).length;
@@ -226,7 +231,6 @@ function getCkId(ck){
 }
 function stateKey(ck,idx){return `${ck}||${idx}`;}
 
-// ── HTML escape ────────────────────────────────────
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function highlight(s,q){
   if(!q)return esc(s);
@@ -249,12 +253,10 @@ function readExcelFile(file){
   const reader=new FileReader();
   reader.onload=(ev)=>{
     try{
-      // SheetJS handles HTML-disguised XLS natively
       let wb;
       const data=ev.target.result;
       try{ wb=XLSX.read(data,{type:'binary'}); }
       catch(err){
-        // Try as UTF-8 string (HTML XLS)
         const text=new TextDecoder('utf-8',{fatal:false}).decode(new Uint8Array(
           new Uint8Array(data.length).map((_,i)=>data.charCodeAt(i))
         ));
@@ -264,7 +266,6 @@ function readExcelFile(file){
       const n=Object.keys(parsed).length;
       if(n===0){showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error');return;}
       checkData=parsed;
-      // Clean orphaned states
       const valid=new Set();
       Object.keys(checkData).forEach(ck=>checkData[ck].items.forEach((_,i)=>valid.add(stateKey(ck,i))));
       Object.keys(checkState).forEach(k=>{if(!valid.has(k))delete checkState[k];});
@@ -281,29 +282,22 @@ function parseWorkbook(wb){
   const sheetName=wb.SheetNames[0];
   const ws=wb.Sheets[sheetName];
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-
   let currentComp=null, ck=null, inItems=false;
   for(let i=0;i<rows.length;i++){
     const row=rows[i].map(c=>String(c).trim());
-
-    // Detect Computer name row
     const ci=row.findIndex(c=>c==='Computer name:');
     if(ci!==-1){
       ck=row[ci+1]||`COMP_${i}`;
       const ip=row[ci+3]||'';
-      // Employee in next row: [ชื่อ-สกุล, NAME, ตำแหน่ง, DEPT]
       const nr=(rows[i+1]||[]).map(c=>String(c).trim());
       const emp=nr[1]||'', dept=nr[3]||'';
       if(!result[ck]) result[ck]={computerName:ck,ip,employee:emp,dept,items:[]};
       currentComp=result[ck]; inItems=false;
       continue;
     }
-
-    // Detect column header row
     if(row.includes('Asset Code')&&(row.includes('Sn')||row.includes('SN'))){
       inItems=true; continue;
     }
-
     if(currentComp&&inItems){
       const has=row.some(c=>c.length>0); if(!has)continue;
       const t=row[0];
@@ -314,13 +308,12 @@ function parseWorkbook(wb){
       if(assetCode||sn||model) currentComp.items.push({type:t,brand,assetCode,model,sn,regNo});
     }
   }
-  // Remove empties
   Object.keys(result).forEach(k=>{if(!result[k].items.length)delete result[k];});
   return result;
 }
 
 // ══════════════════════════════════════════════════
-//  Template download
+//  Template
 // ══════════════════════════════════════════════════
 function downloadTemplate(){
   const wb=XLSX.utils.book_new();
@@ -407,7 +400,6 @@ function renderAll(){
     const comp=checkData[ck];
     const cid=getCkId(ck);
 
-    // Filter items
     const filtered=comp.items.map((item,i)=>({item,i})).filter(({item,i})=>{
       const st=checkState[stateKey(ck,i)]||{};
       if(q){
@@ -456,10 +448,7 @@ function renderAll(){
         <th style="width:28px;">#</th>
         <th>อุปกรณ์ / ยี่ห้อ</th>
         <th>ในระบบ<br><span style="font-weight:400;font-size:9px;text-transform:none;">Asset Code / เลขทะเบียน / รุ่น / SN</span></th>
-        <th style="min-width:130px;">Asset Code จริง<br><span style="font-weight:400;font-size:9px;text-transform:none;">กรอกถ้าต่างจากในระบบ</span></th>
-        <th style="min-width:130px;">รุ่นจริง<br><span style="font-weight:400;font-size:9px;text-transform:none;">กรอกถ้าต่างจากในระบบ</span></th>
-        <th style="min-width:130px;">SN จริง<br><span style="font-weight:400;font-size:9px;text-transform:none;">กรอกถ้าต่างจากในระบบ</span></th>
-        <th style="min-width:130px;">การดำเนินการ</th>
+        <th style="min-width:160px;">การดำเนินการ</th>
       </tr></thead>
       <tbody>`;
 
@@ -468,6 +457,7 @@ function renderAll(){
       const st=checkState[sk]||{};
       const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
       const rowCls=st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'');
+
       html+=`
       <tr class="asset-row ${rowCls}" id="arow_${cid}_${i}">
         <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
@@ -482,30 +472,18 @@ function renderAll(){
           <div class="sn-text">${highlight(item.sn,q)}</div>
         </td>
         <td>
-          <input class="issue-input ${st.assetCodeActual?'has-val':''}" type="text"
-            value="${esc(st.assetCodeActual||'')}"
-            placeholder="Asset Code จริง..."
-            oninput="onFieldChange('${esc(sk)}','assetCodeActual',${cid},${i},this)"/>
-        </td>
-        <td>
-          <input class="issue-input ${st.modelActual?'has-val':''}" type="text"
-            value="${esc(st.modelActual||'')}"
-            placeholder="รุ่นจริง..."
-            oninput="onFieldChange('${esc(sk)}','modelActual',${cid},${i},this)"/>
-        </td>
-        <td>
-          <input class="issue-input ${st.snActual?'has-val':''}" type="text"
-            value="${esc(st.snActual||'')}"
-            placeholder="SN จริง..."
-            oninput="onFieldChange('${esc(sk)}','snActual',${cid},${i},this)"/>
-        </td>
-        <td>
           <div style="display:flex;flex-direction:column;gap:5px;">
             <div style="display:flex;gap:5px;flex-wrap:wrap;">
               <button class="btn-chk ${st.checked?'active':''}"
                 onclick="toggleChecked('${esc(sk)}',${cid},${i})">
                 ${st.checked?'✅ เช็คแล้ว':'☐ เช็คแล้ว'}
               </button>
+              <button class="btn-issue ${hasIssue?'active':''}"
+                onclick="toggleIssuePanel('${esc(sk)}',${cid},${i})">
+                ⚠️ ${hasIssue?'มีปัญหา':'มีปัญหา?'}
+              </button>
+            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
               <button class="btn-reg ${st.updatedInRegistry?'active':''}"
                 onclick="toggleReg('${esc(sk)}',${cid},${i})"
                 title="แก้ไขในทะเบียนทรัพย์สินแล้ว">
@@ -515,6 +493,33 @@ function renderAll(){
             ${st.checkedAt?`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`:''}
             ${st.checkedBy?`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`:''}
             ${st.updatedInRegistry&&st.updatedAt?`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`:''}
+          </div>
+        </td>
+      </tr>
+      <tr class="issue-panel-row" id="ipanel_${cid}_${i}">
+        <td colspan="4">
+          <div class="issue-panel-inner">
+            <div>
+              <label>Asset Code จริง</label>
+              <input class="issue-input ${st.assetCodeActual?'has-val':''}" type="text"
+                value="${esc(st.assetCodeActual||'')}"
+                placeholder="ถ้าต่างจากในระบบ..."
+                oninput="onFieldChange('${esc(sk)}','assetCodeActual',${cid},${i},this)"/>
+            </div>
+            <div>
+              <label>รุ่นจริง</label>
+              <input class="issue-input ${st.modelActual?'has-val':''}" type="text"
+                value="${esc(st.modelActual||'')}"
+                placeholder="ถ้าต่างจากในระบบ..."
+                oninput="onFieldChange('${esc(sk)}','modelActual',${cid},${i},this)"/>
+            </div>
+            <div style="grid-column:1/-1;">
+              <label>SN จริง</label>
+              <input class="issue-input ${st.snActual?'has-val':''}" type="text"
+                value="${esc(st.snActual||'')}"
+                placeholder="ถ้าต่างจากในระบบ..."
+                oninput="onFieldChange('${esc(sk)}','snActual',${cid},${i},this)"/>
+            </div>
           </div>
         </td>
       </tr>`;
@@ -533,6 +538,19 @@ function renderAll(){
       <p>ไม่พบรายการที่ตรงกับเงื่อนไข<br>ลองปรับตัวกรองหรือคำค้นหา</p></div>`;
   }
   list.innerHTML=html;
+
+  // เปิด issue panel อัตโนมัติสำหรับแถวที่มีข้อมูลปัญหาอยู่แล้ว
+  Object.keys(checkData).forEach(ck=>{
+    const cid=getCkId(ck);
+    checkData[ck].items.forEach((_,i)=>{
+      const sk=stateKey(ck,i);
+      const st=checkState[sk]||{};
+      if(st.assetCodeActual||st.modelActual||st.snActual){
+        const panel=document.getElementById(`ipanel_${cid}_${i}`);
+        if(panel) panel.style.display='';
+      }
+    });
+  });
 }
 
 // ══════════════════════════════════════════════════
@@ -545,14 +563,28 @@ function toggleComp(cid){
   const col=body.classList.toggle('collapsed');
   if(tog) tog.textContent=col?'▼':'▲';
 }
-function expandAll(){ Object.keys(_ckIndexRev).forEach(n=>{
-  const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
-  if(b)b.classList.remove('collapsed'); if(t)t.textContent='▲';
-});}
-function collapseAll(){ Object.keys(_ckIndexRev).forEach(n=>{
-  const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
-  if(b)b.classList.add('collapsed'); if(t)t.textContent='▼';
-});}
+function expandAll(){
+  Object.keys(_ckIndexRev).forEach(n=>{
+    const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
+    if(b)b.classList.remove('collapsed'); if(t)t.textContent='▲';
+  });
+}
+function collapseAll(){
+  Object.keys(_ckIndexRev).forEach(n=>{
+    const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
+    if(b)b.classList.add('collapsed'); if(t)t.textContent='▼';
+  });
+}
+
+function toggleIssuePanel(sk, cid, i){
+  const panel=document.getElementById(`ipanel_${cid}_${i}`);
+  if(!panel)return;
+  const isOpen=panel.style.display!=='none' && panel.style.display!=='';
+  panel.style.display=isOpen?'none':'';
+  // อัปเดต style ปุ่ม
+  const btn=document.querySelector(`#arow_${cid}_${i} .btn-issue`);
+  if(btn && !isOpen) btn.style.borderColor='var(--r)';
+}
 
 function toggleChecked(sk,cid,i){
   if(!checkState[sk])checkState[sk]={};
@@ -562,7 +594,7 @@ function toggleChecked(sk,cid,i){
     st.checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
     st.checkedBy=currentUser?.displayName||currentUser?.email||'';
   } else { delete st.checkedAt; delete st.checkedBy; }
-  saveStorage(); renderAll(); // full re-render to update progress bar
+  saveStorage(); renderAll();
 }
 
 function toggleReg(sk,cid,i){
@@ -586,12 +618,17 @@ function onFieldChange(sk,field,cid,i,input){
     else delete checkState[sk][field];
     saveStorage();
     updateSummary();
-    // Update row class live
+    // อัปเดต row class และปุ่ม issue แบบ live
     const row=document.getElementById(`arow_${cid}_${i}`);
     if(row){
       const st=checkState[sk]||{};
       const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
       row.className=`asset-row ${st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'')}`;
+      const btn=row.querySelector('.btn-issue');
+      if(btn){
+        btn.classList.toggle('active',hasIssue);
+        btn.textContent=`⚠️ ${hasIssue?'มีปัญหา':'มีปัญหา?'}`;
+      }
     }
   },400);
 }
