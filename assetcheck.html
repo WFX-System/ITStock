@@ -66,6 +66,7 @@
 .btn-reg:hover{background:var(--aml);border-color:var(--am);color:var(--am);}
 .btn-reg.active{background:var(--am);border-color:var(--am);color:#fff;}
 
+/* FIX: issue-panel-row ใช้ display:none เริ่มต้น */
 .issue-panel-row{display:none;}
 .issue-panel-row td{padding:0;}
 .issue-panel-inner{background:#FFF5F0;border-top:1px solid #FFCDB8;padding:10px;
@@ -84,8 +85,11 @@
 .import-zone.drag-over{border-color:var(--g);background:var(--gll);}
 .import-zone-icon{font-size:36px;margin-bottom:.6rem;}
 .import-zone p{font-size:13px;color:var(--tx3);line-height:1.8;}
-.comp-body{display:block;}
-.comp-body.collapsed{display:none;}
+
+/* FIX: comp-body collapsed by default */
+.comp-body{display:none;}
+.comp-body.expanded{display:block;}
+
 .comp-status-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
 .comp-status-ok{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7;}
 .comp-status-issue{background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;}
@@ -464,6 +468,10 @@ function renderAll(){
       badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค'; nameColor='';
     }
 
+    // FIX: comp-body ย่อเป็น default (ไม่มี class expanded)
+    // ถ้ามีปัญหาหรือกำลังเช็คอยู่ ให้ขยายอัตโนมัติ
+    const autoExpand = issueN > 0 || doneN > 0;
+
     html+=`
 <div class="comp-group">
   <div class="comp-header" onclick="toggleComp(${cid})">
@@ -484,10 +492,10 @@ function renderAll(){
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
       <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
       <span class="prog-lbl">${doneN}/${totalItems}</span>
-      <span id="tog${cid}" style="font-size:12px;color:var(--tx3);">▲</span>
+      <span id="tog${cid}" style="font-size:12px;color:var(--tx3);">${autoExpand?'▲':'▼'}</span>
     </div>
   </div>
-  <div class="comp-body" id="body${cid}">
+  <div class="comp-body${autoExpand?' expanded':''}" id="body${cid}">
     <div style="overflow-x:auto;">
     <table class="asset-table">
       <thead><tr>
@@ -503,6 +511,8 @@ function renderAll(){
       const st=checkState[sk]||{};
       const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
       const rowCls=st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'');
+      // FIX: issue panel เปิดอัตโนมัติถ้ามีข้อมูลปัญหา
+      const panelVisible=hasIssue?'display:table-row;':'';
 
       html+=`
       <tr class="asset-row ${rowCls}" id="arow_${cid}_${i}">
@@ -536,13 +546,15 @@ function renderAll(){
                 ${st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน'}
               </button>
             </div>
-            ${st.checkedAt?`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`:''}
-            ${st.checkedBy?`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`:''}
-            ${st.updatedInRegistry&&st.updatedAt?`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`:''}
+            <div class="dates-wrap">
+              ${st.checkedAt?`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`:''}
+              ${st.checkedBy?`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`:''}
+              ${st.updatedInRegistry&&st.updatedAt?`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`:''}
+            </div>
           </div>
         </td>
       </tr>
-      <tr class="issue-panel-row" id="ipanel_${cid}_${i}">
+      <tr class="issue-panel-row" id="ipanel_${cid}_${i}" style="${panelVisible}">
         <td colspan="4">
           <div class="issue-panel-inner">
             <div>
@@ -584,55 +596,45 @@ function renderAll(){
       <p>ไม่พบรายการที่ตรงกับเงื่อนไข<br>ลองปรับตัวกรองหรือคำค้นหา</p></div>`;
   }
   list.innerHTML=html;
-
-  // เปิด issue panel อัตโนมัติสำหรับแถวที่มีข้อมูลปัญหาอยู่แล้ว
-  Object.keys(checkData).forEach(ck=>{
-    const cid=getCkId(ck);
-    checkData[ck].items.forEach((_,i)=>{
-      const sk=stateKey(ck,i);
-      const st=checkState[sk]||{};
-      if(st.assetCodeActual||st.modelActual||st.snActual){
-        const panel=document.getElementById(`ipanel_${cid}_${i}`);
-        if(panel) panel.style.display='';
-      }
-    });
-  });
 }
 
 // ══════════════════════════════════════════════════
 //  Actions — อัปเดต DOM in-place ไม่ re-render ทั้งหน้า
 // ══════════════════════════════════════════════════
+
+// FIX: toggleComp ใช้ class 'expanded' แทน 'collapsed'
 function toggleComp(cid){
   const body=document.getElementById('body'+cid);
   const tog =document.getElementById('tog'+cid);
   if(!body)return;
-  const col=body.classList.toggle('collapsed');
-  if(tog) tog.textContent=col?'▼':'▲';
+  const isExpanded=body.classList.toggle('expanded');
+  if(tog) tog.textContent=isExpanded?'▲':'▼';
 }
+
 function expandAll(){
   Object.keys(_ckIndexRev).forEach(n=>{
     const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
-    if(b)b.classList.remove('collapsed'); if(t)t.textContent='▲';
+    if(b)b.classList.add('expanded');
+    if(t)t.textContent='▲';
   });
 }
 function collapseAll(){
   Object.keys(_ckIndexRev).forEach(n=>{
     const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
-    if(b)b.classList.add('collapsed'); if(t)t.textContent='▼';
+    if(b)b.classList.remove('expanded');
+    if(t)t.textContent='▼';
   });
 }
 
+// FIX: toggleIssuePanel ใช้ display:table-row เมื่อเปิด
 function toggleIssuePanel(sk, cid, i){
   const panel=document.getElementById(`ipanel_${cid}_${i}`);
   if(!panel)return;
-  const computed=window.getComputedStyle(panel).display;
-  const isOpen=computed!=='none';
+  const isOpen=panel.style.display==='table-row';
   panel.style.display=isOpen?'none':'table-row';
-  const btn=document.querySelector(`#arow_${cid}_${i} .btn-issue`);
-  if(btn) btn.style.borderColor=isOpen?'':'var(--r)';
 }
 
-// ── helper: อัปเดต header ของ comp กลุ่มที่เปลี่ยนไป ──
+// FIX: _updateCompHeader — ใช้ querySelector ที่ถูกต้อง
 function _updateCompHeader(ck){
   const cid=_ckIndex[ck];
   if(cid===undefined)return;
@@ -649,28 +651,29 @@ function _updateCompHeader(ck){
   else if(doneN>0){badgeCls='comp-status-partial';badgeTxt=`⏳ กำลังเช็ค ${doneN}/${totalItems}`;nameColor='';}
   else{badgeCls='comp-status-pending';badgeTxt='○ ยังไม่ได้เช็ค';nameColor='';}
 
-  // progress bar + counter
-  const fill=document.querySelector(`#body${cid}`?.replace(/\d+/,'')+`#body${cid}`)?.previousElementSibling?.querySelector('.prog-fill');
-  const header=document.querySelector(`#body${cid}`)?.previousElementSibling;
-  if(header){
-    const progFill=header.querySelector('.prog-fill');
-    if(progFill) progFill.style.width=pct+'%';
-    const progLbl=header.querySelector('.prog-lbl');
-    if(progLbl) progLbl.textContent=`${doneN}/${totalItems}`;
-    const nameEl=header.querySelector('.comp-name');
-    if(nameEl) nameEl.style.color=nameColor||'';
-    const badge=header.querySelector('.comp-status-badge');
-    if(badge){badge.className=`comp-status-badge ${badgeCls}`;badge.textContent=badgeTxt;}
-    // icon bg
-    const icon=header.querySelector('div[style*="border-radius:8px"]');
-    if(icon){
-      icon.style.background=allDone&&!issueN?'var(--g)':(issueN?'#FEE2E2':'var(--bg)');
-      icon.style.borderColor=allDone&&!issueN?'var(--g)':(issueN?'#FCA5A5':'var(--bdrm)');
-    }
+  // FIX: หา header ผ่าน body element โดยตรง
+  const bodyEl=document.getElementById(`body${cid}`);
+  if(!bodyEl)return;
+  const header=bodyEl.previousElementSibling;
+  if(!header)return;
+
+  const progFill=header.querySelector('.prog-fill');
+  if(progFill) progFill.style.width=pct+'%';
+  const progLbl=header.querySelector('.prog-lbl');
+  if(progLbl) progLbl.textContent=`${doneN}/${totalItems}`;
+  const nameEl=header.querySelector('.comp-name');
+  if(nameEl) nameEl.style.color=nameColor||'';
+  const badge=header.querySelector('.comp-status-badge');
+  if(badge){badge.className=`comp-status-badge ${badgeCls}`;badge.innerHTML=badgeTxt;}
+  // icon bg
+  const icon=header.querySelector('div[style*="border-radius:8px"]');
+  if(icon){
+    icon.style.background=allDone&&!issueN?'var(--g)':(issueN?'#FEE2E2':'var(--bg)');
+    icon.style.borderColor=allDone&&!issueN?'var(--g)':(issueN?'#FCA5A5':'var(--bdrm)');
   }
 }
 
-// ── helper: อัปเดต DOM ของแถวเดียว ──
+// FIX: _updateRow — dates-wrap มีอยู่แล้วใน HTML ไม่ต้อง create ใหม่
 function _updateRow(sk, cid, i){
   const st=checkState[sk]||{};
   const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
@@ -698,15 +701,13 @@ function _updateRow(sk, cid, i){
     btnReg.classList.toggle('active',!!st.updatedInRegistry);
     btnReg.textContent=st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน';
   }
-  // timestamps
-  const actionCell=row.querySelector('td:last-child');
-  if(actionCell){
-    let dates=actionCell.querySelector('.dates-wrap');
-    if(!dates){dates=document.createElement('div');dates.className='dates-wrap';actionCell.querySelector('div').appendChild(dates);}
-    dates.innerHTML='';
-    if(st.checkedAt) dates.innerHTML+=`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`;
-    if(st.checkedBy) dates.innerHTML+=`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`;
-    if(st.updatedInRegistry&&st.updatedAt) dates.innerHTML+=`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`;
+  // FIX: อัปเดต dates-wrap ที่มีอยู่แล้วในแถว (ไม่ต้อง create ใหม่)
+  const datesWrap=row.querySelector('.dates-wrap');
+  if(datesWrap){
+    datesWrap.innerHTML='';
+    if(st.checkedAt) datesWrap.innerHTML+=`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`;
+    if(st.checkedBy) datesWrap.innerHTML+=`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`;
+    if(st.updatedInRegistry&&st.updatedAt) datesWrap.innerHTML+=`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`;
   }
 }
 
@@ -722,7 +723,6 @@ function toggleChecked(sk,cid,i){
   } else { delete st.checkedAt; delete st.checkedBy; }
   saveStorage();
   _updateRow(sk,cid,i);
-  // หา ck จาก stateKey
   const ck=sk.split('||')[0];
   _updateCompHeader(ck);
   updateSummary();
