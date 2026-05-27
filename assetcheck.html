@@ -223,7 +223,7 @@ function saveStorage(){
         updatedByName: currentUser?.displayName||currentUser?.email||'',
       },{merge:true});
     }catch(e){ console.warn('Firestore save error:',e); }
-    finally{ setTimeout(()=>{ _isSaving=false; }, 1000); }
+    finally{ setTimeout(()=>{ _isSaving=false; }, 2000); }
   }, 600);
 }
 
@@ -765,6 +765,9 @@ function onFieldChange(sk,field,cid,i,input){
   input.classList.toggle('has-val',val.length>0);
   clearTimeout(_fieldTimer);
   _fieldTimer=setTimeout(()=>{
+    // ไม่บันทึกถ้าค่าไม่เปลี่ยน
+    const prev=(checkState[sk]||{})[field]||'';
+    if(val===prev) return;
     if(!checkState[sk])checkState[sk]={};
     if(val) checkState[sk][field]=val;
     else delete checkState[sk][field];
@@ -773,7 +776,7 @@ function onFieldChange(sk,field,cid,i,input){
     const ck=sk.split('||')[0];
     _updateCompHeader(ck);
     updateSummary();
-  },400);
+  },1200);
 }
 
 async function confirmClearAll(){
