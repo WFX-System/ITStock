@@ -165,6 +165,15 @@
 </div>
 
 <script>
+// ─── Format date (แสดงเฉพาะวันที่ ไม่แสดงเวลา) ────────────
+function formatDateOnly(ts) {
+  if (!ts) return '—';
+  try {
+    const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
+    return d.toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' });
+  } catch { return '—'; }
+}
+
 const IMGBB_KEY = '4aecea8adeacd9e1dc7815e351021b99';
 
 // ─── Default categories (used if Firestore empty) ─────────
@@ -296,7 +305,8 @@ function tsToInputVal(ts) {
 }
 function inputValToFirestore(val) {
   if (!val) return firebase.firestore.FieldValue.serverTimestamp();
-  return firebase.firestore.Timestamp.fromDate(new Date(val + 'T00:00:00'));
+  // ใช้ 12:00:00 เพื่อป้องกัน timezone offset ทำให้วันเลื่อน
+  return firebase.firestore.Timestamp.fromDate(new Date(val + 'T12:00:00'));
 }
 function groupByYear(list) {
   const map = {};
@@ -428,7 +438,7 @@ function renderDisRow(d) {
         ${renderCatBadge(d.category)}
       </div>
       ${d.serial ? `<div class="dis-sn">S/N: ${d.serial}</div>` : ''}
-      <div class="dis-meta">${d.docNo ? `เอกสาร: ${d.docNo} · ` : ''}${formatDT(d.disposedAt)}${imgCount > 0 ? ` · 📷 ${imgCount}` : ''}</div>
+      <div class="dis-meta">${d.docNo ? `เอกสาร: ${d.docNo} · ` : ''}${formatDateOnly(d.disposedAt)}${imgCount > 0 ? ` · 📷 ${imgCount}` : ''}</div>
     </div>
     <div class="dis-actions">
       <span class="badge-dis ${sc}">${sl}</span>
@@ -662,8 +672,8 @@ function openAddModal() {
         <input id="fAssetNo" placeholder="เช่น OF20-0494" style="margin-top:4px"/>
       </div>
       <div>
-        <label class="form-label">เลขที่ใบถือครอง:</label>
-        <input id="fDocNo" placeholder="เช่น 64/137" style="margin-top:4px"/>
+        <label class="form-label">เลขที่เอกสาร</label>
+        <input id="fDocNo" placeholder="เช่น FNITD-25-000147" style="margin-top:4px"/>
       </div>
     </div>
 
@@ -950,8 +960,8 @@ async function doImport() {
       let disposedAt;
       if (r.dateRaw) {
         let d = null;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(r.dateRaw)) d = new Date(r.dateRaw + 'T00:00:00');
-        else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(r.dateRaw)) { const [dd,mm,yyyy] = r.dateRaw.split('/'); d = new Date(`${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T00:00:00`); }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(r.dateRaw)) d = new Date(r.dateRaw + 'T12:00:00');
+        else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(r.dateRaw)) { const [dd,mm,yyyy] = r.dateRaw.split('/'); d = new Date(`${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T12:00:00`); }
         disposedAt = d && !isNaN(d) ? firebase.firestore.Timestamp.fromDate(d) : firebase.firestore.FieldValue.serverTimestamp();
       } else {
         disposedAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -1085,8 +1095,8 @@ function openDetail(docId) {
       ${d.docNo   ? `<div class="info-row"><div class="fz11 txmute">เลขที่เอกสาร</div><div class="fw7 fz12">${d.docNo}</div></div>` : ''}
       ${d.serial  ? `<div class="info-row"><div class="fz11 txmute">S/N</div><div class="fw7 fz12" style="font-family:var(--mono);font-size:11px">${d.serial}</div></div>` : ''}
       ${d.reason  ? `<div class="info-row"><div class="fz11 txmute">สาเหตุ</div><div><span class="reason-chip">${d.reason}</span></div></div>` : ''}
-      <div class="info-row"><div class="fz11 txmute">วันที่ตัด</div><div class="fw7 fz12">${formatDT(d.disposedAt)}</div></div>
-      ${isSold && d.soldAt ? `<div class="info-row"><div class="fz11 txmute">วันที่ขาย</div><div class="fw7 fz12">${formatDT(d.soldAt)}</div></div>` : ''}
+      <div class="info-row"><div class="fz11 txmute">วันที่ตัด</div><div class="fw7 fz12">${formatDateOnly(d.disposedAt)}</div></div>
+      ${isSold && d.soldAt ? `<div class="info-row"><div class="fz11 txmute">วันที่ขาย</div><div class="fw7 fz12">${formatDateOnly(d.soldAt)}</div></div>` : ''}
     </div>
 
     ${d.remark ? `<div style="background:var(--bg);border-radius:8px;padding:.6rem .8rem;margin-bottom:1rem;font-size:12px;color:var(--tx2)"><span class="fz11 txmute">หมายเหตุ:</span><br>${d.remark}</div>` : ''}
@@ -1118,7 +1128,7 @@ function openDetail(docId) {
       <div id="detailUploadStatus" style="font-size:11px;color:var(--tx3);margin-top:4px;"></div>
     </div>` : ''}
 
-    <div style="font-size:11px;color:var(--tx3);margin-bottom:.75rem;">บันทึกโดย ${d.createdBy||'?'} · ${formatDT(d.disposedAt)}</div>
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:.75rem;">บันทึกโดย ${d.createdBy||'?'} · ${formatDateOnly(d.disposedAt)}</div>
 
     <div class="modal-actions">
       <button class="btn btn-ghost" style="flex:1" onclick="closeModal()">ปิด</button>
