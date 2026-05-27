@@ -579,21 +579,21 @@ function renderAll(){
               <input class="issue-input ${st.assetCodeActual?'has-val':''}" type="text"
                 value="${esc(st.assetCodeActual||'')}"
                 placeholder="ถ้าต่างจากในระบบ..."
-                oninput="onFieldChange('${esc(sk)}','assetCodeActual',${cid},${i},this)"/>
+                onblur="onFieldChange('${esc(sk)}','assetCodeActual',${cid},${i},this)"/>
             </div>
             <div>
               <label>รุ่นจริง</label>
               <input class="issue-input ${st.modelActual?'has-val':''}" type="text"
                 value="${esc(st.modelActual||'')}"
                 placeholder="ถ้าต่างจากในระบบ..."
-                oninput="onFieldChange('${esc(sk)}','modelActual',${cid},${i},this)"/>
+                onblur="onFieldChange('${esc(sk)}','modelActual',${cid},${i},this)"/>
             </div>
             <div style="grid-column:1/-1;">
               <label>SN จริง</label>
               <input class="issue-input ${st.snActual?'has-val':''}" type="text"
                 value="${esc(st.snActual||'')}"
                 placeholder="ถ้าต่างจากในระบบ..."
-                oninput="onFieldChange('${esc(sk)}','snActual',${cid},${i},this)"/>
+                onblur="onFieldChange('${esc(sk)}','snActual',${cid},${i},this)"/>
             </div>
           </div>
         </td>
@@ -759,24 +759,20 @@ function toggleReg(sk,cid,i){
   updateSummary();
 }
 
-let _fieldTimer=null;
 function onFieldChange(sk,field,cid,i,input){
   const val=input.value.trim();
   input.classList.toggle('has-val',val.length>0);
-  clearTimeout(_fieldTimer);
-  _fieldTimer=setTimeout(()=>{
-    // ไม่บันทึกถ้าค่าไม่เปลี่ยน
-    const prev=(checkState[sk]||{})[field]||'';
-    if(val===prev) return;
-    if(!checkState[sk])checkState[sk]={};
-    if(val) checkState[sk][field]=val;
-    else delete checkState[sk][field];
-    saveStorage();
-    _updateRow(sk,cid,i);
-    const ck=sk.split('||')[0];
-    _updateCompHeader(ck);
-    updateSummary();
-  },1200);
+  // บันทึกเมื่อออกจาก field (onblur) — ไม่บันทึกถ้าค่าไม่เปลี่ยน
+  const prev=(checkState[sk]||{})[field]||'';
+  if(val===prev) return;
+  if(!checkState[sk])checkState[sk]={};
+  if(val) checkState[sk][field]=val;
+  else delete checkState[sk][field];
+  saveStorage();
+  _updateRow(sk,cid,i);
+  const ck=sk.split('||')[0];
+  _updateCompHeader(ck);
+  updateSummary();
 }
 
 async function confirmClearAll(){
