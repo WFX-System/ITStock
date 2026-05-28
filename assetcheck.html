@@ -47,6 +47,7 @@
   transition:border-color .15s;box-sizing:border-box;}
 .issue-input:focus{outline:none;border-color:var(--am);box-shadow:0 0 0 2px var(--aml);}
 .issue-input.has-val{border-color:var(--r);background:#FFF5F0;}
+.issue-input.dirty{border-color:var(--am)!important;background:#FFFBEB!important;}
 
 .btn-chk{padding:5px 10px;border-radius:var(--radsm);font-size:11px;font-weight:700;
   cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
@@ -66,12 +67,23 @@
 .btn-reg:hover{background:var(--aml);border-color:var(--am);color:var(--am);}
 .btn-reg.active{background:var(--am);border-color:var(--am);color:#fff;}
 
-/* FIX: issue-panel-row ใช้ display:none เริ่มต้น */
 .issue-panel-row{display:none;}
 .issue-panel-row td{padding:0;}
 .issue-panel-inner{background:#FFF5F0;border-top:1px solid #FFCDB8;padding:10px;
   display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .issue-panel-inner label{font-size:10px;color:var(--r);font-weight:700;display:block;margin-bottom:3px;}
+
+/* Save button */
+.btn-save-issue{
+  grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:7px 14px;border-radius:var(--radsm);font-size:12px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--g);background:var(--g);color:#fff;
+  transition:all .2s;width:100%;box-sizing:border-box;}
+.btn-save-issue:hover{filter:brightness(1.08);}
+.btn-save-issue.dirty{background:var(--am);border-color:var(--am);color:#fff;}
+.btn-save-issue.saving{background:var(--aml);border-color:var(--am);color:var(--am);cursor:default;}
+.btn-save-issue.saved{background:#D1FAE5;border-color:#6EE7B7;color:#065F46;cursor:default;}
+.btn-save-issue:disabled{opacity:.6;cursor:not-allowed;}
 
 .check-date{font-size:10px;color:var(--tx3);margin-top:3px;}
 .summary-bar{display:flex;gap:16px;flex-wrap:wrap;padding:.8rem 1.2rem;
@@ -86,7 +98,6 @@
 .import-zone-icon{font-size:36px;margin-bottom:.6rem;}
 .import-zone p{font-size:13px;color:var(--tx3);line-height:1.8;}
 
-/* FIX: comp-body collapsed by default */
 .comp-body{display:none;}
 .comp-body.expanded{display:block;}
 
@@ -123,7 +134,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 
   <div class="content">
 
-    <!-- Header row -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
       <div>
         <div style="font-size:16px;font-weight:700;">🔍 ตรวจเช็คทรัพย์สิน</div>
@@ -141,7 +151,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
       </div>
     </div>
 
-    <!-- Summary -->
     <div class="summary-bar" id="summaryBar" style="display:none">
       <div class="sum-item"><div class="sum-num" id="sumComp" style="color:var(--tx2)">0</div><div class="sum-lbl">เครื่อง</div></div>
       <div class="sum-item"><div class="sum-num" id="sumTotal" style="color:var(--tx2)">0</div><div class="sum-lbl">รายการทั้งหมด</div></div>
@@ -150,7 +159,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
       <div class="sum-item"><div class="sum-num" id="sumReg" style="color:var(--am)">0</div><div class="sum-lbl">แก้ในทะเบียนแล้ว</div></div>
     </div>
 
-    <!-- Toolbar -->
     <div class="toolbar" id="toolbarRow" style="display:none">
       <input class="search-box" type="text" id="searchInput"
         placeholder="🔎 ค้นหาชื่อเครื่อง / Asset Code / รุ่น / SN..."
@@ -171,7 +179,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
       <button class="btn btn-sm" onclick="collapseAll()">📁 ย่อทั้งหมด</button>
     </div>
 
-    <!-- Import drop zone -->
     <div class="import-zone" id="importZone"
       ondragover="event.preventDefault();this.classList.add('drag-over')"
       ondragleave="this.classList.remove('drag-over')"
@@ -183,7 +190,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
       <span style="font-size:11px;color:#bbb;">โครงสร้าง: Computer name | อุปกรณ์ | ยี่ห้อ | Asset Code | รุ่น | SN</span></p>
     </div>
 
-    <!-- Asset list -->
     <div id="assetList"></div>
 
   </div>
@@ -204,7 +210,6 @@ initShell('assetcheck', async(user,role,firestore)=>{
 });
 
 // ── Firestore ──────────────────────────────────────
-// shared doc เดียวกันสำหรับทุก admin
 function _sessionRef(){
   return db.collection('assetSessions').doc('shared');
 }
@@ -227,12 +232,10 @@ function saveStorage(){
   }, 600);
 }
 
-// real-time listener — อัปเดตทุก admin อัตโนมัติ
 let _unsubscribe=null;
 function startRealtimeSync(){
   if(_unsubscribe) _unsubscribe();
   _unsubscribe=_sessionRef().onSnapshot(snap=>{
-    // ถ้าเราเพิ่งเซฟอยู่ ไม่ต้อง re-render (ข้อมูลเป็นของเราอยู่แล้ว)
     if(_isSaving) return;
     if(snap.exists){
       const d=snap.data();
@@ -245,7 +248,6 @@ function startRealtimeSync(){
     }
     _ckIndex={}; _ckIndexRev={};
     renderAll();
-    // แสดงว่าใครอัปเดตล่าสุด
     if(snap.exists && snap.data().updatedByName && snap.data().updatedBy !== currentUser?.uid){
       const name=snap.data().updatedByName;
       showNotif(`🔄 ${name} อัปเดตข้อมูลแล้ว`,'info');
@@ -428,7 +430,6 @@ function renderAll(){
   const list=document.getElementById('assetList');
   if(!hasData){list.innerHTML='';return;}
 
-  // ── Sort ────────────────────────────────────────
   const sort=document.getElementById('sortSel')?.value||'name';
   const sortedCks=Object.keys(checkData).sort((a,b)=>{
     if(sort==='name') return a.localeCompare(b,'th');
@@ -474,7 +475,6 @@ function renderAll(){
     const pct=totalItems?Math.round(doneN/totalItems*100):0;
     const allDone=doneN===totalItems;
 
-    // Badge logic
     let badgeCls, badgeTxt, nameColor;
     if(issueN>0){
       badgeCls='comp-status-issue'; badgeTxt=`⚠️ มีปัญหา ${issueN} รายการ`; nameColor='#991B1B';
@@ -485,9 +485,6 @@ function renderAll(){
     } else {
       badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค'; nameColor='';
     }
-
-    // ย่อทุก group เป็น default เสมอ ต้องคลิ๊กเองเพื่อขยาย
-    const autoExpand = false;
 
     html+=`
 <div class="comp-group">
@@ -509,10 +506,10 @@ function renderAll(){
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
       <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
       <span class="prog-lbl">${doneN}/${totalItems}</span>
-      <span id="tog${cid}" style="font-size:12px;color:var(--tx3);">${autoExpand?'▲':'▼'}</span>
+      <span id="tog${cid}" style="font-size:12px;color:var(--tx3);">▼</span>
     </div>
   </div>
-  <div class="comp-body${autoExpand?' expanded':''}" id="body${cid}">
+  <div class="comp-body" id="body${cid}">
     <div style="overflow-x:auto;">
     <table class="asset-table">
       <thead><tr>
@@ -528,7 +525,6 @@ function renderAll(){
       const st=checkState[sk]||{};
       const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
       const rowCls=st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'');
-      // FIX: issue panel เปิดอัตโนมัติถ้ามีข้อมูลปัญหา
       const panelVisible=hasIssue?'display:table-row;':'';
 
       html+=`
@@ -573,28 +569,35 @@ function renderAll(){
       </tr>
       <tr class="issue-panel-row" id="ipanel_${cid}_${i}" style="${panelVisible}">
         <td colspan="4">
-          <div class="issue-panel-inner">
+          <div class="issue-panel-inner" id="ipanel-inner_${cid}_${i}">
             <div>
               <label>Asset Code จริง</label>
               <input class="issue-input ${st.assetCodeActual?'has-val':''}" type="text"
+                id="f_assetCode_${cid}_${i}"
                 value="${esc(st.assetCodeActual||'')}"
                 placeholder="ถ้าต่างจากในระบบ..."
-                onblur="onFieldChange('${esc(sk)}','assetCodeActual',${cid},${i},this)"/>
+                oninput="markDirty(${cid},${i},this)"/>
             </div>
             <div>
               <label>รุ่นจริง</label>
               <input class="issue-input ${st.modelActual?'has-val':''}" type="text"
+                id="f_model_${cid}_${i}"
                 value="${esc(st.modelActual||'')}"
                 placeholder="ถ้าต่างจากในระบบ..."
-                onblur="onFieldChange('${esc(sk)}','modelActual',${cid},${i},this)"/>
+                oninput="markDirty(${cid},${i},this)"/>
             </div>
             <div style="grid-column:1/-1;">
               <label>SN จริง</label>
               <input class="issue-input ${st.snActual?'has-val':''}" type="text"
+                id="f_sn_${cid}_${i}"
                 value="${esc(st.snActual||'')}"
                 placeholder="ถ้าต่างจากในระบบ..."
-                onblur="onFieldChange('${esc(sk)}','snActual',${cid},${i},this)"/>
+                oninput="markDirty(${cid},${i},this)"/>
             </div>
+            <button class="btn-save-issue" id="savebtn_${cid}_${i}"
+              onclick="saveIssuePanel('${esc(sk)}',${cid},${i})">
+              💾 บันทึก
+            </button>
           </div>
         </td>
       </tr>`;
@@ -616,10 +619,59 @@ function renderAll(){
 }
 
 // ══════════════════════════════════════════════════
-//  Actions — อัปเดต DOM in-place ไม่ re-render ทั้งหน้า
+//  Issue panel — manual save only, no auto-save
 // ══════════════════════════════════════════════════
 
-// FIX: toggleComp ใช้ class 'expanded' แทน 'collapsed'
+// เมื่อพิมพ์ → แค่ mark dirty, ไม่ trigger save ใดๆ
+function markDirty(cid, i, input){
+  input.classList.toggle('has-val', input.value.trim().length > 0);
+  input.classList.add('dirty');
+  const btn=document.getElementById(`savebtn_${cid}_${i}`);
+  if(btn){ btn.classList.remove('saved'); btn.classList.add('dirty'); btn.innerHTML='💾 บันทึก (มีการเปลี่ยนแปลง)'; }
+}
+
+async function saveIssuePanel(sk, cid, i){
+  const btn=document.getElementById(`savebtn_${cid}_${i}`);
+
+  const fields={
+    assetCodeActual: document.getElementById(`f_assetCode_${cid}_${i}`)?.value.trim()||'',
+    modelActual:     document.getElementById(`f_model_${cid}_${i}`)?.value.trim()||'',
+    snActual:        document.getElementById(`f_sn_${cid}_${i}`)?.value.trim()||'',
+  };
+
+  // saving state
+  if(btn){ btn.classList.remove('dirty'); btn.classList.add('saving'); btn.innerHTML='⏳ กำลังบันทึก...'; btn.disabled=true; }
+
+  if(!checkState[sk]) checkState[sk]={};
+  Object.entries(fields).forEach(([f,v])=>{
+    if(v) checkState[sk][f]=v;
+    else  delete checkState[sk][f];
+  });
+
+  // clear dirty class on inputs
+  ['f_assetCode','f_model','f_sn'].forEach(prefix=>{
+    const el=document.getElementById(`${prefix}_${cid}_${i}`);
+    if(el) el.classList.remove('dirty');
+  });
+
+  await new Promise(r=>{ saveStorage(); setTimeout(r,700); });
+
+  if(btn){ btn.classList.remove('saving'); btn.classList.add('saved'); btn.innerHTML='✅ บันทึกแล้ว'; btn.disabled=false; }
+
+  _updateRow(sk,cid,i);
+  const ck=sk.split('||')[0];
+  _updateCompHeader(ck);
+  updateSummary();
+
+  setTimeout(()=>{
+    const b=document.getElementById(`savebtn_${cid}_${i}`);
+    if(b&&b.classList.contains('saved')){ b.classList.remove('saved'); b.innerHTML='💾 บันทึก'; }
+  }, 3000);
+}
+
+// ══════════════════════════════════════════════════
+//  Actions
+// ══════════════════════════════════════════════════
 function toggleComp(cid){
   const body=document.getElementById('body'+cid);
   const tog =document.getElementById('tog'+cid);
@@ -643,7 +695,6 @@ function collapseAll(){
   });
 }
 
-// FIX: toggleIssuePanel ใช้ display:table-row เมื่อเปิด
 function toggleIssuePanel(sk, cid, i){
   const panel=document.getElementById(`ipanel_${cid}_${i}`);
   if(!panel)return;
@@ -651,7 +702,6 @@ function toggleIssuePanel(sk, cid, i){
   panel.style.display=isOpen?'none':'table-row';
 }
 
-// FIX: _updateCompHeader — ใช้ querySelector ที่ถูกต้อง
 function _updateCompHeader(ck){
   const cid=_ckIndex[ck];
   if(cid===undefined)return;
@@ -668,7 +718,6 @@ function _updateCompHeader(ck){
   else if(doneN>0){badgeCls='comp-status-partial';badgeTxt=`⏳ กำลังเช็ค ${doneN}/${totalItems}`;nameColor='';}
   else{badgeCls='comp-status-pending';badgeTxt='○ ยังไม่ได้เช็ค';nameColor='';}
 
-  // FIX: หา header ผ่าน body element โดยตรง
   const bodyEl=document.getElementById(`body${cid}`);
   if(!bodyEl)return;
   const header=bodyEl.previousElementSibling;
@@ -682,7 +731,6 @@ function _updateCompHeader(ck){
   if(nameEl) nameEl.style.color=nameColor||'';
   const badge=header.querySelector('.comp-status-badge');
   if(badge){badge.className=`comp-status-badge ${badgeCls}`;badge.innerHTML=badgeTxt;}
-  // icon bg
   const icon=header.querySelector('div[style*="border-radius:8px"]');
   if(icon){
     icon.style.background=allDone&&!issueN?'var(--g)':(issueN?'#FEE2E2':'var(--bg)');
@@ -690,35 +738,29 @@ function _updateCompHeader(ck){
   }
 }
 
-// FIX: _updateRow — dates-wrap มีอยู่แล้วใน HTML ไม่ต้อง create ใหม่
 function _updateRow(sk, cid, i){
   const st=checkState[sk]||{};
   const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
   const row=document.getElementById(`arow_${cid}_${i}`);
   if(!row)return;
 
-  // row color
   row.className=`asset-row ${st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'')}`;
 
-  // btn-chk
   const btnChk=row.querySelector('.btn-chk');
   if(btnChk){
     btnChk.classList.toggle('active',!!st.checked);
     btnChk.textContent=st.checked?'✅ เช็คแล้ว':'☐ เช็คแล้ว';
   }
-  // btn-issue
   const btnIssue=row.querySelector('.btn-issue');
   if(btnIssue){
     btnIssue.classList.toggle('active',hasIssue);
     btnIssue.textContent=`⚠️ ${hasIssue?'มีปัญหา':'มีปัญหา?'}`;
   }
-  // btn-reg
   const btnReg=row.querySelector('.btn-reg');
   if(btnReg){
     btnReg.classList.toggle('active',!!st.updatedInRegistry);
     btnReg.textContent=st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน';
   }
-  // FIX: อัปเดต dates-wrap ที่มีอยู่แล้วในแถว (ไม่ต้อง create ใหม่)
   const datesWrap=row.querySelector('.dates-wrap');
   if(datesWrap){
     datesWrap.innerHTML='';
@@ -756,22 +798,6 @@ function toggleReg(sk,cid,i){
   else delete st.updatedAt;
   saveStorage();
   _updateRow(sk,cid,i);
-  updateSummary();
-}
-
-function onFieldChange(sk,field,cid,i,input){
-  const val=input.value.trim();
-  input.classList.toggle('has-val',val.length>0);
-  // บันทึกเมื่อออกจาก field (onblur) — ไม่บันทึกถ้าค่าไม่เปลี่ยน
-  const prev=(checkState[sk]||{})[field]||'';
-  if(val===prev) return;
-  if(!checkState[sk])checkState[sk]={};
-  if(val) checkState[sk][field]=val;
-  else delete checkState[sk][field];
-  saveStorage();
-  _updateRow(sk,cid,i);
-  const ck=sk.split('||')[0];
-  _updateCompHeader(ck);
   updateSummary();
 }
 
