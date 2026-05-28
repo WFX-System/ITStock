@@ -42,6 +42,12 @@
   border-radius:4px;padding:2px 6px;display:inline-block;white-space:nowrap;}
 .sn-text{font-family:var(--mono);font-size:11px;color:var(--tx2);}
 
+/* issue summary pill — แสดงข้อมูลที่บันทึกแล้วโดยไม่ต้องกาง panel */
+.issue-summary{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.issue-pill{font-size:10px;font-family:var(--mono);background:#FEE2E2;color:#991B1B;
+  border:1px solid #FCA5A5;border-radius:4px;padding:1px 6px;max-width:180px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
 .issue-input{width:100%;padding:5px 8px;border:1.5px solid var(--bdrm);border-radius:var(--radsm);
   font-size:11px;font-family:var(--mono);background:var(--surf);color:var(--tx1);
   transition:border-color .15s;box-sizing:border-box;}
@@ -67,7 +73,9 @@
 .btn-reg:hover{background:var(--aml);border-color:var(--am);color:var(--am);}
 .btn-reg.active{background:var(--am);border-color:var(--am);color:#fff;}
 
+/* issue panel — ซ่อนเสมอ เปิดเมื่อกดปุ่มเท่านั้น */
 .issue-panel-row{display:none;}
+.issue-panel-row.open{display:table-row;}
 .issue-panel-row td{padding:0;}
 .issue-panel-inner{background:#FFF5F0;border-top:1px solid #FFCDB8;padding:10px;
   display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -198,9 +206,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 <div id="notif"></div>
 
 <script>
-// ══════════════════════════════════════════════════
-//  State
-// ══════════════════════════════════════════════════
 let currentUser=null, currentRole='user', db=null;
 let checkData={}, checkState={};
 
@@ -209,10 +214,7 @@ initShell('assetcheck', async(user,role,firestore)=>{
   startRealtimeSync();
 });
 
-// ── Firestore ──────────────────────────────────────
-function _sessionRef(){
-  return db.collection('assetSessions').doc('shared');
-}
+function _sessionRef(){ return db.collection('assetSessions').doc('shared'); }
 
 let _saveTimer=null, _isSaving=false;
 function saveStorage(){
@@ -228,8 +230,8 @@ function saveStorage(){
         updatedByName: currentUser?.displayName||currentUser?.email||'',
       },{merge:true});
     }catch(e){ console.warn('Firestore save error:',e); }
-    finally{ setTimeout(()=>{ _isSaving=false; }, 2000); }
-  }, 600);
+    finally{ setTimeout(()=>{ _isSaving=false; },2000); }
+  },600);
 }
 
 let _unsubscribe=null;
@@ -242,48 +244,34 @@ function startRealtimeSync(){
       try{
         if(d.checkData)  checkData=JSON.parse(d.checkData);
         if(d.checkState) checkState=JSON.parse(d.checkState);
-      }catch(e){ console.warn('Parse error:',e); }
-    } else {
-      checkData={}; checkState={};
-    }
+      }catch(e){}
+    } else { checkData={}; checkState={}; }
     _ckIndex={}; _ckIndexRev={};
     renderAll();
-    if(snap.exists && snap.data().updatedByName && snap.data().updatedBy !== currentUser?.uid){
-      const name=snap.data().updatedByName;
-      showNotif(`🔄 ${name} อัปเดตข้อมูลแล้ว`,'info');
-    }
+    if(snap.exists && snap.data().updatedByName && snap.data().updatedBy!==currentUser?.uid)
+      showNotif(`🔄 ${snap.data().updatedByName} อัปเดตข้อมูลแล้ว`,'info');
   }, err=>console.warn('Snapshot error:',err));
 }
 
-// ── ID helpers ─────────────────────────────────────
 let _ckIndex={}, _ckIndexRev={};
 function getCkId(ck){
-  if(_ckIndex[ck]===undefined){
-    const n=Object.keys(_ckIndex).length;
-    _ckIndex[ck]=n; _ckIndexRev[n]=ck;
-  }
+  if(_ckIndex[ck]===undefined){ const n=Object.keys(_ckIndex).length; _ckIndex[ck]=n; _ckIndexRev[n]=ck; }
   return _ckIndex[ck];
 }
-function stateKey(ck,idx){return `${ck}||${idx}`;}
-
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function stateKey(ck,idx){ return `${ck}||${idx}`; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function highlight(s,q){
-  if(!q)return esc(s);
+  if(!q) return esc(s);
   const e=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   return esc(s).replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`);
 }
 
-// ══════════════════════════════════════════════════
-//  Import
-// ══════════════════════════════════════════════════
-function handleImport(input){
-  const f=input.files[0]; if(!f)return; input.value=''; readExcelFile(f);
-}
+// ── Import ────────────────────────────────────────
+function handleImport(input){ const f=input.files[0]; if(!f)return; input.value=''; readExcelFile(f); }
 function handleDrop(e){
   e.preventDefault(); document.getElementById('importZone').classList.remove('drag-over');
-  const f=e.dataTransfer.files[0]; if(f)readExcelFile(f);
+  const f=e.dataTransfer.files[0]; if(f) readExcelFile(f);
 }
-
 function readExcelFile(file){
   const reader=new FileReader();
   reader.onload=(ev)=>{
@@ -292,88 +280,68 @@ function readExcelFile(file){
       const data=ev.target.result;
       try{ wb=XLSX.read(data,{type:'binary'}); }
       catch(err){
-        const text=new TextDecoder('utf-8',{fatal:false}).decode(new Uint8Array(
-          new Uint8Array(data.length).map((_,i)=>data.charCodeAt(i))
-        ));
+        const text=new TextDecoder('utf-8',{fatal:false}).decode(new Uint8Array(new Uint8Array(data.length).map((_,i)=>data.charCodeAt(i))));
         wb=XLSX.read(text,{type:'string'});
       }
       const parsed=parseWorkbook(wb);
       const n=Object.keys(parsed).length;
-      if(n===0){showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error');return;}
+      if(n===0){ showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error'); return; }
       checkData=parsed;
       const valid=new Set();
       Object.keys(checkData).forEach(ck=>checkData[ck].items.forEach((_,i)=>valid.add(stateKey(ck,i))));
-      Object.keys(checkState).forEach(k=>{if(!valid.has(k))delete checkState[k];});
+      Object.keys(checkState).forEach(k=>{ if(!valid.has(k)) delete checkState[k]; });
       _ckIndex={}; _ckIndexRev={};
       saveStorage(); renderAll();
       showNotif(`Import สำเร็จ พบ ${n} เครื่อง`);
-    }catch(err){showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error');}
+    }catch(err){ showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error'); }
   };
   reader.readAsBinaryString(file);
 }
-
 function parseWorkbook(wb){
   const result={};
-  const sheetName=wb.SheetNames[0];
-  const ws=wb.Sheets[sheetName];
+  const ws=wb.Sheets[wb.SheetNames[0]];
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
   let currentComp=null, ck=null, inItems=false;
   for(let i=0;i<rows.length;i++){
     const row=rows[i].map(c=>String(c).trim());
     const ci=row.findIndex(c=>c==='Computer name:');
     if(ci!==-1){
-      ck=row[ci+1]||`COMP_${i}`;
-      const ip=row[ci+3]||'';
+      ck=row[ci+1]||`COMP_${i}`; const ip=row[ci+3]||'';
       const nr=(rows[i+1]||[]).map(c=>String(c).trim());
-      const emp=nr[1]||'', dept=nr[3]||'';
-      if(!result[ck]) result[ck]={computerName:ck,ip,employee:emp,dept,items:[]};
-      currentComp=result[ck]; inItems=false;
-      continue;
+      if(!result[ck]) result[ck]={computerName:ck,ip,employee:nr[1]||'',dept:nr[3]||'',items:[]};
+      currentComp=result[ck]; inItems=false; continue;
     }
-    if(row.includes('Asset Code')&&(row.includes('Sn')||row.includes('SN'))){
-      inItems=true; continue;
-    }
+    if(row.includes('Asset Code')&&(row.includes('Sn')||row.includes('SN'))){ inItems=true; continue; }
     if(currentComp&&inItems){
-      const has=row.some(c=>c.length>0); if(!has)continue;
+      const has=row.some(c=>c.length>0); if(!has) continue;
       const t=row[0];
-      if(!t||['อุปกรณ์','ประเภท','ยี่ห้อ'].includes(t))continue;
-      if(t==='Asset Code'||t.includes('Asset'))continue;
-      const brand=row[1]||'', assetCode=row[2]||'';
-      const model=row[4]||row[3]||'', sn=row[5]||row[4]||'', regNo=row[7]||row[6]||'';
+      if(!t||['อุปกรณ์','ประเภท','ยี่ห้อ'].includes(t)) continue;
+      if(t==='Asset Code'||t.includes('Asset')) continue;
+      const brand=row[1]||'', assetCode=row[2]||'', model=row[4]||row[3]||'', sn=row[5]||row[4]||'', regNo=row[7]||row[6]||'';
       if(assetCode||sn||model) currentComp.items.push({type:t,brand,assetCode,model,sn,regNo});
     }
   }
-  Object.keys(result).forEach(k=>{if(!result[k].items.length)delete result[k];});
+  Object.keys(result).forEach(k=>{ if(!result[k].items.length) delete result[k]; });
   return result;
 }
 
-// ══════════════════════════════════════════════════
-//  Template
-// ══════════════════════════════════════════════════
+// ── Template ──────────────────────────────────────
 function downloadTemplate(){
   const wb=XLSX.utils.book_new();
   const d=[
-    ['ลำดับ','1',''],
-    ['HO'],
-    ['ผู้รับผิดชอบดูแลอุปกรณ์',''],
+    ['ลำดับ','1',''],['HO'],['ผู้รับผิดชอบดูแลอุปกรณ์',''],
     ['Computer name:','ACC001-RYG','IP Address','192.168.101.100',''],
-    ['ชื่อ-สกุล','สมชาย ตัวอย่าง','ตำแหน่ง','พนักงาน IT'],
-    ['อุปกรณ์'],
+    ['ชื่อ-สกุล','สมชาย ตัวอย่าง','ตำแหน่ง','พนักงาน IT'],['อุปกรณ์'],
     ['อุปกรณ์','ยี่ห้อ','Asset Code','','ผลิตภัณฑ์/รุ่น/ขนาด','Sn','สถานะ','เลขทะเบียน'],
     ['Computer Set','Dell','OF21-0001','','Optiplex 3080','S/N : ABC123456','ใช้งาน','64/001'],
     ['Monitor','SAMSUNG','OF21-0002','','S24C330GAE','S/N : DEF789012','ใช้งาน','64/002'],
-    ['UPS','Syndome','OF21-0003','','SZ-1001-PRO','S/N : GHI345678','ใช้งาน','64/003'],
-    [''],
-    ['ลำดับ','2',''],
-    ['HO'],
-    ['ผู้รับผิดชอบดูแลอุปกรณ์',''],
+    ['UPS','Syndome','OF21-0003','','SZ-1001-PRO','S/N : GHI345678','ใช้งาน','64/003'],[''],
+    ['ลำดับ','2',''],['HO'],['ผู้รับผิดชอบดูแลอุปกรณ์',''],
     ['Computer name:','MMD001-RYG','IP Address','192.168.101.101',''],
-    ['ชื่อ-สกุล','สมหญิง ตัวอย่าง','ตำแหน่ง','ผู้จัดการ'],
-    ['อุปกรณ์'],
+    ['ชื่อ-สกุล','สมหญิง ตัวอย่าง','ตำแหน่ง','ผู้จัดการ'],['อุปกรณ์'],
     ['อุปกรณ์','ยี่ห้อ','Asset Code','','ผลิตภัณฑ์/รุ่น/ขนาด','Sn','สถานะ','เลขทะเบียน'],
     ['Computer Set','HP','OF22-0010','','EliteDesk 800','S/N : JKL012345','ใช้งาน','65/010'],
-    ['Printer','HP','FNITD-0001','','LaserJet Pro M12a','S/N : MNO678901','ใช้งาน','65/011'],
-    [''],
+    ['Printer','HP','FNITD-0001','','LaserJet Pro M12a','S/N : MNO678901','ใช้งาน','65/011'],[''],
   ];
   const ws=XLSX.utils.aoa_to_sheet(d);
   ws['!cols']=[{wch:15},{wch:20},{wch:15},{wch:5},{wch:22},{wch:22},{wch:10},{wch:10}];
@@ -382,26 +350,22 @@ function downloadTemplate(){
   showNotif('ดาวน์โหลดไฟล์ตัวอย่างแล้ว');
 }
 
-// ══════════════════════════════════════════════════
-//  Stats
-// ══════════════════════════════════════════════════
+// ── Stats ─────────────────────────────────────────
 function calcStats(){
   let total=0,checked=0,issue=0,reg=0;
   Object.keys(checkData).forEach(ck=>{
     checkData[ck].items.forEach((_,i)=>{
       const st=checkState[stateKey(ck,i)]||{};
       total++;
-      if(st.checked)checked++;
-      if(st.assetCodeActual||st.modelActual||st.snActual)issue++;
-      if(st.updatedInRegistry)reg++;
+      if(st.checked) checked++;
+      if(st.assetCodeActual||st.modelActual||st.snActual) issue++;
+      if(st.updatedInRegistry) reg++;
     });
   });
   return{total,checked,issue,reg,computers:Object.keys(checkData).length};
 }
-
 function updateSummary(){
-  const s=calcStats();
-  const el=id=>document.getElementById(id);
+  const s=calcStats(), el=id=>document.getElementById(id);
   if(el('sumComp'))    el('sumComp').textContent=s.computers;
   if(el('sumTotal'))   el('sumTotal').textContent=s.total;
   if(el('sumChecked')) el('sumChecked').textContent=s.checked;
@@ -411,80 +375,58 @@ function updateSummary(){
     el('pageSubtitle').textContent=`${s.computers} เครื่อง · เช็คแล้ว ${s.checked}/${s.total} รายการ`;
 }
 
-// ══════════════════════════════════════════════════
-//  Render
-// ══════════════════════════════════════════════════
+// ── Render ────────────────────────────────────────
 function renderAll(){
   _ckIndex={}; _ckIndexRev={};
   const hasData=Object.keys(checkData).length>0;
   const q=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();
   const filter=document.getElementById('filterSel')?.value||'';
 
-  document.getElementById('importZone').style.display  =hasData?'none':'block';
-  document.getElementById('summaryBar').style.display  =hasData?'flex':'none';
-  document.getElementById('toolbarRow').style.display  =hasData?'flex':'none';
-  document.getElementById('btnClearAll').style.display =hasData?'':'none';
-
+  document.getElementById('importZone').style.display =hasData?'none':'block';
+  document.getElementById('summaryBar').style.display =hasData?'flex':'none';
+  document.getElementById('toolbarRow').style.display =hasData?'flex':'none';
+  document.getElementById('btnClearAll').style.display=hasData?'':'none';
   if(hasData) updateSummary();
 
   const list=document.getElementById('assetList');
-  if(!hasData){list.innerHTML='';return;}
+  if(!hasData){ list.innerHTML=''; return; }
 
   const sort=document.getElementById('sortSel')?.value||'name';
   const sortedCks=Object.keys(checkData).sort((a,b)=>{
     if(sort==='name') return a.localeCompare(b,'th');
-    const getProgress=(ck)=>{
-      const items=checkData[ck].items;
-      if(!items.length)return 0;
-      return items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length/items.length;
-    };
-    const getIssue=(ck)=>checkData[ck].items.some((_,i)=>{
-      const st=checkState[stateKey(ck,i)]||{};
-      return !!(st.assetCodeActual||st.modelActual||st.snActual);
-    })?1:0;
-    if(sort==='progress_asc') return getProgress(a)-getProgress(b);
-    if(sort==='progress_desc') return getProgress(b)-getProgress(a);
-    if(sort==='issue') return getIssue(b)-getIssue(a)||a.localeCompare(b,'th');
+    const prog=ck=>{ const items=checkData[ck].items; return items.length?items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length/items.length:0; };
+    const hasIssue=ck=>checkData[ck].items.some((_,i)=>{ const st=checkState[stateKey(ck,i)]||{}; return !!(st.assetCodeActual||st.modelActual||st.snActual); })?1:0;
+    if(sort==='progress_asc')  return prog(a)-prog(b);
+    if(sort==='progress_desc') return prog(b)-prog(a);
+    if(sort==='issue')         return hasIssue(b)-hasIssue(a)||a.localeCompare(b,'th');
     return 0;
   });
 
-  let html=''; let visCount=0;
+  let html='', visCount=0;
   sortedCks.forEach(ck=>{
-    const comp=checkData[ck];
-    const cid=getCkId(ck);
-
+    const comp=checkData[ck], cid=getCkId(ck);
     const filtered=comp.items.map((item,i)=>({item,i})).filter(({item,i})=>{
       const st=checkState[stateKey(ck,i)]||{};
-      if(q){
-        const hay=[ck,comp.ip,comp.employee,comp.dept,item.type,item.brand,
-                   item.assetCode,item.model,item.sn,item.regNo].join(' ').toLowerCase();
-        if(!hay.includes(q))return false;
-      }
+      if(q){ const hay=[ck,comp.ip,comp.employee,comp.dept,item.type,item.brand,item.assetCode,item.model,item.sn,item.regNo].join(' ').toLowerCase(); if(!hay.includes(q)) return false; }
       if(filter==='pending') return !st.checked;
       if(filter==='checked') return  st.checked;
       if(filter==='issue')   return  !!(st.assetCodeActual||st.modelActual||st.snActual);
       return true;
     });
-
-    if(!filtered.length)return;
+    if(!filtered.length) return;
     visCount++;
 
     const totalItems=comp.items.length;
-    const doneN=comp.items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length;
-    const issueN=comp.items.filter((_,i)=>{const st=checkState[stateKey(ck,i)]||{};return !!(st.assetCodeActual||st.modelActual||st.snActual);}).length;
+    const doneN =comp.items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length;
+    const issueN=comp.items.filter((_,i)=>{ const st=checkState[stateKey(ck,i)]||{}; return !!(st.assetCodeActual||st.modelActual||st.snActual); }).length;
     const pct=totalItems?Math.round(doneN/totalItems*100):0;
     const allDone=doneN===totalItems;
 
-    let badgeCls, badgeTxt, nameColor;
-    if(issueN>0){
-      badgeCls='comp-status-issue'; badgeTxt=`⚠️ มีปัญหา ${issueN} รายการ`; nameColor='#991B1B';
-    } else if(allDone && totalItems>0){
-      badgeCls='comp-status-ok'; badgeTxt='✅ เช็คครบ ไม่มีปัญหา'; nameColor='#065F46';
-    } else if(doneN>0){
-      badgeCls='comp-status-partial'; badgeTxt=`⏳ กำลังเช็ค ${doneN}/${totalItems}`; nameColor='';
-    } else {
-      badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค'; nameColor='';
-    }
+    let badgeCls,badgeTxt,nameColor;
+    if(issueN>0)               { badgeCls='comp-status-issue';   badgeTxt=`⚠️ มีปัญหา ${issueN} รายการ`; nameColor='#991B1B'; }
+    else if(allDone&&totalItems){ badgeCls='comp-status-ok';      badgeTxt='✅ เช็คครบ ไม่มีปัญหา';       nameColor='#065F46'; }
+    else if(doneN>0)            { badgeCls='comp-status-partial'; badgeTxt=`⏳ กำลังเช็ค ${doneN}/${totalItems}`; nameColor=''; }
+    else                        { badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค';              nameColor=''; }
 
     html+=`
 <div class="comp-group">
@@ -525,7 +467,16 @@ function renderAll(){
       const st=checkState[sk]||{};
       const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
       const rowCls=st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'');
-      const panelVisible=hasIssue?'display:table-row;':'';
+
+      // pill summary สำหรับแสดงข้อมูลปัญหาที่บันทึกแล้ว (ไม่ต้องกางแผง)
+      let pillsHtml='';
+      if(hasIssue){
+        pillsHtml='<div class="issue-summary">';
+        if(st.assetCodeActual) pillsHtml+=`<span class="issue-pill" title="Asset Code จริง">🏷️ ${esc(st.assetCodeActual)}</span>`;
+        if(st.modelActual)     pillsHtml+=`<span class="issue-pill" title="รุ่นจริง">📦 ${esc(st.modelActual)}</span>`;
+        if(st.snActual)        pillsHtml+=`<span class="issue-pill" title="SN จริง">🔢 ${esc(st.snActual)}</span>`;
+        pillsHtml+='</div>';
+      }
 
       html+=`
       <tr class="asset-row ${rowCls}" id="arow_${cid}_${i}">
@@ -548,14 +499,14 @@ function renderAll(){
                 ${st.checked?'✅ เช็คแล้ว':'☐ เช็คแล้ว'}
               </button>
               <button class="btn-issue ${hasIssue?'active':''}"
+                id="btnissue_${cid}_${i}"
                 onclick="toggleIssuePanel('${esc(sk)}',${cid},${i})">
                 ⚠️ ${hasIssue?'มีปัญหา':'มีปัญหา?'}
               </button>
             </div>
             <div style="display:flex;gap:5px;flex-wrap:wrap;">
               <button class="btn-reg ${st.updatedInRegistry?'active':''}"
-                onclick="toggleReg('${esc(sk)}',${cid},${i})"
-                title="แก้ไขในทะเบียนทรัพย์สินแล้ว">
+                onclick="toggleReg('${esc(sk)}',${cid},${i})">
                 ${st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน'}
               </button>
             </div>
@@ -564,12 +515,13 @@ function renderAll(){
               ${st.checkedBy?`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`:''}
               ${st.updatedInRegistry&&st.updatedAt?`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`:''}
             </div>
+            <div class="pills-wrap" id="pills_${cid}_${i}">${pillsHtml}</div>
           </div>
         </td>
       </tr>
-      <tr class="issue-panel-row" id="ipanel_${cid}_${i}" style="${panelVisible}">
+      <tr class="issue-panel-row" id="ipanel_${cid}_${i}">
         <td colspan="4">
-          <div class="issue-panel-inner" id="ipanel-inner_${cid}_${i}">
+          <div class="issue-panel-inner">
             <div>
               <label>Asset Code จริง</label>
               <input class="issue-input ${st.assetCodeActual?'has-val':''}" type="text"
@@ -603,12 +555,7 @@ function renderAll(){
       </tr>`;
     });
 
-    html+=`
-      </tbody>
-    </table>
-    </div>
-  </div>
-</div>`;
+    html+=`</tbody></table></div></div></div>`;
   });
 
   if(!visCount){
@@ -618,193 +565,166 @@ function renderAll(){
   list.innerHTML=html;
 }
 
-// ══════════════════════════════════════════════════
-//  Issue panel — manual save only, no auto-save
-// ══════════════════════════════════════════════════
+// ── Issue panel toggle — ซ่อนเสมอ เปิดเมื่อกดปุ่มเท่านั้น ─
+function toggleIssuePanel(sk, cid, i){
+  const panel=document.getElementById(`ipanel_${cid}_${i}`);
+  if(!panel) return;
+  const willOpen=!panel.classList.contains('open');
+  panel.classList.toggle('open', willOpen);
+  // โฟกัส field แรกเมื่อเปิด
+  if(willOpen){
+    setTimeout(()=>{ document.getElementById(`f_assetCode_${cid}_${i}`)?.focus(); },50);
+  }
+}
 
-// เมื่อพิมพ์ → แค่ mark dirty, ไม่ trigger save ใดๆ
+// ── Mark dirty (พิมพ์แล้วยังไม่บันทึก) ──────────
 function markDirty(cid, i, input){
-  input.classList.toggle('has-val', input.value.trim().length > 0);
+  input.classList.toggle('has-val', input.value.trim().length>0);
   input.classList.add('dirty');
   const btn=document.getElementById(`savebtn_${cid}_${i}`);
   if(btn){ btn.classList.remove('saved'); btn.classList.add('dirty'); btn.innerHTML='💾 บันทึก (มีการเปลี่ยนแปลง)'; }
 }
 
+// ── Save — manual button only ────────────────────
 async function saveIssuePanel(sk, cid, i){
   const btn=document.getElementById(`savebtn_${cid}_${i}`);
-
   const fields={
     assetCodeActual: document.getElementById(`f_assetCode_${cid}_${i}`)?.value.trim()||'',
     modelActual:     document.getElementById(`f_model_${cid}_${i}`)?.value.trim()||'',
     snActual:        document.getElementById(`f_sn_${cid}_${i}`)?.value.trim()||'',
   };
 
-  // saving state
   if(btn){ btn.classList.remove('dirty'); btn.classList.add('saving'); btn.innerHTML='⏳ กำลังบันทึก...'; btn.disabled=true; }
 
   if(!checkState[sk]) checkState[sk]={};
-  Object.entries(fields).forEach(([f,v])=>{
-    if(v) checkState[sk][f]=v;
-    else  delete checkState[sk][f];
-  });
+  Object.entries(fields).forEach(([f,v])=>{ if(v) checkState[sk][f]=v; else delete checkState[sk][f]; });
 
-  // clear dirty class on inputs
-  ['f_assetCode','f_model','f_sn'].forEach(prefix=>{
-    const el=document.getElementById(`${prefix}_${cid}_${i}`);
-    if(el) el.classList.remove('dirty');
-  });
+  ['f_assetCode','f_model','f_sn'].forEach(p=>{ document.getElementById(`${p}_${cid}_${i}`)?.classList.remove('dirty'); });
 
   await new Promise(r=>{ saveStorage(); setTimeout(r,700); });
 
   if(btn){ btn.classList.remove('saving'); btn.classList.add('saved'); btn.innerHTML='✅ บันทึกแล้ว'; btn.disabled=false; }
 
   _updateRow(sk,cid,i);
-  const ck=sk.split('||')[0];
-  _updateCompHeader(ck);
+  _updateCompHeader(sk.split('||')[0]);
   updateSummary();
 
+  // ปิด panel หลังบันทึกสำเร็จ 800ms
   setTimeout(()=>{
+    document.getElementById(`ipanel_${cid}_${i}`)?.classList.remove('open');
     const b=document.getElementById(`savebtn_${cid}_${i}`);
-    if(b&&b.classList.contains('saved')){ b.classList.remove('saved'); b.innerHTML='💾 บันทึก'; }
-  }, 3000);
+    if(b){ b.classList.remove('saved'); b.innerHTML='💾 บันทึก'; }
+  },800);
 }
 
-// ══════════════════════════════════════════════════
-//  Actions
-// ══════════════════════════════════════════════════
+// ── Comp collapse ─────────────────────────────────
 function toggleComp(cid){
-  const body=document.getElementById('body'+cid);
-  const tog =document.getElementById('tog'+cid);
-  if(!body)return;
-  const isExpanded=body.classList.toggle('expanded');
-  if(tog) tog.textContent=isExpanded?'▲':'▼';
+  const body=document.getElementById('body'+cid), tog=document.getElementById('tog'+cid);
+  if(!body) return;
+  const ex=body.classList.toggle('expanded');
+  if(tog) tog.textContent=ex?'▲':'▼';
 }
-
 function expandAll(){
-  Object.keys(_ckIndexRev).forEach(n=>{
-    const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
-    if(b)b.classList.add('expanded');
-    if(t)t.textContent='▲';
-  });
+  Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.add('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▲'; });
 }
 function collapseAll(){
-  Object.keys(_ckIndexRev).forEach(n=>{
-    const b=document.getElementById('body'+n),t=document.getElementById('tog'+n);
-    if(b)b.classList.remove('expanded');
-    if(t)t.textContent='▼';
-  });
+  Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.remove('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▼'; });
 }
 
-function toggleIssuePanel(sk, cid, i){
-  const panel=document.getElementById(`ipanel_${cid}_${i}`);
-  if(!panel)return;
-  const isOpen=panel.style.display==='table-row';
-  panel.style.display=isOpen?'none':'table-row';
-}
-
+// ── Update header ─────────────────────────────────
 function _updateCompHeader(ck){
-  const cid=_ckIndex[ck];
-  if(cid===undefined)return;
-  const comp=checkData[ck];
-  const totalItems=comp.items.length;
-  const doneN=comp.items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length;
-  const issueN=comp.items.filter((_,i)=>{const st=checkState[stateKey(ck,i)]||{};return !!(st.assetCodeActual||st.modelActual||st.snActual);}).length;
-  const pct=totalItems?Math.round(doneN/totalItems*100):0;
-  const allDone=doneN===totalItems;
+  const cid=_ckIndex[ck]; if(cid===undefined) return;
+  const comp=checkData[ck], totalItems=comp.items.length;
+  const doneN =comp.items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length;
+  const issueN=comp.items.filter((_,i)=>{ const st=checkState[stateKey(ck,i)]||{}; return !!(st.assetCodeActual||st.modelActual||st.snActual); }).length;
+  const pct=totalItems?Math.round(doneN/totalItems*100):0, allDone=doneN===totalItems;
 
   let badgeCls,badgeTxt,nameColor;
-  if(issueN>0){badgeCls='comp-status-issue';badgeTxt=`⚠️ มีปัญหา ${issueN} รายการ`;nameColor='#991B1B';}
-  else if(allDone&&totalItems>0){badgeCls='comp-status-ok';badgeTxt='✅ เช็คครบ ไม่มีปัญหา';nameColor='#065F46';}
-  else if(doneN>0){badgeCls='comp-status-partial';badgeTxt=`⏳ กำลังเช็ค ${doneN}/${totalItems}`;nameColor='';}
-  else{badgeCls='comp-status-pending';badgeTxt='○ ยังไม่ได้เช็ค';nameColor='';}
+  if(issueN>0)               { badgeCls='comp-status-issue';   badgeTxt=`⚠️ มีปัญหา ${issueN} รายการ`; nameColor='#991B1B'; }
+  else if(allDone&&totalItems){ badgeCls='comp-status-ok';      badgeTxt='✅ เช็คครบ ไม่มีปัญหา';       nameColor='#065F46'; }
+  else if(doneN>0)            { badgeCls='comp-status-partial'; badgeTxt=`⏳ กำลังเช็ค ${doneN}/${totalItems}`; nameColor=''; }
+  else                        { badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค';              nameColor=''; }
 
-  const bodyEl=document.getElementById(`body${cid}`);
-  if(!bodyEl)return;
-  const header=bodyEl.previousElementSibling;
-  if(!header)return;
-
-  const progFill=header.querySelector('.prog-fill');
-  if(progFill) progFill.style.width=pct+'%';
-  const progLbl=header.querySelector('.prog-lbl');
-  if(progLbl) progLbl.textContent=`${doneN}/${totalItems}`;
-  const nameEl=header.querySelector('.comp-name');
-  if(nameEl) nameEl.style.color=nameColor||'';
-  const badge=header.querySelector('.comp-status-badge');
-  if(badge){badge.className=`comp-status-badge ${badgeCls}`;badge.innerHTML=badgeTxt;}
-  const icon=header.querySelector('div[style*="border-radius:8px"]');
-  if(icon){
-    icon.style.background=allDone&&!issueN?'var(--g)':(issueN?'#FEE2E2':'var(--bg)');
-    icon.style.borderColor=allDone&&!issueN?'var(--g)':(issueN?'#FCA5A5':'var(--bdrm)');
-  }
+  const bodyEl=document.getElementById(`body${cid}`); if(!bodyEl) return;
+  const header=bodyEl.previousElementSibling; if(!header) return;
+  const pf=header.querySelector('.prog-fill'); if(pf) pf.style.width=pct+'%';
+  const pl=header.querySelector('.prog-lbl'); if(pl) pl.textContent=`${doneN}/${totalItems}`;
+  const ne=header.querySelector('.comp-name'); if(ne) ne.style.color=nameColor||'';
+  const bg=header.querySelector('.comp-status-badge'); if(bg){ bg.className=`comp-status-badge ${badgeCls}`; bg.innerHTML=badgeTxt; }
+  const ic=header.querySelector('div[style*="border-radius:8px"]');
+  if(ic){ ic.style.background=allDone&&!issueN?'var(--g)':(issueN?'#FEE2E2':'var(--bg)'); ic.style.borderColor=allDone&&!issueN?'var(--g)':(issueN?'#FCA5A5':'var(--bdrm)'); }
 }
 
+// ── Update row in-place ───────────────────────────
 function _updateRow(sk, cid, i){
   const st=checkState[sk]||{};
   const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
-  const row=document.getElementById(`arow_${cid}_${i}`);
-  if(!row)return;
+  const row=document.getElementById(`arow_${cid}_${i}`); if(!row) return;
 
   row.className=`asset-row ${st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'')}`;
 
-  const btnChk=row.querySelector('.btn-chk');
-  if(btnChk){
-    btnChk.classList.toggle('active',!!st.checked);
-    btnChk.textContent=st.checked?'✅ เช็คแล้ว':'☐ เช็คแล้ว';
+  const bc=row.querySelector('.btn-chk');
+  if(bc){ bc.classList.toggle('active',!!st.checked); bc.textContent=st.checked?'✅ เช็คแล้ว':'☐ เช็คแล้ว'; }
+  const bi=row.querySelector('.btn-issue');
+  if(bi){ bi.classList.toggle('active',hasIssue); bi.textContent=`⚠️ ${hasIssue?'มีปัญหา':'มีปัญหา?'}`; }
+  const br=row.querySelector('.btn-reg');
+  if(br){ br.classList.toggle('active',!!st.updatedInRegistry); br.textContent=st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน'; }
+
+  const dw=row.querySelector('.dates-wrap');
+  if(dw){
+    dw.innerHTML='';
+    if(st.checkedAt) dw.innerHTML+=`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`;
+    if(st.checkedBy) dw.innerHTML+=`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`;
+    if(st.updatedInRegistry&&st.updatedAt) dw.innerHTML+=`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`;
   }
-  const btnIssue=row.querySelector('.btn-issue');
-  if(btnIssue){
-    btnIssue.classList.toggle('active',hasIssue);
-    btnIssue.textContent=`⚠️ ${hasIssue?'มีปัญหา':'มีปัญหา?'}`;
-  }
-  const btnReg=row.querySelector('.btn-reg');
-  if(btnReg){
-    btnReg.classList.toggle('active',!!st.updatedInRegistry);
-    btnReg.textContent=st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน';
-  }
-  const datesWrap=row.querySelector('.dates-wrap');
-  if(datesWrap){
-    datesWrap.innerHTML='';
-    if(st.checkedAt) datesWrap.innerHTML+=`<div class="check-date">🕐 ${esc(st.checkedAt)}</div>`;
-    if(st.checkedBy) datesWrap.innerHTML+=`<div class="check-date">👤 ${esc(st.checkedBy)}</div>`;
-    if(st.updatedInRegistry&&st.updatedAt) datesWrap.innerHTML+=`<div class="check-date">📝 แก้ ${esc(st.updatedAt)}</div>`;
+
+  // อัปเดต pills
+  const pw=document.getElementById(`pills_${cid}_${i}`);
+  if(pw){
+    let pillsHtml='';
+    if(hasIssue){
+      pillsHtml='<div class="issue-summary">';
+      if(st.assetCodeActual) pillsHtml+=`<span class="issue-pill" title="Asset Code จริง">🏷️ ${esc(st.assetCodeActual)}</span>`;
+      if(st.modelActual)     pillsHtml+=`<span class="issue-pill" title="รุ่นจริง">📦 ${esc(st.modelActual)}</span>`;
+      if(st.snActual)        pillsHtml+=`<span class="issue-pill" title="SN จริง">🔢 ${esc(st.snActual)}</span>`;
+      pillsHtml+='</div>';
+    }
+    pw.innerHTML=pillsHtml;
   }
 }
 
+// ── Toggle checked ────────────────────────────────
 function toggleChecked(sk,cid,i){
   const cur=(checkState[sk]||{}).checked;
-  if(!confirm(cur?'ยกเลิกการเช็ค?':'ยืนยันว่าเช็คแล้ว?'))return;
-  if(!checkState[sk])checkState[sk]={};
+  if(!confirm(cur?'ยกเลิกการเช็ค?':'ยืนยันว่าเช็คแล้ว?')) return;
+  if(!checkState[sk]) checkState[sk]={};
   const st=checkState[sk];
   st.checked=!cur;
   if(st.checked){
     st.checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
     st.checkedBy=currentUser?.displayName||currentUser?.email||'';
   } else { delete st.checkedAt; delete st.checkedBy; }
-  saveStorage();
-  _updateRow(sk,cid,i);
-  const ck=sk.split('||')[0];
-  _updateCompHeader(ck);
-  updateSummary();
+  saveStorage(); _updateRow(sk,cid,i); _updateCompHeader(sk.split('||')[0]); updateSummary();
 }
 
+// ── Toggle registry ───────────────────────────────
 function toggleReg(sk,cid,i){
   const cur=(checkState[sk]||{}).updatedInRegistry;
-  if(!confirm(cur?'ยกเลิกการแก้ในระบบ?':'ยืนยันว่าแก้ในระบบแล้ว?'))return;
-  if(!checkState[sk])checkState[sk]={};
+  if(!confirm(cur?'ยกเลิกการแก้ในระบบ?':'ยืนยันว่าแก้ในระบบแล้ว?')) return;
+  if(!checkState[sk]) checkState[sk]={};
   const st=checkState[sk];
   st.updatedInRegistry=!cur;
   if(st.updatedInRegistry)
     st.updatedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   else delete st.updatedAt;
-  saveStorage();
-  _updateRow(sk,cid,i);
-  updateSummary();
+  saveStorage(); _updateRow(sk,cid,i); updateSummary();
 }
 
+// ── Clear all ─────────────────────────────────────
 async function confirmClearAll(){
-  if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย'))return;
+  if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย')) return;
   checkData={}; checkState={}; _ckIndex={}; _ckIndexRev={};
-  try{ await _sessionRef().delete(); }catch(e){ console.warn('Firestore delete error:',e); }
+  try{ await _sessionRef().delete(); }catch(e){}
   renderAll(); showNotif('ลบข้อมูลทั้งหมดแล้ว');
 }
 </script>
