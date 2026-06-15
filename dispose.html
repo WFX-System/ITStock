@@ -2,10 +2,9 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>ตัดทรัพย์สิน — Template</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
-<!-- docx.js for Word export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
 <style>
@@ -20,26 +19,56 @@
   --radius:12px;
 }
 body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh;}
-.editor{max-width:680px;margin:0 auto;padding:16px;}
-.editor-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding:14px 16px;background:var(--surf);border-radius:var(--radius);border:1px solid var(--bdr);}
-.editor-logo{width:38px;height:38px;background:var(--g);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.editor-title{font-size:16px;font-weight:700;}
-.editor-sub{font-size:12px;color:var(--tx3);margin-top:1px;}
-.doc-meta{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;}
+.editor{max-width:700px;margin:0 auto;padding:12px 14px 40px;}
+
+.editor-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 14px;background:var(--surf);border-radius:var(--radius);border:1px solid var(--bdr);}
+.editor-logo{width:36px;height:36px;background:var(--g);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0;}
+.editor-title{font-size:15px;font-weight:700;}
+.editor-sub{font-size:11px;color:var(--tx3);margin-top:1px;}
+
+.sec-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
+.sec-title{font-size:12px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
 .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .field-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
-.field-input{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:8px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:var(--bg);transition:.15s;outline:none;}
+.field-input{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:var(--bg);transition:.15s;outline:none;}
 .field-input:focus{border-color:var(--g);background:#fff;box-shadow:0 0 0 3px var(--gll);}
-.items-section{margin-bottom:14px;}
-.section-label{font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.item-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radius);padding:14px;margin-bottom:10px;position:relative;transition:.15s;}
+
+/* category manager */
+.cat-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.cat-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px 4px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:default;border:1px solid transparent;}
+.cat-tag .cat-edit-btn,.cat-tag .cat-del-btn{background:none;border:none;cursor:pointer;padding:0 2px;font-size:12px;color:inherit;opacity:.7;line-height:1;}
+.cat-tag .cat-edit-btn:hover,.cat-tag .cat-del-btn:hover{opacity:1;}
+.cat-add-row{display:flex;gap:6px;align-items:center;}
+.cat-add-input{flex:1;border:1.5px dashed var(--bdrm);border-radius:8px;padding:6px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:transparent;outline:none;}
+.cat-add-input:focus{border-color:var(--g);}
+.cat-color-pick{width:34px;height:34px;border:1.5px solid var(--bdrm);border-radius:8px;cursor:pointer;padding:3px;background:none;}
+.btn-sm{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;font-family:var(--font);transition:.15s;}
+.btn-sm:hover{border-color:var(--g);color:var(--g);}
+.btn-sm-green{background:var(--g);color:#fff;border-color:var(--g);}
+.btn-sm-green:hover{background:var(--gd);border-color:var(--gd);color:#fff;}
+
+/* filter bar */
+.filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center;}
+.filter-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;}
+.filter-btn{padding:5px 13px;border-radius:16px;border:1.5px solid var(--bdrm);background:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--tx2);transition:.15s;}
+.filter-btn.active{color:#fff;border-color:transparent;}
+.filter-btn:not(.active):hover{border-color:var(--g);color:var(--g);}
+.filter-info{font-size:11px;color:var(--tx3);margin-bottom:10px;padding:6px 12px;background:#F1F5F9;border-radius:8px;display:flex;align-items:center;justify-content:space-between;}
+
+/* item cards */
+.item-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radius);padding:14px;margin-bottom:10px;transition:.15s;border-left:4px solid transparent;}
 .item-card:hover{border-color:var(--bdrm);}
-.item-num{width:26px;height:26px;background:var(--g);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.item-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff;}
 .item-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
-.item-header-title{font-size:13px;font-weight:700;flex:1;}
+.item-header-title{font-size:12px;color:var(--tx3);flex:1;}
 .item-del{background:none;border:1px solid #FECACA;color:#EF4444;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--font);}
 .item-del:hover{background:#FEF2F2;}
 .item-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.cat-select{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:#fff;outline:none;cursor:pointer;}
+.cat-select:focus{border-color:var(--g);}
+.cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+
+/* image upload */
 .img-upload-zone{border:2px dashed var(--bdrm);border-radius:9px;padding:10px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg);}
 .img-upload-zone:hover,.img-upload-zone.drag{border-color:var(--g);background:var(--gll);}
 .img-upload-zone .uz-icon{font-size:22px;margin-bottom:3px;}
@@ -49,18 +78,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .img-thumb img{width:100%;height:100%;object-fit:cover;}
 .img-thumb-del{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;}
 .img-uploading{opacity:.5;}
+.upload-status{font-size:11px;color:var(--tx3);margin-top:4px;min-height:14px;}
+
+/* action bar */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;transition:all .15s;font-family:var(--font);}
 .btn:hover{border-color:var(--g);color:var(--g);}
 .btn-primary{background:var(--g);color:#fff;border-color:var(--g);}
-.btn-primary:hover{background:var(--gd);border-color:var(--gd);}
+.btn-primary:hover{background:var(--gd);border-color:var(--gd);color:#fff;}
 .btn-word{background:#2B579A;color:#fff;border-color:#2B579A;}
 .btn-word:hover{background:#1E3F74;border-color:#1E3F74;color:#fff;}
 .btn-ghost{background:transparent;border-color:var(--bdrm);color:var(--tx3);}
 .btn-ghost:hover{border-color:var(--bdrm);color:var(--tx2);background:var(--bg);}
-.action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .add-item-btn{width:100%;padding:10px;border:2px dashed var(--bdrm);border-radius:10px;background:none;font-size:13px;font-weight:700;color:var(--tx3);cursor:pointer;font-family:var(--font);transition:.15s;}
 .add-item-btn:hover{border-color:var(--g);color:var(--g);background:var(--gll);}
-.upload-status{font-size:11px;color:var(--tx3);margin-top:4px;min-height:14px;}
+
+/* print */
 #printArea{display:none;}
 @media print{
   .editor{display:none!important;}
@@ -73,22 +106,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .print-doc-title{font-size:18pt;font-weight:700;margin-bottom:4px;}
 .print-item{margin-bottom:24px;page-break-inside:avoid;}
 .print-item-header{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;}
-.print-item-num{font-size:13pt;font-weight:700;color:#111;}
-.print-item-ref{font-size:13pt;font-weight:700;color:#111;font-family:'IBM Plex Mono',monospace;text-decoration:underline;text-underline-offset:3px;}
-.print-item-sn{font-size:12pt;color:#111;font-family:'IBM Plex Mono',monospace;}
+.print-item-num{font-size:13pt;font-weight:700;}
+.print-item-ref{font-size:13pt;font-weight:700;font-family:'IBM Plex Mono',monospace;text-decoration:underline;text-underline-offset:3px;}
+.print-item-sn{font-size:12pt;font-family:'IBM Plex Mono',monospace;}
 .print-item-name{font-size:11pt;color:#444;margin-bottom:8px;margin-left:22px;}
 .print-imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-left:22px;}
 .print-img-wrap{border:1px solid #ccc;border-radius:6px;overflow:hidden;aspect-ratio:4/3;}
 .print-img-wrap img{width:100%;height:100%;object-fit:cover;}
 .print-footer{margin-top:28px;padding-top:10px;border-top:1px solid #ccc;font-size:10pt;color:#777;display:flex;justify-content:space-between;}
+.print-cat-heading{font-size:14pt;font-weight:700;margin:20px 0 10px;padding:6px 10px;border-radius:6px;}
+
+/* preview overlay */
 .preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;overflow-y:auto;padding:20px;}
 .preview-overlay.open{display:block;}
 .preview-box{background:#fff;max-width:760px;margin:0 auto;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);}
 .preview-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surf);border-bottom:1px solid var(--bdr);}
 .preview-toolbar-title{font-size:13px;font-weight:700;}
 .preview-content{padding:24px;font-family:'Sarabun',sans-serif;font-size:13pt;color:#111;}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
-.toast.show{opacity:1;}
+
+/* docx progress */
 .docx-progress{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
 .docx-progress.open{display:flex;}
 .docx-progress-box{background:#fff;border-radius:16px;padding:28px 32px;text-align:center;min-width:240px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
@@ -97,6 +133,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .docx-progress-sub{font-size:12px;color:var(--tx3);}
 .progress-bar-wrap{height:6px;background:var(--bdr);border-radius:3px;margin-top:14px;overflow:hidden;}
 .progress-bar-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
+
+/* toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* edit modal */
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
+.modal-wrap.open{display:flex;}
+.modal-box{background:var(--surf);border-radius:14px;padding:22px 24px;min-width:300px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal-title{font-size:14px;font-weight:700;margin-bottom:14px;}
+.modal-row{margin-bottom:10px;}
+.modal-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;}
+.modal-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
+
 @media(max-width:520px){
   .meta-grid,.item-fields{grid-template-columns:1fr;}
   .action-bar{flex-direction:column;}
@@ -111,16 +161,28 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <div class="editor-logo">📦</div>
     <div>
       <div class="editor-title">สร้างเอกสารตัดทรัพย์สิน</div>
-      <div class="editor-sub">เพิ่มรายการ + อัพโหลดรูป → พิมพ์ / Export Word</div>
+      <div class="editor-sub">จัดประเภท · กรองดู · Export เฉพาะประเภท</div>
     </div>
   </div>
 
-  <div class="doc-meta">
-    <div class="field-label" style="margin-bottom:10px;">📄 ข้อมูลเอกสาร</div>
+  <!-- Category Manager -->
+  <div class="sec-card">
+    <div class="sec-title">🏷️ จัดการประเภทอุปกรณ์</div>
+    <div class="cat-list" id="catList"></div>
+    <div class="cat-add-row">
+      <input class="cat-add-input" id="catAddName" placeholder="ชื่อประเภทใหม่ เช่น เครื่องพิมพ์" onkeydown="if(event.key==='Enter')addCategory()"/>
+      <input type="color" class="cat-color-pick" id="catAddColor" value="#1D9E75" title="เลือกสี"/>
+      <button class="btn-sm btn-sm-green" onclick="addCategory()">+ เพิ่ม</button>
+    </div>
+  </div>
+
+  <!-- Doc Meta -->
+  <div class="sec-card">
+    <div class="sec-title">📄 ข้อมูลเอกสาร</div>
     <div class="meta-grid">
       <div>
         <div class="field-label">ชื่อเอกสาร / หัวข้อ</div>
-        <input class="field-input" id="docTitle" placeholder="เช่น รายการตัดทรัพย์สิน ประจำปี 2568" value="รายการตัดทรัพย์สิน"/>
+        <input class="field-input" id="docTitle" placeholder="รายการตัดทรัพย์สิน ประจำปี 2568" value="รายการตัดทรัพย์สิน"/>
       </div>
       <div>
         <div class="field-label">เลขที่เอกสาร</div>
@@ -137,21 +199,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     </div>
   </div>
 
-  <div class="items-section">
-    <div class="section-label">🗂️ รายการทรัพย์สิน</div>
+  <!-- Filter bar -->
+  <div>
+    <div class="filter-bar" id="filterBar"></div>
+    <div class="filter-info" id="filterInfo" style="display:none">
+      <span id="filterInfoText"></span>
+      <span id="filterInfoClear" style="cursor:pointer;color:var(--g);font-weight:700;" onclick="setFilter('__all__')">✕ ล้างตัวกรอง</span>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div>
     <div id="itemsContainer"></div>
     <button class="add-item-btn" onclick="addItem()">+ เพิ่มรายการ</button>
   </div>
 
-  <div class="action-bar">
+  <!-- Action bar -->
+  <div class="action-bar" style="margin-top:14px;">
     <button class="btn btn-primary" onclick="openPreview()">👁 ดูตัวอย่าง</button>
     <button class="btn" onclick="doPrint()">🖨️ พิมพ์</button>
-    <button class="btn btn-word" onclick="exportDocx()">📄 Export Word (.docx)</button>
+    <button class="btn btn-word" onclick="exportDocx()">📄 Export Word</button>
     <button class="btn btn-ghost" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
   </div>
-
-  <div style="font-size:11px;color:var(--tx3);text-align:center;padding-bottom:24px;">
-    รูปภาพจะถูกฝังในไฟล์ Word จริงๆ · รองรับ JPG / PNG · ต้องอัพโหลดสำเร็จก่อน Export
+  <div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px 0 24px;">
+    พิมพ์ / Export จะใช้เฉพาะรายการที่กรองอยู่ · ถ้าเลือก "ทั้งหมด" จะ export ครบทุกรายการ แยกกลุ่มตามประเภท
   </div>
 </div>
 
@@ -184,6 +255,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
   </div>
 </div>
 
+<!-- Edit Category Modal -->
+<div class="modal-wrap" id="editCatModal">
+  <div class="modal-box">
+    <div class="modal-title">✏️ แก้ไขประเภท</div>
+    <div class="modal-row">
+      <div class="modal-label">ชื่อประเภท</div>
+      <input class="field-input" id="editCatName" placeholder="ชื่อประเภท"/>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">สี</div>
+      <input type="color" id="editCatColor" style="width:60px;height:36px;border-radius:8px;border:1.5px solid var(--bdrm);cursor:pointer;padding:3px;"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeEditCat()">ยกเลิก</button>
+      <button class="btn-sm btn-sm-green" onclick="saveEditCat()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -191,54 +281,193 @@ const IMGBB_KEY = '4aecea8adeacd9e1dc7815e351021b99';
 
 document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
 
+// ── Categories ──────────────────────────────────────────────────
+let categories = [
+  { id:'cat_computer', name:'คอมพิวเตอร์',           color:'#1D9E75' },
+  { id:'cat_printer',  name:'เครื่องพิมพ์',           color:'#2B579A' },
+  { id:'cat_network',  name:'อุปกรณ์เครือข่าย',      color:'#7C3AED' },
+  { id:'cat_phone',    name:'โทรศัพท์ / แท็บเล็ต',   color:'#D97706' },
+  { id:'cat_other',    name:'อื่นๆ',                  color:'#6B7280' },
+];
+let filterCat = '__all__';
+let editCatId = null;
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+function lightenHex(hex, amt=0.88){
+  const {r,g,b} = hexToRgb(hex);
+  return `rgb(${Math.round(r+(255-r)*amt)},${Math.round(g+(255-g)*amt)},${Math.round(b+(255-b)*amt)})`;
+}
+function getCatById(id){ return categories.find(c=>c.id===id)||null; }
+
+function renderCategories(){
+  document.getElementById('catList').innerHTML = categories.map(cat=>`
+    <span class="cat-tag" style="background:${lightenHex(cat.color)};color:${cat.color};border-color:${cat.color}44;">
+      ${escHtml(cat.name)}
+      <button class="cat-edit-btn" onclick="openEditCat('${cat.id}')" title="แก้ไข">✏️</button>
+      <button class="cat-del-btn"  onclick="deleteCat('${cat.id}')"  title="ลบ">✕</button>
+    </span>
+  `).join('');
+  renderFilterBar();
+  renderItems();
+}
+
+function addCategory(){
+  const name  = document.getElementById('catAddName').value.trim();
+  const color = document.getElementById('catAddColor').value;
+  if(!name){ showToast('กรุณากรอกชื่อประเภท'); return; }
+  if(categories.find(c=>c.name===name)){ showToast('มีประเภทนี้อยู่แล้ว'); return; }
+  categories.push({ id:'cat_'+Date.now(), name, color });
+  document.getElementById('catAddName').value = '';
+  renderCategories();
+  showToast('เพิ่มประเภทแล้ว: '+name);
+}
+
+function deleteCat(id){
+  const cat  = getCatById(id); if(!cat) return;
+  const used = items.filter(it=>it.category===id).length;
+  if(used>0){
+    if(!confirm(`ประเภท "${cat.name}" ถูกใช้ใน ${used} รายการ\nลบจะทำให้รายการเหล่านั้นไม่มีประเภท ยืนยัน?`)) return;
+    items.forEach(it=>{ if(it.category===id) it.category=''; });
+  }
+  categories = categories.filter(c=>c.id!==id);
+  if(filterCat===id) filterCat='__all__';
+  renderCategories();
+  showToast('ลบประเภทแล้ว');
+}
+
+function openEditCat(id){
+  const cat = getCatById(id); if(!cat) return;
+  editCatId = id;
+  document.getElementById('editCatName').value  = cat.name;
+  document.getElementById('editCatColor').value = cat.color;
+  document.getElementById('editCatModal').classList.add('open');
+}
+function closeEditCat(){ document.getElementById('editCatModal').classList.remove('open'); editCatId=null; }
+function saveEditCat(){
+  if(!editCatId) return;
+  const cat  = getCatById(editCatId); if(!cat) return;
+  const name = document.getElementById('editCatName').value.trim();
+  if(!name){ showToast('กรุณากรอกชื่อ'); return; }
+  cat.name  = name;
+  cat.color = document.getElementById('editCatColor').value;
+  closeEditCat();
+  renderCategories();
+  showToast('แก้ไขประเภทแล้ว');
+}
+
+// ── Filter ──────────────────────────────────────────────────────
+function renderFilterBar(){
+  const bar = document.getElementById('filterBar');
+  const allBtn = `<button class="filter-btn ${filterCat==='__all__'?'active':''}"
+    style="${filterCat==='__all__'?'background:var(--g);':''}"
+    onclick="setFilter('__all__')">ทั้งหมด (${items.length})</button>`;
+
+  const catBtns = categories.map(cat=>{
+    const count  = items.filter(it=>it.category===cat.id).length;
+    const active = filterCat===cat.id;
+    return `<button class="filter-btn ${active?'active':''}"
+      style="${active?`background:${cat.color};`:''}"
+      onclick="setFilter('${cat.id}')">${escHtml(cat.name)} (${count})</button>`;
+  }).join('');
+
+  const noCatCount = items.filter(it=>!it.category||!getCatById(it.category)).length;
+  const noCatBtn   = noCatCount>0
+    ? `<button class="filter-btn ${filterCat==='__none__'?'active':''}"
+        style="${filterCat==='__none__'?'background:#6B7280;':''}"
+        onclick="setFilter('__none__')">ไม่ระบุประเภท (${noCatCount})</button>`
+    : '';
+
+  bar.innerHTML = `<span class="filter-label">กรองดู:</span>${allBtn}${catBtns}${noCatBtn}`;
+
+  const info = document.getElementById('filterInfo');
+  if(filterCat!=='__all__'){
+    const filtered = getFilteredItems();
+    const label = filterCat==='__none__' ? 'ไม่ระบุประเภท' : (getCatById(filterCat)?.name||'');
+    document.getElementById('filterInfoText').textContent = `แสดง: ${label} (${filtered.length} รายการ)`;
+    info.style.display = 'flex';
+  } else {
+    info.style.display = 'none';
+  }
+}
+
+function setFilter(id){ filterCat=id; renderFilterBar(); renderItems(); }
+
+function getFilteredItems(){
+  if(filterCat==='__all__')   return items;
+  if(filterCat==='__none__')  return items.filter(it=>!it.category||!getCatById(it.category));
+  return items.filter(it=>it.category===filterCat);
+}
+
+// ── Items ────────────────────────────────────────────────────────
 let items = [];
 addItem();
 
-// ── Item management ──
 function addItem(){
-  const id = 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
-  items.push({ id, assetNo:'', serial:'', name:'', remark:'', images:[] });
+  const id = 'item_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  const defaultCat = (filterCat!=='__all__'&&filterCat!=='__none__') ? filterCat : (categories[0]?.id||'');
+  items.push({ id, assetNo:'', serial:'', name:'', category:defaultCat, images:[] });
   renderItems();
-  setTimeout(()=>{ const el=document.getElementById('f_assetNo_'+id); if(el) el.focus(); },100);
+  renderFilterBar();
+  setTimeout(()=>{ document.getElementById('f_assetNo_'+id)?.focus(); }, 100);
 }
 
 function removeItem(id){
   if(items.length===1){ showToast('ต้องมีอย่างน้อย 1 รายการ'); return; }
   items = items.filter(x=>x.id!==id);
+  renderFilterBar();
   renderItems();
 }
 
 function renderItems(){
   const container = document.getElementById('itemsContainer');
-  container.innerHTML = items.map((item,idx)=>`
-    <div class="item-card" id="card_${item.id}">
+  const filtered  = getFilteredItems();
+  if(!filtered.length){
+    container.innerHTML = `<div style="text-align:center;padding:28px;color:var(--tx3);font-size:13px;">ไม่มีรายการในประเภทนี้</div>`;
+    return;
+  }
+  const globalIdxMap = {};
+  items.forEach((it,i)=>globalIdxMap[it.id]=i+1);
+
+  container.innerHTML = filtered.map(item=>{
+    const cat         = item.category ? getCatById(item.category) : null;
+    const borderColor = cat ? cat.color : '#E5E7EB';
+    const numBg       = cat ? cat.color : '#9CA3AF';
+    const dispNum     = globalIdxMap[item.id];
+    const catOptions  = `<option value="">-- ไม่ระบุ --</option>`
+      + categories.map(c=>`<option value="${c.id}" ${item.category===c.id?'selected':''}>${escHtml(c.name)}</option>`).join('');
+    return `
+    <div class="item-card" id="card_${item.id}" style="border-left-color:${borderColor};">
       <div class="item-header">
-        <div class="item-num">${idx+1}</div>
-        <div class="item-header-title" style="font-size:12px;color:var(--tx3);">รายการที่ ${idx+1}</div>
+        <div class="item-num" style="background:${numBg};">${dispNum}</div>
+        <div class="item-header-title">รายการที่ ${dispNum}</div>
+        ${cat?`<span class="cat-badge" style="background:${lightenHex(cat.color)};color:${cat.color};">${escHtml(cat.name)}</span>`:''}
         <button class="item-del" onclick="removeItem('${item.id}')">✕ ลบ</button>
       </div>
       <div class="item-fields">
         <div>
-          <div class="field-label">รหัสทรัพย์สิน / เลขที่เอกสาร</div>
-          <input class="field-input" id="f_assetNo_${item.id}"
-            placeholder="เช่น FNITD-25-000147"
-            value="${escHtml(item.assetNo)}"
-            oninput="updateField('${item.id}','assetNo',this.value)"/>
+          <div class="field-label">รหัสทรัพย์สิน</div>
+          <input class="field-input" id="f_assetNo_${item.id}" placeholder="เช่น FNITD-25-000147"
+            value="${escHtml(item.assetNo)}" oninput="updateField('${item.id}','assetNo',this.value)"/>
         </div>
         <div>
           <div class="field-label">Serial Number (S/N)</div>
-          <input class="field-input" id="f_serial_${item.id}"
-            placeholder="เช่น SGH343QLLS"
-            value="${escHtml(item.serial)}"
-            oninput="updateField('${item.id}','serial',this.value)"/>
+          <input class="field-input" id="f_serial_${item.id}" placeholder="เช่น SGH343QLLS"
+            value="${escHtml(item.serial)}" oninput="updateField('${item.id}','serial',this.value)"/>
         </div>
       </div>
-      <div style="margin-bottom:10px;">
-        <div class="field-label">ชื่อ / รายละเอียดอุปกรณ์ (ไม่บังคับ)</div>
-        <input class="field-input" id="f_name_${item.id}"
-          placeholder="เช่น HP Compaq 6300 Pro SFF"
-          value="${escHtml(item.name)}"
-          oninput="updateField('${item.id}','name',this.value)"/>
+      <div class="item-fields">
+        <div>
+          <div class="field-label">ชื่อ / รายละเอียดอุปกรณ์</div>
+          <input class="field-input" id="f_name_${item.id}" placeholder="เช่น HP Compaq 6300"
+            value="${escHtml(item.name)}" oninput="updateField('${item.id}','name',this.value)"/>
+        </div>
+        <div>
+          <div class="field-label">ประเภทอุปกรณ์</div>
+          <select class="cat-select" onchange="updateField('${item.id}','category',this.value);renderItems();renderFilterBar();">${catOptions}</select>
+        </div>
       </div>
       <div class="field-label" style="margin-bottom:6px;">📷 รูปภาพอุปกรณ์</div>
       <div class="img-upload-zone" id="zone_${item.id}"
@@ -247,14 +476,14 @@ function renderItems(){
         ondragleave="this.classList.remove('drag')"
         ondrop="handleDrop(event,'${item.id}')">
         <div class="uz-icon">🖼️</div>
-        <div class="uz-text">คลิกหรือลากรูปมาวาง<br><span style="font-size:10px;">JPG / PNG ขนาดไม่เกิน 10MB</span></div>
+        <div class="uz-text">คลิกหรือลากรูปมาวาง<br><span style="font-size:10px;">JPG / PNG ไม่เกิน 10MB</span></div>
       </div>
       <input type="file" id="file_${item.id}" accept="image/*" multiple style="display:none"
         onchange="handleFiles(this,'${item.id}')"/>
       <div id="thumbs_${item.id}" class="img-thumbs">${renderThumbs(item)}</div>
       <div class="upload-status" id="status_${item.id}"></div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderThumbs(item){
@@ -262,36 +491,35 @@ function renderThumbs(item){
     <div class="img-thumb ${img.uploading?'img-uploading':''}">
       <img src="${img.url}" alt="" loading="lazy"/>
       <button class="img-thumb-del" onclick="removeImg('${item.id}',${i})">✕</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function updateField(id,field,val){ const item=items.find(x=>x.id===id); if(item) item[field]=val; }
-function removeImg(itemId,imgIdx){ const item=items.find(x=>x.id===itemId); if(!item) return; item.images.splice(imgIdx,1); refreshThumbs(item); }
+function updateField(id,field,val){ const it=items.find(x=>x.id===id); if(it) it[field]=val; }
+function removeImg(itemId,idx){ const it=items.find(x=>x.id===itemId); if(!it) return; it.images.splice(idx,1); refreshThumbs(it); }
 function refreshThumbs(item){ const el=document.getElementById('thumbs_'+item.id); if(el) el.innerHTML=renderThumbs(item); }
 
-// ── File upload ──
-function handleDrop(e,id){ e.preventDefault(); document.getElementById('zone_'+id)?.classList.remove('drag'); [...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')).forEach(f=>uploadImg(f,id)); }
+// ── File upload ──────────────────────────────────────────────────
+function handleDrop(e,id){
+  e.preventDefault();
+  document.getElementById('zone_'+id)?.classList.remove('drag');
+  [...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')).forEach(f=>uploadImg(f,id));
+}
 function handleFiles(input,id){ [...input.files].forEach(f=>uploadImg(f,id)); input.value=''; }
 
-async function uploadImg(file,itemId){
-  const item=items.find(x=>x.id===itemId); if(!item) return;
+async function uploadImg(file, itemId){
+  const item = items.find(x=>x.id===itemId); if(!item) return;
   if(file.size>10*1024*1024){ showToast('ไฟล์ใหญ่เกิน 10MB'); return; }
-
-  // Store original file blob for docx embedding
-  const localUrl=URL.createObjectURL(file);
-  const imgObj={ url:localUrl, uploading:true, final:false, blob:file, mimeType:file.type||'image/jpeg' };
+  const localUrl = URL.createObjectURL(file);
+  const imgObj   = { url:localUrl, uploading:true, final:false, blob:file, mimeType:file.type||'image/jpeg' };
   item.images.push(imgObj);
   refreshThumbs(item);
   setStatus(itemId,'⏳ กำลังอัพโหลด...');
-
   try {
-    const fd=new FormData(); fd.append('image',file);
-    const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`,{method:'POST',body:fd});
-    const data=await res.json();
+    const fd = new FormData(); fd.append('image', file);
+    const res  = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`,{method:'POST',body:fd});
+    const data = await res.json();
     if(!data.success) throw new Error(data.error?.message||'Upload failed');
-    imgObj.url=data.data.url;
-    imgObj.uploading=false; imgObj.final=true;
+    imgObj.url = data.data.url; imgObj.uploading=false; imgObj.final=true;
     refreshThumbs(item);
     setStatus(itemId,`✅ อัพโหลดสำเร็จ (${item.images.filter(x=>x.final).length} รูป)`);
     showToast('อัพโหลดสำเร็จ');
@@ -302,230 +530,192 @@ async function uploadImg(file,itemId){
     showToast('อัพโหลดไม่สำเร็จ: '+e.message);
   }
 }
-
 function setStatus(itemId,msg){ const el=document.getElementById('status_'+itemId); if(el) el.textContent=msg; }
 
-// ── Build HTML (preview / print) ──
+// ── Build doc HTML (preview / print) ────────────────────────────
 function buildDocHTML(){
-  const title=document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
-  const ref=document.getElementById('docRef').value.trim();
-  const dept=document.getElementById('docDept').value.trim();
-  const dateV=document.getElementById('docDate').value;
-  const dateStr=dateV?new Date(dateV+'T12:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}):'';
-  const validItems=items.filter(it=>it.assetNo||it.serial||it.name);
+  const title   = document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
+  const ref     = document.getElementById('docRef').value.trim();
+  const dept    = document.getElementById('docDept').value.trim();
+  const dateV   = document.getElementById('docDate').value;
+  const dateStr = dateV ? new Date(dateV+'T12:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}) : '';
+  const metaParts = [dept&&`🏢 ${dept}`, ref&&`📄 ${ref}`, dateStr&&`📅 ${dateStr}`].filter(Boolean).join(' · ');
+  const srcItems  = getFilteredItems().filter(it=>it.assetNo||it.serial||it.name);
+  const groups    = groupItems(srcItems);
 
-  const itemsHTML=validItems.map((item,idx)=>{
-    const hasAssetNo=!!item.assetNo.trim(), hasSerial=!!item.serial.trim(), hasName=!!item.name.trim();
-    let headerLine=`<span class="print-item-num">${idx+1}.</span> `;
-    if(hasAssetNo) headerLine+=`<span class="print-item-ref">${escHtml(item.assetNo)}</span>`;
-    if(hasAssetNo&&hasSerial) headerLine+=`<span style="margin:0 8px;color:#999">  </span>`;
-    if(hasSerial) headerLine+=`<span class="print-item-sn">S/N; ${escHtml(item.serial)}</span>`;
-    if(!hasAssetNo&&!hasSerial&&hasName) headerLine+=`<span class="print-item-ref">${escHtml(item.name)}</span>`;
-    const nameRow=(hasName&&(hasAssetNo||hasSerial))?`<div class="print-item-name">${escHtml(item.name)}</div>`:'';
-    const imgsHTML=item.images.length
-      ?`<div class="print-imgs">${item.images.map(img=>`<div class="print-img-wrap"><img src="${img.url}" style="width:100%;height:100%;object-fit:cover;"/></div>`).join('')}</div>`
-      :`<div style="margin-left:22px;font-size:10pt;color:#aaa;padding:8px 0;">(ไม่มีรูปภาพ)</div>`;
-    return `<div class="print-item"><div class="print-item-header">${headerLine}</div>${nameRow}${imgsHTML}</div>`;
-  }).join('');
+  let body='', globalIdx=0;
+  for(const grp of groups){
+    if(groups.length>1)
+      body+=`<div class="print-cat-heading" style="background:${lightenHex(grp.color||'#9CA3AF')};color:${grp.color||'#374151'};">🏷️ ${escHtml(grp.name)}</div>`;
+    for(const item of grp.items){
+      globalIdx++;
+      const hasA=!!item.assetNo.trim(), hasS=!!item.serial.trim(), hasN=!!item.name.trim();
+      let hdr=`<span class="print-item-num">${globalIdx}.</span> `;
+      if(hasA) hdr+=`<span class="print-item-ref">${escHtml(item.assetNo)}</span>`;
+      if(hasA&&hasS) hdr+=`<span style="margin:0 8px;color:#999">  </span>`;
+      if(hasS) hdr+=`<span class="print-item-sn">S/N; ${escHtml(item.serial)}</span>`;
+      if(!hasA&&!hasS&&hasN) hdr+=`<span class="print-item-ref">${escHtml(item.name)}</span>`;
+      const nameRow=(hasN&&(hasA||hasS))?`<div class="print-item-name">${escHtml(item.name)}</div>`:'';
+      const imgsHTML=item.images.length
+        ?`<div class="print-imgs">${item.images.map(img=>`<div class="print-img-wrap"><img src="${img.url}" style="width:100%;height:100%;object-fit:cover;"/></div>`).join('')}</div>`
+        :`<div style="margin-left:22px;font-size:10pt;color:#aaa;padding:6px 0;">(ไม่มีรูปภาพ)</div>`;
+      body+=`<div class="print-item"><div class="print-item-header">${hdr}</div>${nameRow}${imgsHTML}</div>`;
+    }
+  }
 
-  const metaParts=[dept&&`🏢 ${dept}`,ref&&`📄 ${ref}`,dateStr&&`📅 ${dateStr}`].filter(Boolean).join(' · ');
   return `
     <div class="print-doc-header">
       <div class="print-doc-title">${escHtml(title)}</div>
       ${metaParts?`<div style="margin-top:6px;font-size:11pt;color:#555;">${metaParts}</div>`:''}
+      ${filterCat!=='__all__'?`<div style="margin-top:4px;font-size:10pt;color:#888;">ประเภท: ${escHtml(getCatById(filterCat)?.name||'ไม่ระบุ')}</div>`:''}
     </div>
-    ${itemsHTML||'<div style="text-align:center;color:#aaa;padding:20px;">ยังไม่มีรายการ</div>'}
+    ${body||'<div style="text-align:center;color:#aaa;padding:20px;">ยังไม่มีรายการ</div>'}
     <div class="print-footer">
-      <span>จำนวน ${validItems.length} รายการ</span>
+      <span>จำนวน ${srcItems.length} รายการ</span>
       <span>พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</span>
     </div>`;
+}
+
+function groupItems(srcItems){
+  if(filterCat!=='__all__'){
+    const cat = getCatById(filterCat);
+    return [{ name:cat?cat.name:'ไม่ระบุประเภท', color:cat?cat.color:'#9CA3AF', items:srcItems }];
+  }
+  const map={};
+  for(const item of srcItems){
+    const cid=item.category||'__none__';
+    if(!map[cid]) map[cid]=[];
+    map[cid].push(item);
+  }
+  const result=[];
+  for(const cat of categories){ if(map[cat.id]?.length) result.push({name:cat.name,color:cat.color,items:map[cat.id]}); }
+  if(map['__none__']?.length) result.push({name:'ไม่ระบุประเภท',color:'#9CA3AF',items:map['__none__']});
+  return result;
 }
 
 function openPreview(){ document.getElementById('previewContent').innerHTML=buildDocHTML(); document.getElementById('previewOverlay').classList.add('open'); }
 function closePreview(){ document.getElementById('previewOverlay').classList.remove('open'); }
 function closePreviewOutside(e){ if(e.target===document.getElementById('previewOverlay')) closePreview(); }
+function doPrint(){ document.getElementById('printArea').innerHTML=buildDocHTML(); setTimeout(()=>window.print(),150); }
 
-function doPrint(){
-  document.getElementById('printArea').innerHTML=buildDocHTML();
-  setTimeout(()=>window.print(),150);
-}
-
-// ── DOCX Export ──────────────────────────────────────────────
+// ── DOCX Export ──────────────────────────────────────────────────
 async function exportDocx(){
   if(!window.docx){ showToast('โหลด docx.js ไม่สำเร็จ กรุณารีเฟรช'); return; }
-  const validItems=items.filter(it=>it.assetNo||it.serial||it.name);
-  if(!validItems.length){ showToast('ยังไม่มีรายการ'); return; }
+  const srcItems = getFilteredItems().filter(it=>it.assetNo||it.serial||it.name);
+  if(!srcItems.length){ showToast('ยังไม่มีรายการ'); return; }
 
   showDocxProgress('กำลังเตรียมข้อมูล...', 5);
 
-  const title  = document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
-  const ref    = document.getElementById('docRef').value.trim();
-  const dept   = document.getElementById('docDept').value.trim();
-  const dateV  = document.getElementById('docDate').value;
-  const dateStr= dateV?new Date(dateV+'T12:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}):'';
+  const title   = document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
+  const ref     = document.getElementById('docRef').value.trim();
+  const dept    = document.getElementById('docDept').value.trim();
+  const dateV   = document.getElementById('docDate').value;
+  const dateStr = dateV ? new Date(dateV+'T12:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}) : '';
 
-  const {
-    Document, Packer, Paragraph, TextRun, ImageRun,
-    AlignmentType, HeadingLevel, BorderStyle, WidthType,
-    Table, TableRow, TableCell, ShadingType,
-    PageOrientation, Header, Footer, PageNumber
-  } = window.docx;
+  const {Document,Packer,Paragraph,TextRun,ImageRun,AlignmentType,BorderStyle} = window.docx;
+  const PAGE_W=11906, MARGIN=1080, CONTENT_W=PAGE_W-MARGIN*2;
+  const IMG_COL_W=Math.floor((CONTENT_W-360)/3);
+  const IMG_H_DXA=Math.floor(IMG_COL_W*0.75);
+  const dxaToEmu=v=>Math.round(v*914400/1440);
 
-  // A4 dimensions in DXA (1440 DXA = 1 inch, A4 = 210mm x 297mm)
-  const PAGE_W = 11906;  // A4 width DXA
-  const MARGIN  = 1080;  // ~19mm margins
-  const CONTENT_W = PAGE_W - MARGIN*2; // ~9746 DXA
+  const children=[];
 
-  // Image width for docx: 2 columns with gap
-  const IMG_COL_W = Math.floor((CONTENT_W - 360) / 3); // 3 images per row with gaps
-  const IMG_H_DXA = Math.floor(IMG_COL_W * 0.75);      // 4:3 ratio
-  // Convert DXA to EMU (1 DXA = 914.4 EMU... actually: 1 inch = 914400 EMU, 1440 DXA = 1 inch)
-  const dxaToEmu = v => Math.round(v * 914400 / 1440);
+  // Title
+  children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},
+    children:[new TextRun({text:title,bold:true,size:36,font:'Angsana New'})]}));
 
-  const children = [];
+  const metaParts=[dept,ref,dateStr].filter(Boolean);
+  if(metaParts.length) children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},
+    children:[new TextRun({text:metaParts.join('   ·   '),size:22,color:'555555',font:'Angsana New'})]}));
 
-  // ── Title ──
-  children.push(new Paragraph({
-    alignment: AlignmentType.CENTER,
-    spacing: { after: 100 },
-    children: [new TextRun({ text: title, bold: true, size: 36, font: 'Angsana New' })]
-  }));
-
-  // ── Meta line ──
-  const metaParts = [dept, ref, dateStr].filter(Boolean);
-  if(metaParts.length){
-    children.push(new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 240 },
-      children: [new TextRun({ text: metaParts.join('   ·   '), size: 22, color: '555555', font: 'Angsana New' })]
-    }));
+  if(filterCat!=='__all__'){
+    const cname=getCatById(filterCat)?.name||'ไม่ระบุ';
+    children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:240},
+      children:[new TextRun({text:`ประเภท: ${cname}`,size:20,color:'888888',font:'Angsana New'})]}));
+  } else {
+    children.push(new Paragraph({spacing:{after:240},children:[]}));
   }
 
-  // ── Divider ──
-  children.push(new Paragraph({
-    spacing: { after: 280 },
-    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '111111', space: 1 } },
-    children: []
-  }));
+  children.push(new Paragraph({spacing:{after:280},
+    border:{bottom:{style:BorderStyle.SINGLE,size:6,color:'111111',space:1}},children:[]}));
 
-  // ── Items ──
-  const totalImgs = validItems.reduce((s,it)=>s+it.images.length,0);
-  let imgLoaded = 0;
+  const groups=groupItems(srcItems);
+  const totalImgs=srcItems.reduce((s,it)=>s+it.images.length,0);
+  let imgLoaded=0, globalIdx=0;
 
-  for(let idx=0; idx<validItems.length; idx++){
-    const item = validItems[idx];
-    showDocxProgress(`กำลังประมวลผลรายการ ${idx+1}/${validItems.length}...`, 10 + Math.round(idx/validItems.length*70));
-
-    // Header line: "1.  FNITD-25-000147    S/N; SGH343QLLS"
-    const headerRuns = [
-      new TextRun({ text: `${idx+1}.  `, bold: true, size: 26, font: 'Courier New' })
-    ];
-    if(item.assetNo){
-      headerRuns.push(new TextRun({ text: item.assetNo, bold: true, size: 26, font: 'Courier New',
-        underline: { type: 'single' } }));
+  for(const grp of groups){
+    if(groups.length>1){
+      children.push(new Paragraph({spacing:{before:200,after:120},
+        children:[new TextRun({text:`▌ ${grp.name}`,bold:true,size:28,font:'Angsana New',
+          color:(grp.color||'#374151').replace('#','')})]}));
     }
-    if(item.assetNo && item.serial){
-      headerRuns.push(new TextRun({ text: '    ', size: 26, font: 'Courier New' }));
-    }
-    if(item.serial){
-      headerRuns.push(new TextRun({ text: `S/N; ${item.serial}`, size: 26, font: 'Courier New' }));
-    }
-    if(!item.assetNo && !item.serial && item.name){
-      headerRuns.push(new TextRun({ text: item.name, bold: true, size: 26, font: 'Angsana New',
-        underline: { type: 'single' } }));
-    }
+    for(const item of grp.items){
+      globalIdx++;
+      showDocxProgress(`กำลังประมวลผลรายการ ${globalIdx}/${srcItems.length}...`,
+        10+Math.round(globalIdx/srcItems.length*70));
 
-    children.push(new Paragraph({
-      spacing: { before: 200, after: 60 },
-      children: headerRuns
-    }));
+      const hRuns=[new TextRun({text:`${globalIdx}.  `,bold:true,size:26,font:'Courier New'})];
+      if(item.assetNo) hRuns.push(new TextRun({text:item.assetNo,bold:true,size:26,font:'Courier New',underline:{type:'single'}}));
+      if(item.assetNo&&item.serial) hRuns.push(new TextRun({text:'    ',size:26,font:'Courier New'}));
+      if(item.serial)  hRuns.push(new TextRun({text:`S/N; ${item.serial}`,size:26,font:'Courier New'}));
+      if(!item.assetNo&&!item.serial&&item.name)
+        hRuns.push(new TextRun({text:item.name,bold:true,size:26,font:'Angsana New',underline:{type:'single'}}));
 
-    // Name sub-line
-    if(item.name && (item.assetNo || item.serial)){
-      children.push(new Paragraph({
-        indent: { left: 360 },
-        spacing: { after: 80 },
-        children: [new TextRun({ text: item.name, size: 22, color: '444444', font: 'Angsana New' })]
-      }));
-    }
+      children.push(new Paragraph({spacing:{before:200,after:60},children:hRuns}));
+      if(item.name&&(item.assetNo||item.serial))
+        children.push(new Paragraph({indent:{left:360},spacing:{after:80},
+          children:[new TextRun({text:item.name,size:22,color:'444444',font:'Angsana New'})]}));
 
-    // Images — load blobs and embed
-    if(item.images.length){
-      // Build rows of up to 3 images
-      const IMGS_PER_ROW = 3;
-      for(let r=0; r<item.images.length; r+=IMGS_PER_ROW){
-        const rowImgs = item.images.slice(r, r+IMGS_PER_ROW);
-        const imgRuns = [];
-
-        for(const imgObj of rowImgs){
-          imgLoaded++;
-          showDocxProgress(`กำลังฝังรูปที่ ${imgLoaded}/${totalImgs}...`,
-            10 + Math.round(idx/validItems.length*70) + Math.round(imgLoaded/Math.max(totalImgs,1)*15));
-          try {
-            const arrBuf = await fetchImageAsArrayBuffer(imgObj);
-            if(arrBuf){
-              const ext = (imgObj.mimeType||'image/jpeg').includes('png') ? 'png' : 'jpg';
-              imgRuns.push(
-                new ImageRun({
-                  data: arrBuf,
-                  transformation: { width: Math.round(dxaToEmu(IMG_COL_W)/9144), height: Math.round(dxaToEmu(IMG_H_DXA)/9144) },
-                  type: ext,
-                }),
-                new TextRun({ text: '   ' }) // spacer between images
-              );
-            }
-          } catch(e){ /* skip failed image */ }
+      if(item.images.length){
+        const IMGS_PER_ROW=3;
+        for(let r=0;r<item.images.length;r+=IMGS_PER_ROW){
+          const rowImgs=item.images.slice(r,r+IMGS_PER_ROW);
+          const iRuns=[];
+          for(const imgObj of rowImgs){
+            imgLoaded++;
+            showDocxProgress(`กำลังฝังรูปที่ ${imgLoaded}/${totalImgs}...`,
+              10+Math.round(globalIdx/srcItems.length*70)+Math.round(imgLoaded/Math.max(totalImgs,1)*15));
+            try {
+              const ab=await fetchImageAsArrayBuffer(imgObj);
+              if(ab){
+                const ext=(imgObj.mimeType||'image/jpeg').includes('png')?'png':'jpg';
+                iRuns.push(
+                  new ImageRun({data:ab,transformation:{
+                    width:Math.round(dxaToEmu(IMG_COL_W)/9144),
+                    height:Math.round(dxaToEmu(IMG_H_DXA)/9144)},type:ext}),
+                  new TextRun({text:'   '})
+                );
+              }
+            } catch(e){}
+          }
+          if(iRuns.length) children.push(new Paragraph({indent:{left:360},spacing:{after:80},children:iRuns}));
         }
-
-        if(imgRuns.length){
-          children.push(new Paragraph({
-            indent: { left: 360 },
-            spacing: { after: 80 },
-            children: imgRuns
-          }));
-        }
+      } else {
+        children.push(new Paragraph({indent:{left:360},spacing:{after:80},
+          children:[new TextRun({text:'(ไม่มีรูปภาพ)',size:20,color:'AAAAAA',font:'Angsana New'})]}));
       }
-    } else {
-      children.push(new Paragraph({
-        indent: { left: 360 },
-        spacing: { after: 80 },
-        children: [new TextRun({ text: '(ไม่มีรูปภาพ)', size: 20, color: 'AAAAAA', font: 'Angsana New' })]
-      }));
+      children.push(new Paragraph({spacing:{after:200},children:[]}));
     }
-
-    // Spacer between items
-    children.push(new Paragraph({ spacing: { after: 200 }, children: [] }));
   }
 
-  // ── Footer line ──
-  children.push(new Paragraph({
-    spacing: { before: 280 },
-    border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC', space: 1 } },
-    children: [
-      new TextRun({ text: `จำนวน ${validItems.length} รายการ`, size: 18, color: '888888', font: 'Angsana New' }),
-      new TextRun({ text: `     พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}`, size: 18, color: '888888', font: 'Angsana New' }),
-    ]
-  }));
+  children.push(new Paragraph({spacing:{before:280},
+    border:{top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC',space:1}},
+    children:[
+      new TextRun({text:`จำนวน ${srcItems.length} รายการ`,size:18,color:'888888',font:'Angsana New'}),
+      new TextRun({text:`     พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}`,size:18,color:'888888',font:'Angsana New'}),
+    ]}));
 
   showDocxProgress('กำลังสร้างไฟล์...', 90);
 
-  const doc = new Document({
-    sections: [{
-      properties: {
-        page: {
-          size: { width: PAGE_W, height: 16838 },  // A4
-          margin: { top: MARGIN, right: MARGIN, bottom: MARGIN, left: MARGIN }
-        }
-      },
-      children
-    }]
-  });
-
+  const doc=new Document({sections:[{properties:{page:{
+    size:{width:PAGE_W,height:16838},
+    margin:{top:MARGIN,right:MARGIN,bottom:MARGIN,left:MARGIN}}},children}]});
   try {
-    const buffer = await Packer.toBlob(doc);
-    const now = new Date();
-    const fname = `dispose_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.docx`;
-    saveAs(buffer, fname);
+    const buffer=await Packer.toBlob(doc);
+    const now=new Date();
+    const catSuffix=filterCat!=='__all__'?'_'+(getCatById(filterCat)?.name||'filter'):'';
+    const fname=`dispose${catSuffix}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.docx`;
+    saveAs(buffer,fname);
     hideDocxProgress();
     showToast('✅ Export Word สำเร็จ!');
   } catch(e){
@@ -535,42 +725,28 @@ async function exportDocx(){
   }
 }
 
-// ── Fetch image as ArrayBuffer (try blob first, then URL fetch) ──
 async function fetchImageAsArrayBuffer(imgObj){
-  // If we still have the original File blob, use it directly
-  if(imgObj.blob && imgObj.blob instanceof Blob){
-    return await imgObj.blob.arrayBuffer();
+  if(imgObj.blob instanceof Blob) return await imgObj.blob.arrayBuffer();
+  if(imgObj.url&&!imgObj.url.startsWith('blob:')){
+    try{ const r=await fetch(imgObj.url); if(r.ok) return await r.arrayBuffer(); }catch(e){}
   }
-  // Otherwise fetch from URL (works for imgbb URLs, may fail for blob: URLs after page unload)
-  if(imgObj.url && !imgObj.url.startsWith('blob:')){
-    try {
-      const res = await fetch(imgObj.url);
-      if(res.ok) return await res.arrayBuffer();
-    } catch(e){}
-  }
-  // Fallback: try via canvas for local blob URLs
-  if(imgObj.url){
-    return await urlToArrayBuffer(imgObj.url, imgObj.mimeType||'image/jpeg');
-  }
+  if(imgObj.url) return await urlToArrayBuffer(imgObj.url, imgObj.mimeType||'image/jpeg');
   return null;
 }
-
 async function urlToArrayBuffer(url, mimeType){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = ()=>{
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d'); ctx.drawImage(img,0,0);
-      canvas.toBlob(blob=>{ if(blob) blob.arrayBuffer().then(resolve).catch(reject); else reject(new Error('canvas toBlob failed')); }, mimeType, 0.92);
+  return new Promise((res,rej)=>{
+    const img=new Image(); img.crossOrigin='anonymous';
+    img.onload=()=>{
+      const c=document.createElement('canvas');
+      c.width=img.naturalWidth; c.height=img.naturalHeight;
+      c.getContext('2d').drawImage(img,0,0);
+      c.toBlob(b=>b?b.arrayBuffer().then(res).catch(rej):rej(new Error('toBlob failed')),mimeType,0.92);
     };
-    img.onerror = ()=>reject(new Error('img load failed'));
-    img.src = url;
+    img.onerror=()=>rej(new Error('img load failed'));
+    img.src=url;
   });
 }
 
-// ── DOCX Progress UI ──
 function showDocxProgress(msg,pct){
   document.getElementById('docxProgress').classList.add('open');
   document.getElementById('docxProgressSub').textContent=msg;
@@ -578,20 +754,22 @@ function showDocxProgress(msg,pct){
 }
 function hideDocxProgress(){ document.getElementById('docxProgress').classList.remove('open'); }
 
-// ── Clear all ──
 function clearAll(){
   if(!confirm('ล้างข้อมูลทั้งหมด?')) return;
-  items=[];
-  addItem();
+  items=[]; filterCat='__all__'; addItem();
   document.getElementById('docTitle').value='รายการตัดทรัพย์สิน';
   document.getElementById('docRef').value='';
   document.getElementById('docDept').value='';
   document.getElementById('docDate').value=new Date().toISOString().split('T')[0];
+  renderCategories();
   showToast('ล้างข้อมูลแล้ว');
 }
 
 function escHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg,dur=2400){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),dur); }
+
+// init
+renderCategories();
 </script>
 </body>
 </html>
