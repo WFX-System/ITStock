@@ -7,6 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -68,6 +71,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .cat-select:focus{border-color:var(--g);}
 .cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
 
+/* Firestore badge on item */
+.fs-saved-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;}
+
 /* image upload */
 .img-upload-zone{border:2px dashed var(--bdrm);border-radius:9px;padding:10px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg);}
 .img-upload-zone:hover,.img-upload-zone.drag{border-color:var(--g);background:var(--gll);}
@@ -89,9 +95,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .btn-word:hover{background:#1E3F74;border-color:#1E3F74;color:#fff;}
 .btn-ghost{background:transparent;border-color:var(--bdrm);color:var(--tx3);}
 .btn-ghost:hover{border-color:var(--bdrm);color:var(--tx2);background:var(--bg);}
+/* Firestore save button */
+.btn-fire{background:#FF6F00;color:#fff;border-color:#FF6F00;}
+.btn-fire:hover{background:#E65100;border-color:#E65100;color:#fff;}
+.btn-fire:disabled{background:#FFC947;border-color:#FFC947;cursor:not-allowed;}
 .action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .add-item-btn{width:100%;padding:10px;border:2px dashed var(--bdrm);border-radius:10px;background:none;font-size:13px;font-weight:700;color:var(--tx3);cursor:pointer;font-family:var(--font);transition:.15s;}
 .add-item-btn:hover{border-color:var(--g);color:var(--g);background:var(--gll);}
+
+/* Firestore status bar */
+.fs-statusbar{display:none;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;font-size:13px;}
+.fs-statusbar.open{display:block;}
+.fs-log{font-family:var(--font-mono,monospace);font-size:11px;color:var(--tx3);margin-top:8px;max-height:120px;overflow-y:auto;background:#F8FAFC;border-radius:6px;padding:8px;}
+.fs-log-line{margin-bottom:3px;}
+.fs-log-line.ok{color:#059669;}
+.fs-log-line.err{color:#EF4444;}
+.fs-progress-wrap{height:5px;background:var(--bdr);border-radius:3px;margin-top:8px;overflow:hidden;}
+.fs-progress-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
 
 /* print */
 #printArea{display:none;}
@@ -161,7 +181,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <div class="editor-logo">📦</div>
     <div>
       <div class="editor-title">สร้างเอกสารตัดทรัพย์สิน</div>
-      <div class="editor-sub">จัดประเภท · กรองดู · Export เฉพาะประเภท</div>
+      <div class="editor-sub">จัดประเภท · กรองดู · Export เฉพาะประเภท · บันทึก Firestore</div>
     </div>
   </div>
 
@@ -214,15 +234,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <button class="add-item-btn" onclick="addItem()">+ เพิ่มรายการ</button>
   </div>
 
+  <!-- Firestore status bar -->
+  <div class="fs-statusbar" id="fsStatusBar">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span id="fsStatusTitle" style="font-weight:700;font-size:13px;">🔥 กำลังบันทึกลง Firestore...</span>
+      <span id="fsStatusCount" style="font-size:12px;color:var(--tx3);"></span>
+    </div>
+    <div class="fs-progress-wrap"><div class="fs-progress-fill" id="fsProgressFill" style="width:0%"></div></div>
+    <div class="fs-log" id="fsLog"></div>
+  </div>
+
   <!-- Action bar -->
   <div class="action-bar" style="margin-top:14px;">
     <button class="btn btn-primary" onclick="openPreview()">👁 ดูตัวอย่าง</button>
     <button class="btn" onclick="doPrint()">🖨️ พิมพ์</button>
     <button class="btn btn-word" onclick="exportDocx()">📄 Export Word</button>
+    <button class="btn btn-fire" id="btnSaveFirestore" onclick="saveAllToFirestore()">🔥 บันทึกลง Firestore</button>
     <button class="btn btn-ghost" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
   </div>
   <div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px 0 24px;">
-    พิมพ์ / Export จะใช้เฉพาะรายการที่กรองอยู่ · ถ้าเลือก "ทั้งหมด" จะ export ครบทุกรายการ แยกกลุ่มตามประเภท
+    พิมพ์ / Export จะใช้เฉพาะรายการที่กรองอยู่ · บันทึก Firestore จะบันทึก<strong>ทุกรายการ</strong>ใน collection <code>dispose_items</code>
   </div>
 </div>
 
@@ -277,11 +308,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Firebase init ────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyABKbRCDNh5SHwvbuFtAudLnRYepZfXk7s",
+  authDomain: "ryg-stock.firebaseapp.com",
+  projectId: "ryg-stock",
+  storageBucket: "ryg-stock.firebasestorage.app",
+  messagingSenderId: "338213551131",
+  appId: "1:338213551131:web:153773df4f8111b2364cbe",
+  measurementId: "G-ZG4Z0T6S7H"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const FS_COLLECTION = 'dispose_items';
+
 const IMGBB_KEY = '4aecea8adeacd9e1dc7815e351021b99';
 
 document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
 
-// ── Categories ──────────────────────────────────────────────────
+// ── Categories ──────────────────────────────────────────────────────
 let categories = [
   { id:'cat_computer', name:'คอมพิวเตอร์',           color:'#1D9E75' },
   { id:'cat_printer',  name:'เครื่องพิมพ์',           color:'#2B579A' },
@@ -358,13 +403,12 @@ function saveEditCat(){
   showToast('แก้ไขประเภทแล้ว');
 }
 
-// ── Filter ──────────────────────────────────────────────────────
+// ── Filter ──────────────────────────────────────────────────────────
 function renderFilterBar(){
   const bar = document.getElementById('filterBar');
   const allBtn = `<button class="filter-btn ${filterCat==='__all__'?'active':''}"
     style="${filterCat==='__all__'?'background:var(--g);':''}"
     onclick="setFilter('__all__')">ทั้งหมด (${items.length})</button>`;
-
   const catBtns = categories.map(cat=>{
     const count  = items.filter(it=>it.category===cat.id).length;
     const active = filterCat===cat.id;
@@ -372,16 +416,13 @@ function renderFilterBar(){
       style="${active?`background:${cat.color};`:''}"
       onclick="setFilter('${cat.id}')">${escHtml(cat.name)} (${count})</button>`;
   }).join('');
-
   const noCatCount = items.filter(it=>!it.category||!getCatById(it.category)).length;
   const noCatBtn   = noCatCount>0
     ? `<button class="filter-btn ${filterCat==='__none__'?'active':''}"
         style="${filterCat==='__none__'?'background:#6B7280;':''}"
         onclick="setFilter('__none__')">ไม่ระบุประเภท (${noCatCount})</button>`
     : '';
-
   bar.innerHTML = `<span class="filter-label">กรองดู:</span>${allBtn}${catBtns}${noCatBtn}`;
-
   const info = document.getElementById('filterInfo');
   if(filterCat!=='__all__'){
     const filtered = getFilteredItems();
@@ -401,14 +442,14 @@ function getFilteredItems(){
   return items.filter(it=>it.category===filterCat);
 }
 
-// ── Items ────────────────────────────────────────────────────────
+// ── Items ────────────────────────────────────────────────────────────
 let items = [];
 addItem();
 
 function addItem(){
   const id = 'item_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
   const defaultCat = (filterCat!=='__all__'&&filterCat!=='__none__') ? filterCat : (categories[0]?.id||'');
-  items.push({ id, assetNo:'', serial:'', name:'', category:defaultCat, images:[] });
+  items.push({ id, assetNo:'', serial:'', name:'', category:defaultCat, images:[], firestoreDocId:null });
   renderItems();
   renderFilterBar();
   setTimeout(()=>{ document.getElementById('f_assetNo_'+id)?.focus(); }, 100);
@@ -438,12 +479,16 @@ function renderItems(){
     const dispNum     = globalIdxMap[item.id];
     const catOptions  = `<option value="">-- ไม่ระบุ --</option>`
       + categories.map(c=>`<option value="${c.id}" ${item.category===c.id?'selected':''}>${escHtml(c.name)}</option>`).join('');
+    const savedBadge  = item.firestoreDocId
+      ? `<span class="fs-saved-badge">✅ บันทึกแล้ว</span>`
+      : '';
     return `
     <div class="item-card" id="card_${item.id}" style="border-left-color:${borderColor};">
       <div class="item-header">
         <div class="item-num" style="background:${numBg};">${dispNum}</div>
         <div class="item-header-title">รายการที่ ${dispNum}</div>
         ${cat?`<span class="cat-badge" style="background:${lightenHex(cat.color)};color:${cat.color};">${escHtml(cat.name)}</span>`:''}
+        ${savedBadge}
         <button class="item-del" onclick="removeItem('${item.id}')">✕ ลบ</button>
       </div>
       <div class="item-fields">
@@ -498,7 +543,7 @@ function updateField(id,field,val){ const it=items.find(x=>x.id===id); if(it) it
 function removeImg(itemId,idx){ const it=items.find(x=>x.id===itemId); if(!it) return; it.images.splice(idx,1); refreshThumbs(it); }
 function refreshThumbs(item){ const el=document.getElementById('thumbs_'+item.id); if(el) el.innerHTML=renderThumbs(item); }
 
-// ── File upload ──────────────────────────────────────────────────
+// ── File upload ──────────────────────────────────────────────────────
 function handleDrop(e,id){
   e.preventDefault();
   document.getElementById('zone_'+id)?.classList.remove('drag');
@@ -519,7 +564,11 @@ async function uploadImg(file, itemId){
     const res  = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`,{method:'POST',body:fd});
     const data = await res.json();
     if(!data.success) throw new Error(data.error?.message||'Upload failed');
-    imgObj.url = data.data.url; imgObj.uploading=false; imgObj.final=true;
+    imgObj.url       = data.data.url;
+    imgObj.thumb_url = data.data.thumb?.url || '';
+    imgObj.delete_url= data.data.delete_url || '';
+    imgObj.uploading = false;
+    imgObj.final     = true;
     refreshThumbs(item);
     setStatus(itemId,`✅ อัพโหลดสำเร็จ (${item.images.filter(x=>x.final).length} รูป)`);
     showToast('อัพโหลดสำเร็จ');
@@ -532,7 +581,100 @@ async function uploadImg(file, itemId){
 }
 function setStatus(itemId,msg){ const el=document.getElementById('status_'+itemId); if(el) el.textContent=msg; }
 
-// ── Build doc HTML (preview / print) ────────────────────────────
+// ── Firestore Save ───────────────────────────────────────────────────
+async function saveAllToFirestore(){
+  const saveItems = items.filter(it=>it.assetNo||it.serial||it.name);
+  if(!saveItems.length){ showToast('ยังไม่มีรายการที่มีข้อมูล'); return; }
+
+  const btn = document.getElementById('btnSaveFirestore');
+  btn.disabled = true;
+
+  const docTitle = document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
+  const docRef   = document.getElementById('docRef').value.trim();
+  const docDept  = document.getElementById('docDept').value.trim();
+  const docDate  = document.getElementById('docDate').value;
+
+  // show status bar
+  const bar = document.getElementById('fsStatusBar');
+  bar.classList.add('open');
+  const logEl  = document.getElementById('fsLog');
+  logEl.innerHTML = '';
+  document.getElementById('fsProgressFill').style.width = '0%';
+  document.getElementById('fsStatusTitle').textContent  = '🔥 กำลังบันทึกลง Firestore...';
+  document.getElementById('fsStatusCount').textContent  = `0 / ${saveItems.length}`;
+
+  let success = 0, fail = 0;
+
+  for(let i=0; i<saveItems.length; i++){
+    const item = saveItems[i];
+    const cat  = item.category ? getCatById(item.category) : null;
+    const pct  = Math.round((i/saveItems.length)*100);
+    document.getElementById('fsProgressFill').style.width = pct+'%';
+    document.getElementById('fsStatusCount').textContent  = `${i} / ${saveItems.length}`;
+
+    const payload = {
+      // เอกสาร
+      doc_title  : docTitle,
+      doc_ref    : docRef,
+      doc_dept   : docDept,
+      doc_date   : docDate,
+      // รายการ
+      asset_no   : item.assetNo,
+      serial     : item.serial,
+      name       : item.name,
+      category_id: item.category || '',
+      category_name: cat ? cat.name : '',
+      // รูปภาพ (เก็บเฉพาะที่ upload สำเร็จแล้ว)
+      images     : item.images.filter(img=>img.final).map(img=>({
+        url       : img.url,
+        thumb_url : img.thumb_url || '',
+        delete_url: img.delete_url || '',
+        mime_type : img.mimeType || 'image/jpeg',
+      })),
+      image_count: item.images.filter(img=>img.final).length,
+      saved_at   : firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    try {
+      let docId;
+      if(item.firestoreDocId){
+        // update ถ้าเคยบันทึกแล้ว
+        await db.collection(FS_COLLECTION).doc(item.firestoreDocId).set(payload, { merge: true });
+        docId = item.firestoreDocId;
+      } else {
+        const ref = await db.collection(FS_COLLECTION).add(payload);
+        docId = ref.id;
+        item.firestoreDocId = docId;
+      }
+      success++;
+      fsLog(`✅ ${item.assetNo||item.serial||item.name} → ${docId}`, 'ok');
+    } catch(e){
+      fail++;
+      fsLog(`✗ ${item.assetNo||item.serial||item.name}: ${e.message}`, 'err');
+    }
+  }
+
+  document.getElementById('fsProgressFill').style.width = '100%';
+  document.getElementById('fsStatusTitle').textContent  = `🔥 เสร็จสิ้น: ${success} สำเร็จ${fail>0?`, ${fail} ล้มเหลว`:''}`;
+  document.getElementById('fsStatusCount').textContent  = `${saveItems.length} / ${saveItems.length}`;
+  btn.disabled = false;
+
+  // แสดง badge ✅ บันทึกแล้ว บน item card
+  renderItems();
+
+  showToast(fail===0 ? `✅ บันทึก Firestore สำเร็จ ${success} รายการ` : `⚠️ สำเร็จ ${success} / ล้มเหลว ${fail}`);
+}
+
+function fsLog(msg, cls=''){
+  const logEl = document.getElementById('fsLog');
+  const line  = document.createElement('div');
+  line.className = 'fs-log-line '+(cls||'');
+  line.textContent = msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ── Build doc HTML (preview / print) ────────────────────────────────
 function buildDocHTML(){
   const title   = document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
   const ref     = document.getElementById('docRef').value.trim();
@@ -598,7 +740,7 @@ function closePreview(){ document.getElementById('previewOverlay').classList.rem
 function closePreviewOutside(e){ if(e.target===document.getElementById('previewOverlay')) closePreview(); }
 function doPrint(){ document.getElementById('printArea').innerHTML=buildDocHTML(); setTimeout(()=>window.print(),150); }
 
-// ── DOCX Export ──────────────────────────────────────────────────
+// ── DOCX Export ──────────────────────────────────────────────────────
 async function exportDocx(){
   if(!window.docx){ showToast('โหลด docx.js ไม่สำเร็จ กรุณารีเฟรช'); return; }
   const srcItems = getFilteredItems().filter(it=>it.assetNo||it.serial||it.name);
@@ -620,7 +762,6 @@ async function exportDocx(){
 
   const children=[];
 
-  // Title
   children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:100},
     children:[new TextRun({text:title,bold:true,size:36,font:'Angsana New'})]}));
 
@@ -761,6 +902,7 @@ function clearAll(){
   document.getElementById('docRef').value='';
   document.getElementById('docDept').value='';
   document.getElementById('docDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fsStatusBar').classList.remove('open');
   renderCategories();
   showToast('ล้างข้อมูลแล้ว');
 }
