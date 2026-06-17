@@ -6,7 +6,26 @@
 <title>ตัดทรัพย์สิน — Template</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<!-- docx.js — โหลดจากหลาย CDN อัตโนมัติ -->
+<script>
+(function(){
+  const DOCX_URLS = [
+    'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js',
+    'https://unpkg.com/docx@8.5.0/build/index.js',
+    'https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.js',
+  ];
+  let tried = 0;
+  function tryLoad(){
+    if(tried >= DOCX_URLS.length){ console.error('docx.js โหลดไม่สำเร็จจากทุก CDN'); return; }
+    const s = document.createElement('script');
+    s.src = DOCX_URLS[tried++];
+    s.onload  = () => console.log('docx.js โหลดสำเร็จจาก', s.src);
+    s.onerror = () => { console.warn('docx.js ล้มเหลว:', s.src); tryLoad(); };
+    document.head.appendChild(s);
+  }
+  tryLoad();
+})();
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -981,12 +1000,33 @@ function closePreviewOutside(e){ if(e.target===document.getElementById('previewO
 function doPrint(){ document.getElementById('printArea').innerHTML=buildDocHTML(); setTimeout(()=>window.print(),150); }
 
 // ── DOCX Export ──────────────────────────────────────────────────
+// รอให้ docx.js โหลดเสร็จก่อน (timeout 15s)
+function waitForDocx(timeout=15000){
+  return new Promise((resolve, reject)=>{
+    if(window.docx){ resolve(window.docx); return; }
+    const start = Date.now();
+    const check = setInterval(()=>{
+      if(window.docx){ clearInterval(check); resolve(window.docx); }
+      else if(Date.now()-start > timeout){ clearInterval(check); reject(new Error('docx.js โหลดนานเกิน 15 วินาที — กรุณาตรวจสอบอินเทอร์เน็ต')); }
+    }, 200);
+  });
+}
+
 async function exportDocx(){
-  if(!window.docx){ showToast('โหลด docx.js ไม่สำเร็จ กรุณารีเฟรช'); return; }
   const srcItems = getFilteredItems().filter(it=>it.assetNo||it.serial||it.name);
   if(!srcItems.length){ showToast('ยังไม่มีรายการ'); return; }
 
-  showDocxProgress('กำลังเตรียมข้อมูล...', 5);
+  // รอ docx.js พร้อม
+  showDocxProgress('กำลังโหลด docx.js...', 2);
+  try {
+    await waitForDocx();
+  } catch(e) {
+    hideDocxProgress();
+    showToast('⚠️ ' + e.message, 4000);
+    return;
+  }
+
+  showDocxProgress('กำลังเตรียมข้อมูล...', 8);
 
   const title   = document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
   const ref     = document.getElementById('docRef').value.trim();
