@@ -88,13 +88,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .img-upload-zone .uz-text{font-size:11px;color:var(--tx3);}
 
 /* ════════════════════════════════════════════════════
-   IMAGE GRID — แนวตั้ง (portrait 3:4) 2 คอลัมน์
-   รูปใหญ่ที่สุด สวยงาม
+   IMAGE GRID — แนวตั้ง (portrait 3:4) 1 คอลัมน์
+   เรียงซ้อนกันบนลงล่าง แต่ละรูปเต็มความกว้าง
 ════════════════════════════════════════════════════ */
 .img-grid{
   display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
+  grid-template-columns:1fr;
+  gap:10px;
   margin-top:8px;
 }
 .img-grid-cell{
@@ -174,8 +174,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .print-item-ref{font-size:13pt;font-weight:700;font-family:'IBM Plex Mono',monospace;text-decoration:underline;text-underline-offset:3px;}
 .print-item-sn{font-size:12pt;font-family:'IBM Plex Mono',monospace;}
 .print-item-name{font-size:11pt;color:#444;margin-bottom:8px;margin-left:22px;}
-/* รูปแนวตั้ง 2 คอลัมน์ ใหญ่เต็มพื้นที่ */
-.print-imgs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-left:22px;margin-top:6px;}
+/* รูปแนวตั้ง 1 คอลัมน์ เรียงซ้อนกัน เต็มความกว้าง */
+.print-imgs{display:grid;grid-template-columns:1fr;gap:10px;margin-left:22px;margin-top:6px;}
 .print-img-wrap{border:1px solid #ccc;border-radius:6px;overflow:hidden;aspect-ratio:3/4;}
 .print-img-wrap img{width:100%;height:100%;object-fit:cover;}
 .print-item-divider{border:none;border-top:1px dashed #ccc;margin:10px 0;}
@@ -308,7 +308,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <button class="btn btn-ghost" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
   </div>
   <div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px 0 24px;">
-    รูปแนวตั้ง (portrait) ขนาดใหญ่ · 2 คอลัมน์ · Word export: 2 รายการต่อหน้า
+    รูปแนวตั้ง (portrait) ขนาดใหญ่ · เรียงซ้อนเต็มความกว้าง · Word export: 2 รายการต่อหน้า
   </div>
 </div>
 
@@ -496,33 +496,20 @@ function removeItem(id){
 }
 
 // ════════════════════════════════════════════════════════════════
-// renderImageGrid — รูปแนวตั้ง (portrait 3:4) ขนาดใหญ่
-// n=1 → รูป 1 ช่อง + placeholder ขวา
-// n=2 → เต็มทั้ง 2 ช่อง
-// n=3 → แถว1: 2 รูป, แถว2: รูป + placeholder
-// n≥4 → แถวละ 2 รูป
+// renderImageGrid — รูปแนวตั้ง (portrait 3:4) เรียงซ้อนกัน 1 คอลัมน์
+// ทุกรูปใช้ความกว้างเต็มพื้นที่ วางต่อกันจากบนลงล่าง
 // ════════════════════════════════════════════════════════════════
 function renderImageGrid(item){
   const imgs = item.images;
   if(!imgs.length) return '<div style="font-size:11px;color:var(--tx3);padding:6px 0 2px;">(ยังไม่มีรูปภาพ)</div>';
-  const n = imgs.length;
   let cells = '';
-  for(let i=0;i<n;i++){
-    const img=imgs[i];
+  imgs.forEach((img,i)=>{
     cells+=`
       <div class="img-grid-cell${img.uploading?' uploading':''}">
         <img src="${img.url}" alt="" loading="lazy"/>
         <button class="img-thumb-del" onclick="removeImg('${item.id}',${i})" title="ลบรูปนี้">✕</button>
       </div>`;
-    if(n===3&&i===2){
-      cells+=`<div class="img-grid-placeholder" onclick="document.getElementById('file_${item.id}').click()">
-        <span style="font-size:20px;">+</span><span>เพิ่มรูป</span></div>`;
-    }
-  }
-  if(n===1){
-    cells+=`<div class="img-grid-placeholder" onclick="document.getElementById('file_${item.id}').click()">
-      <span style="font-size:20px;">+</span><span>เพิ่มรูป</span></div>`;
-  }
+  });
   return `<div class="img-grid">${cells}</div>`;
 }
 
@@ -791,7 +778,7 @@ function closePreview(){document.getElementById('previewOverlay').classList.remo
 function closePreviewOutside(e){if(e.target===document.getElementById('previewOverlay'))closePreview();}
 function doPrint(){document.getElementById('printArea').innerHTML=buildDocHTML();setTimeout(()=>window.print(),150);}
 
-// ── DOCX Export (2 รายการต่อหน้า, รูปแนวตั้งใหญ่) ────────────────
+// ── DOCX Export (2 รายการต่อหน้า, รูปแนวตั้งใหญ่ เรียงซ้อนกัน) ────
 function waitForDocx(timeout=15000){
   return new Promise((resolve,reject)=>{
     if(window.docx&&window.docx.Document){resolve(window.docx);return;}
@@ -828,9 +815,8 @@ async function exportDocx(){
   const CONTENT_W = PAGE_W - MARGIN * 2;  // 10106 DXA
 
   // ── ขนาดรูป portrait (3:4) ───────────────────────────────────
-  // 2 คอลัมน์ + gap 200 DXA
-  const IMG_GAP   = 200;
-  const IMG_COL_W = Math.floor((CONTENT_W - IMG_GAP) / 2);  // ~4953 DXA
+  // 1 คอลัมน์ เต็มความกว้าง (เรียงซ้อนแนวตั้งจากบนลงล่าง)
+  const IMG_COL_W = CONTENT_W;                              // เต็มความกว้างเนื้อหา
   const IMG_H_DXA = Math.floor(IMG_COL_W * 4 / 3);          // portrait 3:4
 
   const dxaToEmu = v => Math.round(v * 914400 / 1440);
@@ -878,58 +864,27 @@ async function exportDocx(){
         children:[new TextRun({text:item.name,size:24,color:'444444',font:'Angsana New'})],
       }));
 
-    // ── รูปภาพ: แนวตั้ง ใหญ่, แถวละ 2 ────────────────────────
+    // ── รูปภาพ: แนวตั้ง เต็มความกว้าง เรียงซ้อนกันจากบนลงล่าง ──
     if(item.images.length){
       const imgs=item.images;
-      for(let r=0;r<imgs.length;r+=2){
-        const rowImgs=imgs.slice(r,r+2);
-        const tableCells=[];
-        for(let ci=0;ci<rowImgs.length;ci++){
-          const imgObj=rowImgs[ci];
-          imgLoadedRef.count++;
-          showDocxProgress(
-            `ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,
-            10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75)
-          );
-          let imgRun=null;
-          try{
-            const ab=await fetchImageAsArrayBuffer(imgObj);
-            if(ab){
-              const ext=(imgObj.mimeType||'image/jpeg').includes('png')?'png':'jpg';
-              imgRun=new ImageRun({data:ab,transformation:{width:imgPxW,height:imgPxH},type:ext});
-            }
-          }catch(e){}
-          // กำหนด margin ขวาสำหรับช่องแรก (gap ระหว่าง 2 รูป)
-          const rightMargin = (ci===0 && rowImgs.length===2) ? IMG_GAP : 0;
-          tableCells.push(new TableCell({
-            width:{size:IMG_COL_W,type:WidthType.DXA},
-            margins:{top:0,bottom:0,left:0,right:rightMargin},
-            borders:{
-              top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},
-              left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE},
-            },
-            children:[new Paragraph({
-              spacing:{before:0,after:0},
-              children:imgRun?[imgRun]:[new TextRun({text:'(ไม่มีรูป)',size:18,color:'AAAAAA',font:'Angsana New'})],
-            })],
-          }));
-        }
-        // ถ้าแถวสุดท้ายมีแค่ 1 รูป → เติม cell ว่าง
-        if(rowImgs.length===1){
-          tableCells.push(new TableCell({
-            width:{size:IMG_COL_W,type:WidthType.DXA},
-            borders:{
-              top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},
-              left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE},
-            },
-            children:[new Paragraph({children:[]})],
-          }));
-        }
-        blockParas.push(new Paragraph({indent:{left:0},spacing:{before:60,after:0},children:[]}));
-        blockParas.push(new Table({
-          width:{size:CONTENT_W,type:WidthType.DXA},
-          columnWidths:[IMG_COL_W, IMG_COL_W],
-          rows:[new TableRow({children:tableCells})],
+      for(let i=0;i<imgs.length;i++){
+        const imgObj=imgs[i];
+        imgLoadedRef.count++;
+        showDocxProgress(
+          `ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,
+          10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75)
+        );
+        let imgRun=null;
+        try{
+          const ab=await fetchImageAsArrayBuffer(imgObj);
+          if(ab){
+            const ext=(imgObj.mimeType||'image/jpeg').includes('png')?'png':'jpg';
+            imgRun=new ImageRun({data:ab,transformation:{width:imgPxW,height:imgPxH},type:ext});
+          }
+        }catch(e){}
+        blockParas.push(new Paragraph({
+          spacing:{before:i===0?60:160,after:0},
+          children:imgRun?[imgRun]:[new TextRun({text:'(ไม่มีรูป)',size:18,color:'AAAAAA',font:'Angsana New'})],
         }));
       }
     } else {
