@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -30,11 +29,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .editor-title{font-size:15px;font-weight:700;}
 .editor-sub{font-size:11px;color:var(--tx3);margin-top:1px;}
 
-/* auth status badge */
 .auth-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-left:auto;flex-shrink:0;}
 .auth-badge.ok{background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;}
 .auth-badge.pending{background:#FFF7ED;color:#D97706;border:1px solid #FED7AA;}
 .auth-badge.err{background:#FEF2F2;color:#EF4444;border:1px solid #FECACA;}
+
+/* ── load banner ── */
+.load-banner{display:none;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;}
+.load-banner.open{display:flex;}
+.load-spinner{width:18px;height:18px;border:2.5px solid var(--bdr);border-top-color:var(--g);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-banner-text{font-size:13px;color:var(--tx2);}
+.load-banner-sub{font-size:11px;color:var(--tx3);margin-top:2px;}
 
 .sec-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
 .sec-title{font-size:12px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
@@ -43,7 +49,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .field-input{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:var(--bg);transition:.15s;outline:none;}
 .field-input:focus{border-color:var(--g);background:#fff;box-shadow:0 0 0 3px var(--gll);}
 
-/* category manager */
 .cat-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
 .cat-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px 4px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:default;border:1px solid transparent;}
 .cat-tag .cat-edit-btn,.cat-tag .cat-del-btn{background:none;border:none;cursor:pointer;padding:0 2px;font-size:12px;color:inherit;opacity:.7;line-height:1;}
@@ -57,7 +62,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .btn-sm-green{background:var(--g);color:#fff;border-color:var(--g);}
 .btn-sm-green:hover{background:var(--gd);border-color:var(--gd);color:#fff;}
 
-/* filter bar */
 .filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center;}
 .filter-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;}
 .filter-btn{padding:5px 13px;border-radius:16px;border:1.5px solid var(--bdrm);background:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--tx2);transition:.15s;}
@@ -65,7 +69,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .filter-btn:not(.active):hover{border-color:var(--g);color:var(--g);}
 .filter-info{font-size:11px;color:var(--tx3);margin-bottom:10px;padding:6px 12px;background:#F1F5F9;border-radius:8px;display:flex;align-items:center;justify-content:space-between;}
 
-/* item cards */
 .item-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radius);padding:14px;margin-bottom:10px;transition:.15s;border-left:4px solid transparent;}
 .item-card:hover{border-color:var(--bdrm);}
 .item-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff;}
@@ -77,11 +80,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .cat-select{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:#fff;outline:none;cursor:pointer;}
 .cat-select:focus{border-color:var(--g);}
 .cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
-
-/* Firestore badge on item */
 .fs-saved-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;}
 
-/* image upload */
 .img-upload-zone{border:2px dashed var(--bdrm);border-radius:9px;padding:10px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg);}
 .img-upload-zone:hover,.img-upload-zone.drag{border-color:var(--g);background:var(--gll);}
 .img-upload-zone .uz-icon{font-size:22px;margin-bottom:3px;}
@@ -93,7 +93,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .img-uploading{opacity:.5;}
 .upload-status{font-size:11px;color:var(--tx3);margin-top:4px;min-height:14px;}
 
-/* action bar */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;transition:all .15s;font-family:var(--font);}
 .btn:hover{border-color:var(--g);color:var(--g);}
 .btn-primary{background:var(--g);color:#fff;border-color:var(--g);}
@@ -102,15 +101,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .btn-word:hover{background:#1E3F74;border-color:#1E3F74;color:#fff;}
 .btn-ghost{background:transparent;border-color:var(--bdrm);color:var(--tx3);}
 .btn-ghost:hover{border-color:var(--bdrm);color:var(--tx2);background:var(--bg);}
-/* Firestore save button */
 .btn-fire{background:#FF6F00;color:#fff;border-color:#FF6F00;}
 .btn-fire:hover{background:#E65100;border-color:#E65100;color:#fff;}
 .btn-fire:disabled{background:#FFC947;border-color:#FFC947;cursor:not-allowed;}
+/* load button */
+.btn-load{background:#0EA5E9;color:#fff;border-color:#0EA5E9;}
+.btn-load:hover{background:#0284C7;border-color:#0284C7;color:#fff;}
+.btn-load:disabled{background:#7DD3FC;border-color:#7DD3FC;cursor:not-allowed;}
+
 .action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .add-item-btn{width:100%;padding:10px;border:2px dashed var(--bdrm);border-radius:10px;background:none;font-size:13px;font-weight:700;color:var(--tx3);cursor:pointer;font-family:var(--font);transition:.15s;}
 .add-item-btn:hover{border-color:var(--g);color:var(--g);background:var(--gll);}
 
-/* Firestore status bar */
 .fs-statusbar{display:none;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;font-size:13px;}
 .fs-statusbar.open{display:block;}
 .fs-log{font-family:var(--font-mono,monospace);font-size:11px;color:var(--tx3);margin-top:8px;max-height:120px;overflow-y:auto;background:#F8FAFC;border-radius:6px;padding:8px;}
@@ -120,7 +122,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .fs-progress-wrap{height:5px;background:var(--bdr);border-radius:3px;margin-top:8px;overflow:hidden;}
 .fs-progress-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
 
-/* print */
 #printArea{display:none;}
 @media print{
   .editor{display:none!important;}
@@ -143,7 +144,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .print-footer{margin-top:28px;padding-top:10px;border-top:1px solid #ccc;font-size:10pt;color:#777;display:flex;justify-content:space-between;}
 .print-cat-heading{font-size:14pt;font-weight:700;margin:20px 0 10px;padding:6px 10px;border-radius:6px;}
 
-/* preview overlay */
 .preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;overflow-y:auto;padding:20px;}
 .preview-overlay.open{display:block;}
 .preview-box{background:#fff;max-width:760px;margin:0 auto;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);}
@@ -151,7 +151,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .preview-toolbar-title{font-size:13px;font-weight:700;}
 .preview-content{padding:24px;font-family:'Sarabun',sans-serif;font-size:13pt;color:#111;}
 
-/* docx progress */
 .docx-progress{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
 .docx-progress.open{display:flex;}
 .docx-progress-box{background:#fff;border-radius:16px;padding:28px 32px;text-align:center;min-width:240px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
@@ -161,11 +160,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .progress-bar-wrap{height:6px;background:var(--bdr);border-radius:3px;margin-top:14px;overflow:hidden;}
 .progress-bar-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
 
-/* toast */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
 
-/* edit modal */
 .modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
 .modal-wrap.open{display:flex;}
 .modal-box{background:var(--surf);border-radius:14px;padding:22px 24px;min-width:300px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);}
@@ -173,6 +170,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .modal-row{margin-bottom:10px;}
 .modal-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;}
 .modal-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
+
+/* confirm load modal */
+.load-confirm-box{max-width:420px;}
+.load-confirm-info{background:#F0FDF4;border:1px solid #A7F3D0;border-radius:8px;padding:10px 14px;font-size:12px;color:#065F46;margin-bottom:12px;}
+.load-confirm-info b{color:#047857;}
 
 @media(max-width:520px){
   .meta-grid,.item-fields{grid-template-columns:1fr;}
@@ -190,8 +192,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
       <div class="editor-title">สร้างเอกสารตัดทรัพย์สิน</div>
       <div class="editor-sub">จัดประเภท · กรองดู · Export เฉพาะประเภท · บันทึก Firestore</div>
     </div>
-    <!-- Auth status badge -->
     <span class="auth-badge pending" id="authBadge">⏳ กำลังเชื่อมต่อ...</span>
+  </div>
+
+  <!-- Load banner (แสดงตอนกำลังโหลด) -->
+  <div class="load-banner" id="loadBanner">
+    <div class="load-spinner"></div>
+    <div>
+      <div class="load-banner-text" id="loadBannerText">กำลังโหลดข้อมูลจาก Firestore...</div>
+      <div class="load-banner-sub" id="loadBannerSub">โปรดรอสักครู่</div>
+    </div>
   </div>
 
   <!-- Category Manager -->
@@ -259,10 +269,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <button class="btn" onclick="doPrint()">🖨️ พิมพ์</button>
     <button class="btn btn-word" onclick="exportDocx()">📄 Export Word</button>
     <button class="btn btn-fire" id="btnSaveFirestore" onclick="saveAllToFirestore()">🔥 บันทึกลง Firestore</button>
+    <button class="btn btn-load" id="btnLoadFirestore" onclick="openLoadConfirm()">☁️ โหลดจาก Firestore</button>
     <button class="btn btn-ghost" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
   </div>
   <div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px 0 24px;">
-    พิมพ์ / Export จะใช้เฉพาะรายการที่กรองอยู่ · บันทึก Firestore จะบันทึก<strong>ทุกรายการ</strong>ใน collection <code>dispose_items</code>
+    พิมพ์ / Export จะใช้เฉพาะรายการที่กรองอยู่ · บันทึก/โหลด Firestore จะจัดการ<strong>ทุกรายการ</strong>ใน collection <code>dispose_items</code>
   </div>
 </div>
 
@@ -314,10 +325,28 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
   </div>
 </div>
 
+<!-- Load Confirm Modal -->
+<div class="modal-wrap" id="loadConfirmModal">
+  <div class="modal-box load-confirm-box">
+    <div class="modal-title">☁️ โหลดข้อมูลจาก Firestore</div>
+    <div class="load-confirm-info" id="loadConfirmInfo">
+      กำลังตรวจสอบข้อมูล...
+    </div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px;">
+      ข้อมูลปัจจุบันในหน้าจะถูก<strong>แทนที่ทั้งหมด</strong> ด้วยข้อมูลจาก Firestore<br/>
+      (รวมถึง ข้อมูลเอกสาร และ รายการทรัพย์สิน)
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeLoadConfirm()">ยกเลิก</button>
+      <button class="btn-sm btn-sm-green" id="btnConfirmLoad" onclick="loadFromFirestore()">✅ โหลดเลย</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Firebase init ────────────────────────────────────────────────
+// ── Firebase init ───────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyABKbRCDNh5SHwvbuFtAudLnRYepZfXk7s",
   authDomain: "ryg-stock.firebaseapp.com",
@@ -332,13 +361,19 @@ const auth = firebase.auth();
 const db   = firebase.firestore();
 const FS_COLLECTION = 'dispose_items';
 
-// ── Anonymous Auth ───────────────────────────────────────────────
+const IMGBB_KEY = '4aecea8adeacd9e1dc7815e351021b99';
+
+document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
+
+// ── Anonymous Auth ──────────────────────────────────────────────
 const authBadge = document.getElementById('authBadge');
 
 auth.onAuthStateChanged(user => {
   if (user) {
     authBadge.className = 'auth-badge ok';
     authBadge.textContent = '🔒 เชื่อมต่อแล้ว';
+    // ── AUTO-LOAD ตอน auth พร้อม ──
+    autoLoadFromFirestore();
   } else {
     authBadge.className = 'auth-badge pending';
     authBadge.textContent = '⏳ กำลังเชื่อมต่อ...';
@@ -350,7 +385,6 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-// ── Helper: รอให้ auth พร้อมก่อนบันทึก ──────────────────────────
 function waitForAuth(timeout = 8000) {
   return new Promise((resolve, reject) => {
     if (auth.currentUser) { resolve(auth.currentUser); return; }
@@ -361,12 +395,7 @@ function waitForAuth(timeout = 8000) {
   });
 }
 
-// ────────────────────────────────────────────────────────────────
-const IMGBB_KEY = '4aecea8adeacd9e1dc7815e351021b99';
-
-document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
-
-// ── Categories ──────────────────────────────────────────────────────
+// ── Categories ──────────────────────────────────────────────────
 let categories = [
   { id:'cat_computer', name:'คอมพิวเตอร์',           color:'#1D9E75' },
   { id:'cat_printer',  name:'เครื่องพิมพ์',           color:'#2B579A' },
@@ -443,7 +472,7 @@ function saveEditCat(){
   showToast('แก้ไขประเภทแล้ว');
 }
 
-// ── Filter ──────────────────────────────────────────────────────────
+// ── Filter ──────────────────────────────────────────────────────
 function renderFilterBar(){
   const bar = document.getElementById('filterBar');
   const allBtn = `<button class="filter-btn ${filterCat==='__all__'?'active':''}"
@@ -482,9 +511,8 @@ function getFilteredItems(){
   return items.filter(it=>it.category===filterCat);
 }
 
-// ── Items ────────────────────────────────────────────────────────────
+// ── Items ────────────────────────────────────────────────────────
 let items = [];
-addItem();
 
 function addItem(){
   const id = 'item_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
@@ -583,7 +611,7 @@ function updateField(id,field,val){ const it=items.find(x=>x.id===id); if(it) it
 function removeImg(itemId,idx){ const it=items.find(x=>x.id===itemId); if(!it) return; it.images.splice(idx,1); refreshThumbs(it); }
 function refreshThumbs(item){ const el=document.getElementById('thumbs_'+item.id); if(el) el.innerHTML=renderThumbs(item); }
 
-// ── File upload ──────────────────────────────────────────────────────
+// ── File upload ──────────────────────────────────────────────────
 function handleDrop(e,id){
   e.preventDefault();
   document.getElementById('zone_'+id)?.classList.remove('drag');
@@ -621,7 +649,178 @@ async function uploadImg(file, itemId){
 }
 function setStatus(itemId,msg){ const el=document.getElementById('status_'+itemId); if(el) el.textContent=msg; }
 
-// ── Firestore Save ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// ── LOAD FROM FIRESTORE ────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+
+// แปลง Firestore docs → items array
+function docsToItems(docs){
+  return docs.map(doc=>{
+    const d = doc.data();
+    return {
+      id             : 'item_'+doc.id,
+      firestoreDocId : doc.id,
+      assetNo        : d.asset_no   || '',
+      serial         : d.serial     || '',
+      name           : d.name       || '',
+      category       : d.category_id|| '',
+      images         : (d.images||[]).map(img=>({
+        url       : img.url        || '',
+        thumb_url : img.thumb_url  || '',
+        delete_url: img.delete_url || '',
+        mimeType  : img.mime_type  || 'image/jpeg',
+        uploading : false,
+        final     : true,           // รูปที่ดึงจาก Firestore ถือว่า final แล้ว
+        blob      : null,
+      })),
+    };
+  });
+}
+
+// ดึง meta จาก doc แรก (ถ้ามี)
+function applyDocMeta(docs){
+  if(!docs.length) return;
+  const d = docs[0].data();
+  if(d.doc_title) document.getElementById('docTitle').value = d.doc_title;
+  if(d.doc_ref)   document.getElementById('docRef').value   = d.doc_ref;
+  if(d.doc_dept)  document.getElementById('docDept').value  = d.doc_dept;
+  if(d.doc_date)  document.getElementById('docDate').value  = d.doc_date;
+}
+
+// ── AUTO-LOAD ตอนเปิดหน้า ──────────────────────────────────────
+let autoLoaded = false;
+async function autoLoadFromFirestore(){
+  if(autoLoaded) return;
+  autoLoaded = true;
+
+  // แสดง banner
+  const banner = document.getElementById('loadBanner');
+  banner.classList.add('open');
+  document.getElementById('loadBannerText').textContent = 'กำลังโหลดข้อมูลจาก Firestore...';
+  document.getElementById('loadBannerSub').textContent  = 'โปรดรอสักครู่';
+
+  try {
+    const snap = await db.collection(FS_COLLECTION)
+      .orderBy('saved_at', 'asc')
+      .get();
+
+    if(snap.empty){
+      // ไม่มีข้อมูล → เริ่มต้นด้วย 1 item ว่าง
+      banner.classList.remove('open');
+      if(items.length===0) addItem();
+      renderCategories();
+      showToast('ยังไม่มีข้อมูลใน Firestore');
+      return;
+    }
+
+    const docs = snap.docs;
+    applyDocMeta(docs);
+    items = docsToItems(docs);
+
+    banner.classList.remove('open');
+    renderCategories();
+    showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
+
+  } catch(e){
+    banner.classList.remove('open');
+    console.error('autoLoad error:', e);
+    // ถ้า error (เช่น index ไม่มี) ลองดึงแบบไม่ sort
+    try {
+      const snap2 = await db.collection(FS_COLLECTION).get();
+      if(!snap2.empty){
+        const docs = snap2.docs;
+        applyDocMeta(docs);
+        items = docsToItems(docs);
+        renderCategories();
+        showToast(`✅ โหลดสำเร็จ ${items.length} รายการ (ไม่มีการเรียง)`);
+        return;
+      }
+    } catch(e2){ console.error('fallback load error:', e2); }
+
+    if(items.length===0) addItem();
+    renderCategories();
+    showToast('⚠️ โหลดข้อมูลไม่สำเร็จ: '+e.message);
+  }
+}
+
+// ── MANUAL LOAD (ปุ่ม "โหลดจาก Firestore") ────────────────────
+let loadPreviewCount = 0;
+
+async function openLoadConfirm(){
+  const modal = document.getElementById('loadConfirmModal');
+  const infoEl = document.getElementById('loadConfirmInfo');
+  const btnConfirm = document.getElementById('btnConfirmLoad');
+  btnConfirm.disabled = true;
+  infoEl.innerHTML = '⏳ กำลังตรวจสอบข้อมูลใน Firestore...';
+  modal.classList.add('open');
+
+  try {
+    await waitForAuth();
+    const snap = await db.collection(FS_COLLECTION).get();
+    loadPreviewCount = snap.size;
+    if(loadPreviewCount===0){
+      infoEl.innerHTML = '📭 ยังไม่มีข้อมูลใน Firestore';
+      btnConfirm.disabled = true;
+    } else {
+      infoEl.innerHTML = `<b>พบ ${loadPreviewCount} รายการ</b> ใน Firestore<br/>โหลดจะแทนที่ข้อมูลปัจจุบัน ${items.length} รายการในหน้า`;
+      btnConfirm.disabled = false;
+    }
+  } catch(e){
+    infoEl.innerHTML = `⚠️ ตรวจสอบไม่ได้: ${e.message}`;
+    btnConfirm.disabled = true;
+  }
+}
+
+function closeLoadConfirm(){
+  document.getElementById('loadConfirmModal').classList.remove('open');
+}
+
+async function loadFromFirestore(){
+  closeLoadConfirm();
+
+  const banner = document.getElementById('loadBanner');
+  banner.classList.add('open');
+  document.getElementById('loadBannerText').textContent = `กำลังโหลด ${loadPreviewCount} รายการจาก Firestore...`;
+  document.getElementById('loadBannerSub').textContent  = 'โปรดรอสักครู่';
+  document.getElementById('btnLoadFirestore').disabled = true;
+
+  try {
+    await waitForAuth();
+    const snap = await db.collection(FS_COLLECTION)
+      .orderBy('saved_at', 'asc')
+      .get().catch(async ()=>{
+        // fallback ถ้าไม่มี index
+        return await db.collection(FS_COLLECTION).get();
+      });
+
+    if(snap.empty){
+      banner.classList.remove('open');
+      document.getElementById('btnLoadFirestore').disabled = false;
+      showToast('ไม่มีข้อมูลใน Firestore');
+      return;
+    }
+
+    const docs = snap.docs;
+    applyDocMeta(docs);
+    items = docsToItems(docs);
+    filterCat = '__all__';
+
+    banner.classList.remove('open');
+    document.getElementById('btnLoadFirestore').disabled = false;
+    renderCategories();
+    showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
+
+  } catch(e){
+    banner.classList.remove('open');
+    document.getElementById('btnLoadFirestore').disabled = false;
+    showToast('⚠️ โหลดไม่สำเร็จ: '+e.message);
+    console.error('loadFromFirestore error:', e);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ── SAVE TO FIRESTORE ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
 async function saveAllToFirestore(){
   const saveItems = items.filter(it=>it.assetNo||it.serial||it.name);
   if(!saveItems.length){ showToast('ยังไม่มีรายการที่มีข้อมูล'); return; }
@@ -629,7 +828,6 @@ async function saveAllToFirestore(){
   const btn = document.getElementById('btnSaveFirestore');
   btn.disabled = true;
 
-  // ── รอ auth ก่อน ──
   try {
     await waitForAuth();
   } catch(e) {
@@ -643,7 +841,6 @@ async function saveAllToFirestore(){
   const docDept  = document.getElementById('docDept').value.trim();
   const docDate  = document.getElementById('docDate').value;
 
-  // show status bar
   const bar = document.getElementById('fsStatusBar');
   bar.classList.add('open');
   const logEl  = document.getElementById('fsLog');
@@ -662,26 +859,23 @@ async function saveAllToFirestore(){
     document.getElementById('fsStatusCount').textContent  = `${i} / ${saveItems.length}`;
 
     const payload = {
-      // เอกสาร
-      doc_title  : docTitle,
-      doc_ref    : docRef,
-      doc_dept   : docDept,
-      doc_date   : docDate,
-      // รายการ
-      asset_no   : item.assetNo,
-      serial     : item.serial,
-      name       : item.name,
-      category_id: item.category || '',
+      doc_title    : docTitle,
+      doc_ref      : docRef,
+      doc_dept     : docDept,
+      doc_date     : docDate,
+      asset_no     : item.assetNo,
+      serial       : item.serial,
+      name         : item.name,
+      category_id  : item.category || '',
       category_name: cat ? cat.name : '',
-      // รูปภาพ (เก็บเฉพาะที่ upload สำเร็จแล้ว)
-      images     : item.images.filter(img=>img.final).map(img=>({
+      images       : item.images.filter(img=>img.final).map(img=>({
         url       : img.url,
         thumb_url : img.thumb_url || '',
         delete_url: img.delete_url || '',
         mime_type : img.mimeType || 'image/jpeg',
       })),
-      image_count: item.images.filter(img=>img.final).length,
-      saved_at   : firebase.firestore.FieldValue.serverTimestamp(),
+      image_count  : item.images.filter(img=>img.final).length,
+      saved_at     : firebase.firestore.FieldValue.serverTimestamp(),
     };
 
     try {
@@ -720,7 +914,7 @@ function fsLog(msg, cls=''){
   logEl.scrollTop = logEl.scrollHeight;
 }
 
-// ── Build doc HTML (preview / print) ────────────────────────────────
+// ── Build doc HTML ───────────────────────────────────────────────
 function buildDocHTML(){
   const title   = document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
   const ref     = document.getElementById('docRef').value.trim();
@@ -786,7 +980,7 @@ function closePreview(){ document.getElementById('previewOverlay').classList.rem
 function closePreviewOutside(e){ if(e.target===document.getElementById('previewOverlay')) closePreview(); }
 function doPrint(){ document.getElementById('printArea').innerHTML=buildDocHTML(); setTimeout(()=>window.print(),150); }
 
-// ── DOCX Export ──────────────────────────────────────────────────────
+// ── DOCX Export ──────────────────────────────────────────────────
 async function exportDocx(){
   if(!window.docx){ showToast('โหลด docx.js ไม่สำเร็จ กรุณารีเฟรช'); return; }
   const srcItems = getFilteredItems().filter(it=>it.assetNo||it.serial||it.name);
@@ -956,7 +1150,7 @@ function clearAll(){
 function escHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg,dur=2400){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),dur); }
 
-// init
+// init — renderCategories จะถูกเรียกอีกครั้งหลัง autoLoad
 renderCategories();
 </script>
 </body>
