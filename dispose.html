@@ -88,38 +88,40 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .img-upload-zone .uz-text{font-size:11px;color:var(--tx3);}
 
 /* ════════════════════════════════════════════════════
-   IMAGE GRID — 1 คอลัมน์ เรียงซ้อนกันบนลงล่าง
-   ไม่ตัดรูป (object-fit:contain) ไม่บังคับสัดส่วน
-   จำกัดความสูงสูงสุดไม่ให้รูปใหญ่เกินไป
+   IMAGE GRID — ปรับอัตโนมัติตามจำนวนรูป
+   1 รูป  → เต็มความกว้าง (ใหญ่)
+   2+ รูป → กริด 2 คอลัมน์ (รูปคี่สุดท้ายขยายเต็มแถว)
+   กรอบเป็นแนวนอน 4:3 ไม่ตัดรูป (object-fit:contain)
 ════════════════════════════════════════════════════ */
 .img-grid{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
   margin-top:8px;
+}
+.img-grid.cols-2{
+  grid-template-columns:1fr 1fr;
 }
 .img-grid-cell{
   position:relative;
   border-radius:9px;
   border:1.5px solid var(--bdrm);
   background:#F1F5F9;
-  padding:8px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
   overflow:hidden;
+  aspect-ratio:4/3;
 }
+.img-grid-cell.span-2{
+  grid-column:1/-1;
+}
+.img-grid-cell.uploading img{opacity:.45;}
 .img-grid-cell img{
   display:block;
-  max-width:100%;
-  max-height:380px;
-  width:auto;
-  height:auto;
+  width:100%;
+  height:100%;
   object-fit:contain;
   border-radius:4px;
   transition:opacity .2s;
 }
-.img-grid-cell.uploading img{opacity:.45;}
 .img-thumb-del{
   position:absolute;top:6px;right:6px;
   width:22px;height:22px;border-radius:50%;
@@ -184,10 +186,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .print-item-ref{font-size:13pt;font-weight:700;font-family:'IBM Plex Mono',monospace;text-decoration:underline;text-underline-offset:3px;}
 .print-item-sn{font-size:12pt;font-family:'IBM Plex Mono',monospace;}
 .print-item-name{font-size:11pt;color:#444;margin-bottom:8px;margin-left:22px;}
-/* รูปภาพ 1 คอลัมน์ เรียงซ้อนกัน ไม่ตัดรูป จำกัดความสูงสูงสุด */
-.print-imgs{display:flex;flex-direction:column;gap:10px;margin-left:22px;margin-top:6px;}
-.print-img-wrap{border:1px solid #ccc;border-radius:6px;overflow:hidden;padding:6px;background:#fafafa;display:flex;align-items:center;justify-content:center;}
-.print-img-wrap img{display:block;max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;}
+/* รูปภาพ: ปรับอัตโนมัติตามจำนวนรูป — 1 รูปเต็มแถว / 2+ รูปจัดกริด 2 คอลัมน์ */
+.print-imgs{display:grid;grid-template-columns:1fr;gap:8px;margin-left:22px;margin-top:6px;}
+.print-imgs.cols-2{grid-template-columns:1fr 1fr;}
+.print-img-wrap{border:1px solid #ccc;border-radius:6px;overflow:hidden;background:#fafafa;display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;page-break-inside:avoid;}
+.print-img-wrap.span-2{grid-column:1/-1;}
+.print-img-wrap img{display:block;width:100%;height:100%;object-fit:contain;}
 .print-item-divider{border:none;border-top:1px dashed #ccc;margin:10px 0;}
 .print-footer{margin-top:20px;padding-top:8px;border-top:1px solid #ccc;font-size:10pt;color:#777;display:flex;justify-content:space-between;}
 .print-cat-heading{font-size:13pt;font-weight:700;margin:14px 0 8px;padding:5px 10px;border-radius:6px;}
@@ -236,7 +240,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <div class="editor-logo">📦</div>
     <div>
       <div class="editor-title">สร้างเอกสารตัดทรัพย์สิน</div>
-      <div class="editor-sub">รูปแนวตั้งใหญ่ · 2 รายการต่อหน้า · Firestore · Export Word</div>
+      <div class="editor-sub">รูปแนวนอน จัดกริดอัตโนมัติ · 2 รายการต่อหน้า · Firestore · Export Word</div>
     </div>
     <span class="auth-badge pending" id="authBadge">⏳ กำลังเชื่อมต่อ...</span>
   </div>
@@ -318,7 +322,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <button class="btn btn-ghost" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
   </div>
   <div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px 0 24px;">
-    รูปแนวตั้ง (portrait) ขนาดใหญ่ · เรียงซ้อนเต็มความกว้าง · Word export: 2 รายการต่อหน้า
+    รูปแนวนอน (landscape) · จัดกริดอัตโนมัติตามจำนวนรูป (1 รูป=ใหญ่ / 2+ รูป=กริด) · Word export: 2 รายการต่อหน้า
   </div>
 </div>
 
@@ -506,21 +510,31 @@ function removeItem(id){
 }
 
 // ════════════════════════════════════════════════════════════════
-// renderImageGrid — รูปแนวตั้ง (portrait 3:4) เรียงซ้อนกัน 1 คอลัมน์
-// ทุกรูปใช้ความกว้างเต็มพื้นที่ วางต่อกันจากบนลงล่าง
+// computeImgLayout — ตรรกะกริดกลาง ใช้ร่วมกันทั้งตัวแก้ไข / พิมพ์ / Word
+// 1 รูป  → 1 คอลัมน์ เต็มความกว้าง
+// 2+ รูป → 2 คอลัมน์ (ถ้าจำนวนเป็นเลขคี่ รูปสุดท้ายขยายเต็มแถว)
 // ════════════════════════════════════════════════════════════════
+function computeImgLayout(count){
+  if(count<=1) return{cols:1,lastSpanFull:false};
+  return{cols:2,lastSpanFull:count%2===1};
+}
+
+// renderImageGrid — รูปแนวนอน จัดกริดอัตโนมัติตามจำนวนรูป
 function renderImageGrid(item){
   const imgs = item.images;
   if(!imgs.length) return '<div style="font-size:11px;color:var(--tx3);padding:6px 0 2px;">(ยังไม่มีรูปภาพ)</div>';
+  const layout = computeImgLayout(imgs.length);
   let cells = '';
   imgs.forEach((img,i)=>{
+    const isLast = i===imgs.length-1;
+    const spanClass = (isLast&&layout.lastSpanFull) ? ' span-2' : '';
     cells+=`
-      <div class="img-grid-cell${img.uploading?' uploading':''}">
+      <div class="img-grid-cell${img.uploading?' uploading':''}${spanClass}">
         <img src="${img.url}" alt="" loading="lazy"/>
         <button class="img-thumb-del" onclick="removeImg('${item.id}',${i})" title="ลบรูปนี้">✕</button>
       </div>`;
   });
-  return `<div class="img-grid">${cells}</div>`;
+  return `<div class="img-grid${layout.cols===2?' cols-2':''}">${cells}</div>`;
 }
 
 function renderItems(){
@@ -569,14 +583,14 @@ function renderItems(){
           <select class="cat-select" onchange="updateField('${item.id}','category',this.value);renderItems();renderFilterBar();">${catOptions}</select>
         </div>
       </div>
-      <div class="field-label" style="margin-bottom:6px;">📷 รูปภาพอุปกรณ์ (แนวตั้ง)</div>
+      <div class="field-label" style="margin-bottom:6px;">📷 รูปภาพอุปกรณ์ (แนวนอน)</div>
       <div class="img-upload-zone" id="zone_${item.id}"
         onclick="document.getElementById('file_${item.id}').click()"
         ondragover="event.preventDefault();this.classList.add('drag')"
         ondragleave="this.classList.remove('drag')"
         ondrop="handleDrop(event,'${item.id}')">
         <div class="uz-icon">🖼️</div>
-        <div class="uz-text">คลิกหรือลากรูปมาวาง<br><span style="font-size:10px;">JPG / PNG ไม่เกิน 10MB · รูปแนวตั้งจะสวยที่สุด</span></div>
+        <div class="uz-text">คลิกหรือลากรูปมาวาง<br><span style="font-size:10px;">JPG / PNG ไม่เกิน 10MB · รูปแนวนอนจะสวยที่สุด</span></div>
       </div>
       <input type="file" id="file_${item.id}" accept="image/*" multiple style="display:none"
         onchange="handleFiles(this,'${item.id}')"/>
@@ -737,6 +751,17 @@ async function saveAllToFirestore(){
 function fsLog(msg,cls=''){const logEl=document.getElementById('fsLog');const line=document.createElement('div');line.className='fs-log-line '+(cls||'');line.textContent=msg;logEl.appendChild(line);logEl.scrollTop=logEl.scrollHeight;}
 
 // ── Build doc HTML ────────────────────────────────────────────────
+function buildImgsHTML(images){
+  if(!images.length) return `<div style="margin-left:22px;font-size:10pt;color:#aaa;padding:6px 0;">(ไม่มีรูปภาพ)</div>`;
+  const layout=computeImgLayout(images.length);
+  const cells=images.map((img,i)=>{
+    const isLast=i===images.length-1;
+    const spanClass=(isLast&&layout.lastSpanFull)?' span-2':'';
+    return `<div class="print-img-wrap${spanClass}"><img src="${img.url}"/></div>`;
+  }).join('');
+  return `<div class="print-imgs${layout.cols===2?' cols-2':''}">${cells}</div>`;
+}
+
 function groupItems(srcItems){
   if(filterCat!=='__all__'){const cat=getCatById(filterCat);return[{name:cat?cat.name:'ไม่ระบุประเภท',color:cat?cat.color:'#9CA3AF',items:srcItems}];}
   const map={};for(const item of srcItems){const cid=item.category||'__none__';if(!map[cid])map[cid]=[];map[cid].push(item);}
@@ -768,9 +793,7 @@ function buildDocHTML(){
       if(hasS)hdr+=`<span class="print-item-sn">S/N; ${escHtml(item.serial)}</span>`;
       if(!hasA&&!hasS&&hasN)hdr+=`<span class="print-item-ref">${escHtml(item.name)}</span>`;
       const nameRow=(hasN&&(hasA||hasS))?`<div class="print-item-name">${escHtml(item.name)}</div>`:'';
-      const imgsHTML=item.images.length
-        ?`<div class="print-imgs">${item.images.map(img=>`<div class="print-img-wrap"><img src="${img.url}"/></div>`).join('')}</div>`
-        :`<div style="margin-left:22px;font-size:10pt;color:#aaa;padding:6px 0;">(ไม่มีรูปภาพ)</div>`;
+      const imgsHTML=buildImgsHTML(item.images);
       // ใส่ divider หรือ page-break ทุก 2 รายการ
       const isSecondInPair = globalIdx % 2 === 0;
       const notLast = gi < grp.items.length - 1 || grp !== groups[groups.length-1];
@@ -824,14 +847,28 @@ async function exportDocx(){
   const MARGIN  = 900;   // ~1.6 cm — เล็กกว่าปกติ เพื่อพื้นที่รูปเยอะขึ้น
   const CONTENT_W = PAGE_W - MARGIN * 2;  // 10106 DXA
 
-  // ── ขนาดรูป portrait (3:4) ───────────────────────────────────
-  // 1 คอลัมน์ เต็มความกว้าง (เรียงซ้อนแนวตั้งจากบนลงล่าง)
-  const IMG_COL_W = CONTENT_W;                              // เต็มความกว้างเนื้อหา
-  const IMG_H_DXA = Math.floor(IMG_COL_W * 4 / 3);          // portrait 3:4
+  // ── ขนาดรูป: ปรับอัตโนมัติตามจำนวนรูป (แนวนอน 4:3) ────────────
+  // 1 รูป  → เต็มความกว้าง
+  // 2+ รูป → ครึ่งความกว้าง 2 คอลัมน์ (รูปคี่สุดท้ายขยายเต็มแถว)
+  const IMG_COL_W   = CONTENT_W;                              // เต็มความกว้างเนื้อหา
+  const IMG_GAP     = 200;                                    // ช่องว่างระหว่าง 2 คอลัมน์ (DXA)
+  const IMG_HALF_W  = Math.floor((IMG_COL_W - IMG_GAP) / 2);  // ความกว้างครึ่งคอลัมน์
+  const IMG_FULL_H  = Math.floor(IMG_COL_W * 3 / 4);          // ความสูง รูปเต็มแถว (4:3)
+  const IMG_HALF_H  = Math.floor(IMG_HALF_W * 3 / 4);         // ความสูง รูปครึ่งแถว (4:3)
 
-  const dxaToEmu = v => Math.round(v * 914400 / 1440);
-  const imgPxW   = Math.round(dxaToEmu(IMG_COL_W) / 9525);
-  const imgPxH   = Math.round(dxaToEmu(IMG_H_DXA) / 9525);
+  const dxaToEmu   = v => Math.round(v * 914400 / 1440);
+  const fullImgPxW = Math.round(dxaToEmu(IMG_COL_W) / 9525);
+  const fullImgPxH = Math.round(dxaToEmu(IMG_FULL_H) / 9525);
+  const halfImgPxW = Math.round(dxaToEmu(IMG_HALF_W) / 9525);
+  const halfImgPxH = Math.round(dxaToEmu(IMG_HALF_H) / 9525);
+  const noTableBorders={
+    top:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
+    bottom:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
+    left:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
+    right:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
+    insideHorizontal:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
+    insideVertical:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
+  };
 
   // ── Header paragraph ─────────────────────────────────────────
   function makeHeader(){
