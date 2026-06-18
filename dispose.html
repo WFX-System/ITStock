@@ -81,66 +81,39 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
 .fs-saved-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;}
 
-/* ── Image Upload Zone ── */
+/* ══════════════════════════════════════════════════
+   IMAGE GRID (Editor)
+   รูปทุกรูปขนาดเท่ากัน aspect-ratio 4:3 เสมอ
+   1 รูป  → เต็มแถว
+   2+ รูป → 2 คอลัมน์ (รูปคี่สุดท้ายขยายเต็มแถว)
+══════════════════════════════════════════════════ */
 .img-upload-zone{border:2px dashed var(--bdrm);border-radius:9px;padding:10px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg);}
 .img-upload-zone:hover,.img-upload-zone.drag{border-color:var(--g);background:var(--gll);}
 .img-upload-zone .uz-icon{font-size:22px;margin-bottom:3px;}
 .img-upload-zone .uz-text{font-size:11px;color:var(--tx3);}
 
-/* ════════════════════════════════════════════════════
-   IMAGE GRID — ปรับอัตโนมัติตามจำนวนรูป
-   1 รูป  → เต็มความกว้าง (ใหญ่)
-   2+ รูป → กริด 2 คอลัมน์ (รูปคี่สุดท้ายขยายเต็มแถว)
-   กรอบเป็นแนวนอน 4:3 ไม่ตัดรูป (object-fit:contain)
-════════════════════════════════════════════════════ */
-.img-grid{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:8px;
-  margin-top:8px;
-}
-.img-grid.cols-2{
-  grid-template-columns:1fr 1fr;
-}
+.img-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;}
+.img-grid.cols-2{grid-template-columns:1fr 1fr;}
 .img-grid-cell{
-  position:relative;
-  border-radius:9px;
-  border:1.5px solid var(--bdrm);
-  background:#F1F5F9;
-  overflow:hidden;
-  aspect-ratio:4/3;
+  position:relative;border-radius:9px;border:1.5px solid var(--bdrm);
+  background:#F1F5F9;overflow:hidden;
+  aspect-ratio:4/3;   /* ← ทุกช่องสูงเท่ากันหมด */
 }
-.img-grid-cell.span-2{
-  grid-column:1/-1;
-}
+.img-grid-cell.span-2{grid-column:1/-1;}
 .img-grid-cell.uploading img{opacity:.45;}
 .img-grid-cell img{
-  display:block;
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  border-radius:4px;
-  transition:opacity .2s;
+  display:block;width:100%;height:100%;
+  object-fit:cover;   /* ← cover = รูปเต็มช่อง ขนาดเท่ากันทุกรูป */
+  border-radius:4px;transition:opacity .2s;
 }
 .img-thumb-del{
-  position:absolute;top:6px;right:6px;
-  width:22px;height:22px;border-radius:50%;
+  position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;
   background:rgba(0,0,0,.65);color:#fff;font-size:12px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;border:none;line-height:1;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;line-height:1;
 }
-.img-grid-placeholder{
-  border-radius:9px;
-  border:2px dashed var(--bdrm);
-  background:transparent;
-  aspect-ratio:3/4;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;color:var(--tx3);cursor:pointer;
-  flex-direction:column;gap:4px;
-}
-.img-grid-placeholder:hover{border-color:var(--g);color:var(--g);background:var(--gll);}
 .upload-status{font-size:11px;color:var(--tx3);margin-top:4px;min-height:14px;}
 
+/* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;transition:all .15s;font-family:var(--font);}
 .btn:hover{border-color:var(--g);color:var(--g);}
 .btn-primary{background:var(--g);color:#fff;border-color:var(--g);}
@@ -159,6 +132,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .add-item-btn{width:100%;padding:10px;border:2px dashed var(--bdrm);border-radius:10px;background:none;font-size:13px;font-weight:700;color:var(--tx3);cursor:pointer;font-family:var(--font);transition:.15s;}
 .add-item-btn:hover{border-color:var(--g);color:var(--g);background:var(--gll);}
 
+/* ── Firestore status bar ── */
 .fs-statusbar{display:none;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;font-size:13px;}
 .fs-statusbar.open{display:block;}
 .fs-log{font-family:var(--font-mono,monospace);font-size:11px;color:var(--tx3);margin-top:8px;max-height:120px;overflow-y:auto;background:#F8FAFC;border-radius:6px;padding:8px;}
@@ -168,41 +142,80 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .fs-progress-wrap{height:5px;background:var(--bdr);border-radius:3px;margin-top:8px;overflow:hidden;}
 .fs-progress-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
 
+/* ══════════════════════════════════════════════════
+   PRINT STYLES  (window.print)
+   A4 · 2 รายการต่อหน้า · รูปขนาดเท่ากัน
+══════════════════════════════════════════════════ */
 #printArea{display:none;}
 @media print{
   .editor{display:none!important;}
   #printArea{display:block!important;}
   body{background:#fff;}
-  @page{size:A4;margin:12mm 15mm;}
+  @page{size:A4;margin:14mm 16mm;}
 }
-#printArea{font-family:'Sarabun',sans-serif;font-size:12pt;color:#111;line-height:1.5;padding:20px;}
-.print-doc-header{text-align:center;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #111;}
-.print-doc-title{font-size:18pt;font-weight:700;margin-bottom:4px;}
-/* 2 รายการต่อหน้า */
-.print-item{page-break-inside:avoid;margin-bottom:0;}
-.print-item-break{page-break-after:always;}
-.print-item-header{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;}
-.print-item-num{font-size:13pt;font-weight:700;}
-.print-item-ref{font-size:13pt;font-weight:700;font-family:'IBM Plex Mono',monospace;text-decoration:underline;text-underline-offset:3px;}
-.print-item-sn{font-size:12pt;font-family:'IBM Plex Mono',monospace;}
-.print-item-name{font-size:11pt;color:#444;margin-bottom:8px;margin-left:22px;}
-/* รูปภาพ: ปรับอัตโนมัติตามจำนวนรูป — 1 รูปเต็มแถว / 2+ รูปจัดกริด 2 คอลัมน์ */
-.print-imgs{display:grid;grid-template-columns:1fr;gap:8px;margin-left:22px;margin-top:6px;}
-.print-imgs.cols-2{grid-template-columns:1fr 1fr;}
-.print-img-wrap{border:1px solid #ccc;border-radius:6px;overflow:hidden;background:#fafafa;display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;page-break-inside:avoid;}
-.print-img-wrap.span-2{grid-column:1/-1;}
-.print-img-wrap img{display:block;width:100%;height:100%;object-fit:contain;}
-.print-item-divider{border:none;border-top:1px dashed #ccc;margin:10px 0;}
-.print-footer{margin-top:20px;padding-top:8px;border-top:1px solid #ccc;font-size:10pt;color:#777;display:flex;justify-content:space-between;}
-.print-cat-heading{font-size:13pt;font-weight:700;margin:14px 0 8px;padding:5px 10px;border-radius:6px;}
+/* shared print styles — ใช้ทั้ง @print และ preview-a4 */
+.doc-render{font-family:'Sarabun',sans-serif;font-size:12pt;color:#111;line-height:1.5;}
+.doc-header{text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #111;}
+.doc-title{font-size:18pt;font-weight:700;margin-bottom:4px;}
+.doc-meta{font-size:11pt;color:#555;margin-top:4px;}
 
-.preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;overflow-y:auto;padding:20px;}
+/* item block */
+.pi{page-break-inside:avoid;}
+.pi-hdr{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;}
+.pi-num{font-size:13pt;font-weight:700;}
+.pi-ref{font-size:13pt;font-weight:700;font-family:'IBM Plex Mono',monospace;text-decoration:underline;text-underline-offset:3px;}
+.pi-sn{font-size:12pt;font-family:'IBM Plex Mono',monospace;}
+.pi-name{font-size:11pt;color:#444;margin-bottom:6px;margin-left:22px;}
+
+/* ── รูปภาพใน print / preview
+   ทุกรูปใช้ aspect-ratio 4:3 + object-fit:cover → ขนาดเท่ากันหมด ── */
+.pi-imgs{display:grid;grid-template-columns:1fr;gap:6px;margin-left:22px;margin-top:4px;}
+.pi-imgs.cols-2{grid-template-columns:1fr 1fr;}
+.pi-img-cell{
+  border:1px solid #ccc;border-radius:6px;overflow:hidden;
+  background:#fafafa;
+  aspect-ratio:4/3;   /* ← เท่ากันทุกช่อง */
+  page-break-inside:avoid;
+}
+.pi-img-cell.span-2{grid-column:1/-1;}
+.pi-img-cell img{display:block;width:100%;height:100%;object-fit:cover;}  /* ← cover */
+
+.pi-divider{border:none;border-top:1px dashed #ccc;margin:10px 0;}
+.pi-page-break{page-break-after:always;}
+.pi-cat-heading{font-size:13pt;font-weight:700;margin:14px 0 8px;padding:5px 10px;border-radius:6px;}
+.doc-footer{margin-top:16px;padding-top:8px;border-top:1px solid #ccc;font-size:10pt;color:#777;display:flex;justify-content:space-between;}
+
+/* ══════════════════════════════════════════════════
+   PREVIEW OVERLAY — จำลอง A4 จริง 2 รายการ/หน้า
+══════════════════════════════════════════════════ */
+.preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;overflow-y:auto;padding:20px 10px;}
 .preview-overlay.open{display:block;}
-.preview-box{background:#fff;max-width:760px;margin:0 auto;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);}
-.preview-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surf);border-bottom:1px solid var(--bdr);}
+.preview-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:#fff;border-radius:12px 12px 0 0;
+  border-bottom:1px solid #E5E7EB;
+  position:sticky;top:0;z-index:10;
+  max-width:794px;margin:0 auto;
+}
 .preview-toolbar-title{font-size:13px;font-weight:700;}
-.preview-content{padding:24px;font-family:'Sarabun',sans-serif;font-size:13pt;color:#111;}
+/* A4 กรอบ */
+.preview-a4-wrap{max-width:794px;margin:0 auto;}
+/* แต่ละหน้า A4 */
+.a4-page{
+  background:#fff;
+  width:794px;        /* A4 @ 96dpi = 210mm */
+  min-height:1123px;  /* A4 @ 96dpi = 297mm */
+  padding:53px 60px;  /* ~14mm 16mm */
+  margin-bottom:16px;
+  box-shadow:0 4px 24px rgba(0,0,0,.15);
+  position:relative;
+}
+/* หน้าแรกแสดง header เอกสาร */
+.a4-page:first-child .doc-header{display:block;}
+/* หน้าถัดไปไม่มี header */
+.a4-page:not(:first-child) .doc-header{display:none;}
 
+/* ── DOCX Progress ── */
 .docx-progress{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
 .docx-progress.open{display:flex;}
 .docx-progress-box{background:#fff;border-radius:16px;padding:28px 32px;text-align:center;min-width:240px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
@@ -212,9 +225,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .progress-bar-wrap{height:6px;background:var(--bdr);border-radius:3px;margin-top:14px;overflow:hidden;}
 .progress-bar-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
 
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
-.toast.show{opacity:1;}
-
+/* ── Modals ── */
 .modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
 .modal-wrap.open{display:flex;}
 .modal-box{background:var(--surf);border-radius:14px;padding:22px 24px;min-width:300px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);}
@@ -226,6 +237,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .load-confirm-info{background:#F0FDF4;border:1px solid #A7F3D0;border-radius:8px;padding:10px 14px;font-size:12px;color:#065F46;margin-bottom:12px;}
 .load-confirm-info b{color:#047857;}
 
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+@media(max-width:860px){
+  .a4-page{width:100%;min-height:unset;padding:28px 20px;}
+  .preview-toolbar{max-width:100%;}
+  .preview-a4-wrap{max-width:100%;}
+}
 @media(max-width:520px){
   .meta-grid,.item-fields{grid-template-columns:1fr;}
   .action-bar{flex-direction:column;}
@@ -240,7 +259,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <div class="editor-logo">📦</div>
     <div>
       <div class="editor-title">สร้างเอกสารตัดทรัพย์สิน</div>
-      <div class="editor-sub">รูปแนวนอน จัดกริดอัตโนมัติ · 2 รายการต่อหน้า · Firestore · Export Word</div>
+      <div class="editor-sub">รูปขนาดเท่ากัน · Preview A4 จำลอง · 2 รายการ/หน้า · Firestore · Export Word</div>
     </div>
     <span class="auth-badge pending" id="authBadge">⏳ กำลังเชื่อมต่อ...</span>
   </div>
@@ -314,7 +333,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 
   <!-- Action bar -->
   <div class="action-bar" style="margin-top:14px;">
-    <button class="btn btn-primary" onclick="openPreview()">👁 ดูตัวอย่าง</button>
+    <button class="btn btn-primary" onclick="openPreview()">👁 ดูตัวอย่าง A4</button>
     <button class="btn" onclick="doPrint()">🖨️ พิมพ์</button>
     <button class="btn btn-word" onclick="exportDocx()">📄 Export Word</button>
     <button class="btn btn-fire" id="btnSaveFirestore" onclick="saveAllToFirestore()">🔥 บันทึกลง Firestore</button>
@@ -322,24 +341,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
     <button class="btn btn-ghost" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
   </div>
   <div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px 0 24px;">
-    รูปแนวนอน (landscape) · จัดกริดอัตโนมัติตามจำนวนรูป (1 รูป=ใหญ่ / 2+ รูป=กริด) · Word export: 2 รายการต่อหน้า
+    รูปขนาดเท่ากันทุกรูป (4:3 cover) · Preview จำลอง A4 จริง · 2 รายการต่อหน้า · Word export ฝังรูปขนาดเท่ากัน
   </div>
 </div>
 
 <div id="printArea"></div>
 
-<!-- Preview Modal -->
+<!-- ══════════════════════════════════════════════════
+     PREVIEW OVERLAY — A4 แบ่งหน้าจริง
+══════════════════════════════════════════════════ -->
 <div class="preview-overlay" id="previewOverlay" onclick="closePreviewOutside(event)">
-  <div class="preview-box">
-    <div class="preview-toolbar">
-      <div class="preview-toolbar-title">👁 ตัวอย่างเอกสาร</div>
-      <div style="display:flex;gap:6px;">
-        <button class="btn btn-word" style="padding:6px 14px;font-size:12px;" onclick="exportDocx()">📄 Export Word</button>
-        <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;" onclick="doPrint()">🖨️ พิมพ์</button>
-        <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;" onclick="closePreview()">✕ ปิด</button>
-      </div>
+  <div class="preview-toolbar">
+    <div class="preview-toolbar-title">👁 ตัวอย่างเอกสาร A4 (2 รายการ/หน้า)</div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-word" style="padding:6px 14px;font-size:12px;" onclick="exportDocx()">📄 Export Word</button>
+      <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;" onclick="doPrint()">🖨️ พิมพ์</button>
+      <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;" onclick="closePreview()">✕ ปิด</button>
     </div>
-    <div class="preview-content" id="previewContent"></div>
+  </div>
+  <div class="preview-a4-wrap" id="previewA4Wrap">
+    <!-- หน้า A4 จะถูก inject ที่นี่ -->
   </div>
 </div>
 
@@ -509,32 +530,30 @@ function removeItem(id){
   items=items.filter(x=>x.id!==id);renderFilterBar();renderItems();
 }
 
-// ════════════════════════════════════════════════════════════════
-// computeImgLayout — ตรรกะกริดกลาง ใช้ร่วมกันทั้งตัวแก้ไข / พิมพ์ / Word
-// 1 รูป  → 1 คอลัมน์ เต็มความกว้าง
-// 2+ รูป → 2 คอลัมน์ (ถ้าจำนวนเป็นเลขคี่ รูปสุดท้ายขยายเต็มแถว)
-// ════════════════════════════════════════════════════════════════
+// ── Image layout helper (ใช้ร่วมกันทุกที่) ─────────────────────
+// 1 รูป  → 1 คอลัมน์
+// 2+ รูป → 2 คอลัมน์ รูปคี่สุดท้ายขยายเต็มแถว
 function computeImgLayout(count){
-  if(count<=1) return{cols:1,lastSpanFull:false};
+  if(count<=1)return{cols:1,lastSpanFull:false};
   return{cols:2,lastSpanFull:count%2===1};
 }
 
-// renderImageGrid — รูปแนวนอน จัดกริดอัตโนมัติตามจำนวนรูป
+// ── render Image Grid (Editor UI) ────────────────────────────────
 function renderImageGrid(item){
-  const imgs = item.images;
-  if(!imgs.length) return '<div style="font-size:11px;color:var(--tx3);padding:6px 0 2px;">(ยังไม่มีรูปภาพ)</div>';
-  const layout = computeImgLayout(imgs.length);
-  let cells = '';
+  const imgs=item.images;
+  if(!imgs.length)return'<div style="font-size:11px;color:var(--tx3);padding:6px 0 2px;">(ยังไม่มีรูปภาพ)</div>';
+  const layout=computeImgLayout(imgs.length);
+  let cells='';
   imgs.forEach((img,i)=>{
-    const isLast = i===imgs.length-1;
-    const spanClass = (isLast&&layout.lastSpanFull) ? ' span-2' : '';
+    const isLast=i===imgs.length-1;
+    const spanClass=(isLast&&layout.lastSpanFull)?' span-2':'';
     cells+=`
       <div class="img-grid-cell${img.uploading?' uploading':''}${spanClass}">
         <img src="${img.url}" alt="" loading="lazy"/>
         <button class="img-thumb-del" onclick="removeImg('${item.id}',${i})" title="ลบรูปนี้">✕</button>
       </div>`;
   });
-  return `<div class="img-grid${layout.cols===2?' cols-2':''}">${cells}</div>`;
+  return`<div class="img-grid${layout.cols===2?' cols-2':''}">${cells}</div>`;
 }
 
 function renderItems(){
@@ -543,7 +562,6 @@ function renderItems(){
   if(!filtered.length){container.innerHTML=`<div style="text-align:center;padding:28px;color:var(--tx3);font-size:13px;">ไม่มีรายการในประเภทนี้</div>`;return;}
   const globalIdxMap={};
   items.forEach((it,i)=>globalIdxMap[it.id]=i+1);
-
   container.innerHTML=filtered.map(item=>{
     const cat=item.category?getCatById(item.category):null;
     const borderColor=cat?cat.color:'#E5E7EB';
@@ -551,7 +569,7 @@ function renderItems(){
     const dispNum=globalIdxMap[item.id];
     const catOptions=`<option value="">-- ไม่ระบุ --</option>`+categories.map(c=>`<option value="${c.id}" ${item.category===c.id?'selected':''}>${escHtml(c.name)}</option>`).join('');
     const savedBadge=item.firestoreDocId?`<span class="fs-saved-badge">✅ บันทึกแล้ว</span>`:'';
-    return `
+    return`
     <div class="item-card" id="card_${item.id}" style="border-left-color:${borderColor};">
       <div class="item-header">
         <div class="item-num" style="background:${numBg};">${dispNum}</div>
@@ -583,14 +601,14 @@ function renderItems(){
           <select class="cat-select" onchange="updateField('${item.id}','category',this.value);renderItems();renderFilterBar();">${catOptions}</select>
         </div>
       </div>
-      <div class="field-label" style="margin-bottom:6px;">📷 รูปภาพอุปกรณ์ (แนวนอน)</div>
+      <div class="field-label" style="margin-bottom:6px;">📷 รูปภาพอุปกรณ์</div>
       <div class="img-upload-zone" id="zone_${item.id}"
         onclick="document.getElementById('file_${item.id}').click()"
         ondragover="event.preventDefault();this.classList.add('drag')"
         ondragleave="this.classList.remove('drag')"
         ondrop="handleDrop(event,'${item.id}')">
         <div class="uz-icon">🖼️</div>
-        <div class="uz-text">คลิกหรือลากรูปมาวาง<br><span style="font-size:10px;">JPG / PNG ไม่เกิน 10MB · รูปแนวนอนจะสวยที่สุด</span></div>
+        <div class="uz-text">คลิกหรือลากรูปมาวาง<br><span style="font-size:10px;">JPG / PNG ไม่เกิน 10MB · รูปทุกใบขนาดเท่ากัน (4:3)</span></div>
       </div>
       <input type="file" id="file_${item.id}" accept="image/*" multiple style="display:none"
         onchange="handleFiles(this,'${item.id}')"/>
@@ -750,68 +768,165 @@ async function saveAllToFirestore(){
 }
 function fsLog(msg,cls=''){const logEl=document.getElementById('fsLog');const line=document.createElement('div');line.className='fs-log-line '+(cls||'');line.textContent=msg;logEl.appendChild(line);logEl.scrollTop=logEl.scrollHeight;}
 
-// ── Build doc HTML ────────────────────────────────────────────────
-function buildImgsHTML(images){
-  if(!images.length) return `<div style="margin-left:22px;font-size:10pt;color:#aaa;padding:6px 0;">(ไม่มีรูปภาพ)</div>`;
-  const layout=computeImgLayout(images.length);
-  const cells=images.map((img,i)=>{
-    const isLast=i===images.length-1;
-    const spanClass=(isLast&&layout.lastSpanFull)?' span-2':'';
-    return `<div class="print-img-wrap${spanClass}"><img src="${img.url}"/></div>`;
-  }).join('');
-  return `<div class="print-imgs${layout.cols===2?' cols-2':''}">${cells}</div>`;
+// ══════════════════════════════════════════════════════════════════
+//  BUILD DOC HTML  (ใช้ทั้ง print และ preview A4)
+//  สร้างเป็น array ของ "page block" แต่ละ page = 2 items
+// ══════════════════════════════════════════════════════════════════
+
+function getDocMeta(){
+  const title=document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
+  const ref=document.getElementById('docRef').value.trim();
+  const dept=document.getElementById('docDept').value.trim();
+  const dateV=document.getElementById('docDate').value;
+  const dateStr=dateV?new Date(dateV+'T12:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}):'';
+  return{title,ref,dept,dateStr};
+}
+
+function buildItemHTML(item,globalIdx){
+  const hasA=!!item.assetNo.trim(),hasS=!!item.serial.trim(),hasN=!!item.name.trim();
+  let hdr=`<span class="pi-num">${globalIdx}.</span> `;
+  if(hasA)hdr+=`<span class="pi-ref">${escHtml(item.assetNo)}</span>`;
+  if(hasA&&hasS)hdr+=`<span style="margin:0 6px;color:#999"> </span>`;
+  if(hasS)hdr+=`<span class="pi-sn">S/N; ${escHtml(item.serial)}</span>`;
+  if(!hasA&&!hasS&&hasN)hdr+=`<span class="pi-ref">${escHtml(item.name)}</span>`;
+  const nameRow=(hasN&&(hasA||hasS))?`<div class="pi-name">${escHtml(item.name)}</div>`:'';
+  // รูป
+  const imgs=item.images;
+  let imgsHTML='';
+  if(imgs.length){
+    const layout=computeImgLayout(imgs.length);
+    const cells=imgs.map((img,i)=>{
+      const isLast=i===imgs.length-1;
+      const spanClass=(isLast&&layout.lastSpanFull)?' span-2':'';
+      return`<div class="pi-img-cell${spanClass}"><img src="${img.url}" loading="lazy"/></div>`;
+    }).join('');
+    imgsHTML=`<div class="pi-imgs${layout.cols===2?' cols-2':''}">${cells}</div>`;
+  } else {
+    imgsHTML=`<div style="margin-left:22px;font-size:10pt;color:#aaa;padding:4px 0;">(ไม่มีรูปภาพ)</div>`;
+  }
+  return`<div class="pi"><div class="pi-hdr">${hdr}</div>${nameRow}${imgsHTML}</div>`;
 }
 
 function groupItems(srcItems){
   if(filterCat!=='__all__'){const cat=getCatById(filterCat);return[{name:cat?cat.name:'ไม่ระบุประเภท',color:cat?cat.color:'#9CA3AF',items:srcItems}];}
-  const map={};for(const item of srcItems){const cid=item.category||'__none__';if(!map[cid])map[cid]=[];map[cid].push(item);}
+  const map={};for(const item of srcItems){const cid=item.category||'__none__';if(!map[cid])map[cid]=[];}
+  for(const item of srcItems){const cid=item.category||'__none__';if(!map[cid])map[cid]=[];map[cid].push(item);}
   const result=[];
   for(const cat of categories){if(map[cat.id]?.length)result.push({name:cat.name,color:cat.color,items:map[cat.id]});}
   if(map['__none__']?.length)result.push({name:'ไม่ระบุประเภท',color:'#9CA3AF',items:map['__none__']});
   return result;
 }
 
-function buildDocHTML(){
-  const title=document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
-  const ref=document.getElementById('docRef').value.trim();
-  const dept=document.getElementById('docDept').value.trim();
-  const dateV=document.getElementById('docDate').value;
-  const dateStr=dateV?new Date(dateV+'T12:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}):'';
-  const metaParts=[dept&&`🏢 ${dept}`,ref&&`📄 ${ref}`,dateStr&&`📅 ${dateStr}`].filter(Boolean).join(' · ');
-  const srcItems=getFilteredItems().filter(it=>it.assetNo||it.serial||it.name);
+// ── แบ่ง items เป็น pages (2 item ต่อหน้า, heading ไม่นับ) ───────
+function buildPages(srcItems){
   const groups=groupItems(srcItems);
-  let body='',globalIdx=0;
+  const pages=[];
+  let curPage=[];
+  let itemInPage=0;
+  let globalIdx=0;
+  const multiGroup=groups.length>1;
+
+  function flushPage(){if(curPage.length){pages.push(curPage);curPage=[];itemInPage=0;}}
+
   for(const grp of groups){
-    if(groups.length>1) body+=`<div class="print-cat-heading" style="background:${lightenHex(grp.color||'#9CA3AF')};color:${grp.color||'#374151'};">🏷️ ${escHtml(grp.name)}</div>`;
-    for(let gi=0;gi<grp.items.length;gi++){
-      const item=grp.items[gi];
+    // heading (ถ้ามีหลาย group)
+    if(multiGroup){
+      // ถ้าหน้าปัจจุบันมี item อยู่แล้ว และยังไม่เต็ม 2 → ไม่ต้องขึ้นหน้าใหม่
+      // แต่ heading ควรอยู่ด้านบนของกลุ่ม — เพิ่ม heading block เข้าหน้าปัจจุบัน
+      curPage.push({type:'heading',grp});
+    }
+    for(const item of grp.items){
       globalIdx++;
-      const hasA=!!item.assetNo.trim(),hasS=!!item.serial.trim(),hasN=!!item.name.trim();
-      let hdr=`<span class="print-item-num">${globalIdx}.</span> `;
-      if(hasA)hdr+=`<span class="print-item-ref">${escHtml(item.assetNo)}</span>`;
-      if(hasA&&hasS)hdr+=`<span style="margin:0 8px;color:#999"> </span>`;
-      if(hasS)hdr+=`<span class="print-item-sn">S/N; ${escHtml(item.serial)}</span>`;
-      if(!hasA&&!hasS&&hasN)hdr+=`<span class="print-item-ref">${escHtml(item.name)}</span>`;
-      const nameRow=(hasN&&(hasA||hasS))?`<div class="print-item-name">${escHtml(item.name)}</div>`:'';
-      const imgsHTML=buildImgsHTML(item.images);
-      // ใส่ divider หรือ page-break ทุก 2 รายการ
-      const isSecondInPair = globalIdx % 2 === 0;
-      const notLast = gi < grp.items.length - 1 || grp !== groups[groups.length-1];
-      const sep = isSecondInPair && notLast
-        ? '<div class="print-item-break"></div>'
-        : (!isSecondInPair && notLast ? '<hr class="print-item-divider"/>' : '');
-      body+=`<div class="print-item"><div class="print-item-header">${hdr}</div>${nameRow}${imgsHTML}</div>${sep}`;
+      curPage.push({type:'item',item,globalIdx});
+      itemInPage++;
+      if(itemInPage>=2){flushPage();}
     }
   }
-  return`<div class="print-doc-header"><div class="print-doc-title">${escHtml(title)}</div>${metaParts?`<div style="margin-top:6px;font-size:11pt;color:#555;">${metaParts}</div>`:''}</div>${body||'<div style="text-align:center;color:#aaa;padding:20px;">ยังไม่มีรายการ</div>'}<div class="print-footer"><span>จำนวน ${srcItems.length} รายการ</span><span>พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</span></div>`;
+  flushPage();
+  return pages;
 }
 
-function openPreview(){document.getElementById('previewContent').innerHTML=buildDocHTML();document.getElementById('previewOverlay').classList.add('open');}
+// ── สร้าง HTML ของแต่ละหน้า ───────────────────────────────────────
+function buildPageHTML(pageBlocks,isFirst,meta,totalItems){
+  const{title,ref,dept,dateStr}=meta;
+  const metaParts=[dept&&`🏢 ${dept}`,ref&&`📄 ${ref}`,dateStr&&`📅 ${dateStr}`].filter(Boolean).join(' · ');
+  let html='';
+  // header เอกสาร (หน้าแรกเท่านั้น)
+  if(isFirst){
+    html+=`<div class="doc-header">
+      <div class="doc-title">${escHtml(title)}</div>
+      ${metaParts?`<div class="doc-meta">${metaParts}</div>`:''}
+    </div>`;
+  }
+  // content
+  const itemsInPage=pageBlocks.filter(b=>b.type==='item');
+  pageBlocks.forEach((blk,bi)=>{
+    if(blk.type==='heading'){
+      html+=`<div class="pi-cat-heading" style="background:${lightenHex(blk.grp.color||'#9CA3AF')};color:${blk.grp.color||'#374151'};">🏷️ ${escHtml(blk.grp.name)}</div>`;
+    } else {
+      // separator ระหว่าง 2 items ในหน้าเดียวกัน (ไม่ใช่ตัวสุดท้าย)
+      const itemIdx=itemsInPage.indexOf(blk);
+      if(itemIdx===1){html+=`<hr class="pi-divider"/>`;}
+      html+=buildItemHTML(blk.item,blk.globalIdx);
+    }
+  });
+  return html;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  PREVIEW A4 — จำลองหน้า A4 จริงในหน้าต่าง overlay
+// ══════════════════════════════════════════════════════════════════
+function openPreview(){
+  const srcItems=getFilteredItems().filter(it=>it.assetNo||it.serial||it.name);
+  if(!srcItems.length){showToast('ยังไม่มีรายการ');return;}
+  const meta=getDocMeta();
+  const pages=buildPages(srcItems);
+  const wrap=document.getElementById('previewA4Wrap');
+  wrap.innerHTML='';
+  pages.forEach((pageBlocks,pi)=>{
+    const div=document.createElement('div');
+    div.className='a4-page doc-render';
+    div.innerHTML=buildPageHTML(pageBlocks,pi===0,meta,srcItems.length);
+    // footer เฉพาะหน้าสุดท้าย
+    if(pi===pages.length-1){
+      div.innerHTML+=`<div class="doc-footer">
+        <span>จำนวน ${srcItems.length} รายการ</span>
+        <span>พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</span>
+      </div>`;
+    }
+    wrap.appendChild(div);
+  });
+  document.getElementById('previewOverlay').classList.add('open');
+}
 function closePreview(){document.getElementById('previewOverlay').classList.remove('open');}
 function closePreviewOutside(e){if(e.target===document.getElementById('previewOverlay'))closePreview();}
-function doPrint(){document.getElementById('printArea').innerHTML=buildDocHTML();setTimeout(()=>window.print(),150);}
 
-// ── DOCX Export (2 รายการต่อหน้า, รูปแนวตั้งใหญ่ เรียงซ้อนกัน) ────
+// ══════════════════════════════════════════════════════════════════
+//  PRINT — ใช้ CSS @page + page-break-after
+// ══════════════════════════════════════════════════════════════════
+function doPrint(){
+  const srcItems=getFilteredItems().filter(it=>it.assetNo||it.serial||it.name);
+  if(!srcItems.length){showToast('ยังไม่มีรายการ');return;}
+  const meta=getDocMeta();
+  const pages=buildPages(srcItems);
+  let html=`<div class="doc-render">`;
+  pages.forEach((pageBlocks,pi)=>{
+    const isLast=pi===pages.length-1;
+    const pageContent=buildPageHTML(pageBlocks,pi===0,meta,srcItems.length);
+    const footer=isLast?`<div class="doc-footer">
+      <span>จำนวน ${srcItems.length} รายการ</span>
+      <span>พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</span>
+    </div>`:'';
+    html+=`<div style="${!isLast?'page-break-after:always;':''}">${pageContent}${footer}</div>`;
+  });
+  html+='</div>';
+  document.getElementById('printArea').innerHTML=html;
+  setTimeout(()=>window.print(),150);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DOCX EXPORT — 2 รายการต่อหน้า, รูปขนาดเท่ากัน
+// ══════════════════════════════════════════════════════════════════
 function waitForDocx(timeout=15000){
   return new Promise((resolve,reject)=>{
     if(window.docx&&window.docx.Document){resolve(window.docx);return;}
@@ -830,47 +945,46 @@ async function exportDocx(){
   try{await waitForDocx();}catch(e){hideDocxProgress();showToast('⚠️ '+e.message,4000);return;}
   showDocxProgress('กำลังเตรียมข้อมูล...',8);
 
-  const title=document.getElementById('docTitle').value.trim()||'รายการตัดทรัพย์สิน';
-  const ref=document.getElementById('docRef').value.trim();
-  const dept=document.getElementById('docDept').value.trim();
-  const dateV=document.getElementById('docDate').value;
-  const dateStr=dateV?new Date(dateV+'T12:00:00').toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}):'';
+  const meta=getDocMeta();
+  const{title,ref,dept,dateStr}=meta;
 
   const{Document,Packer,Paragraph,TextRun,ImageRun,AlignmentType,BorderStyle,
-        Table,TableRow,TableCell,WidthType,VerticalAlign,PageBreak}=window.docx;
+        Table,TableRow,TableCell,WidthType,VerticalAlign}=window.docx;
 
   // ── ขนาดหน้า A4 ──────────────────────────────────────────────
-  // A4: 11906 x 16838 DXA, margin 900 DXA (~1.6cm) ทุกด้าน
-  // เพิ่ม margin เล็กเพื่อได้พื้นที่รูปใหญ่ที่สุด
+  // A4: 11906 × 16838 DXA, margin 900 DXA (~1.6cm)
   const PAGE_W  = 11906;
   const PAGE_H  = 16838;
-  const MARGIN  = 900;   // ~1.6 cm — เล็กกว่าปกติ เพื่อพื้นที่รูปเยอะขึ้น
-  const CONTENT_W = PAGE_W - MARGIN * 2;  // 10106 DXA
+  const MARGIN  = 900;
+  const CONTENT_W = PAGE_W - MARGIN * 2;   // 10106 DXA
 
-  // ── ขนาดรูป: ปรับอัตโนมัติตามจำนวนรูป (แนวนอน 4:3) ────────────
-  // 1 รูป  → เต็มความกว้าง
-  // 2+ รูป → ครึ่งความกว้าง 2 คอลัมน์ (รูปคี่สุดท้ายขยายเต็มแถว)
-  const IMG_COL_W   = CONTENT_W;                              // เต็มความกว้างเนื้อหา
-  const IMG_GAP     = 200;                                    // ช่องว่างระหว่าง 2 คอลัมน์ (DXA)
-  const IMG_HALF_W  = Math.floor((IMG_COL_W - IMG_GAP) / 2);  // ความกว้างครึ่งคอลัมน์
-  const IMG_FULL_H  = Math.floor(IMG_COL_W * 3 / 4);          // ความสูง รูปเต็มแถว (4:3)
-  const IMG_HALF_H  = Math.floor(IMG_HALF_W * 3 / 4);         // ความสูง รูปครึ่งแถว (4:3)
+  // ── ขนาดรูป: เท่ากันทุกรูป (4:3 cover อ้างอิงจาก CSS) ────────
+  // 1 รูป  → เต็มความกว้าง  = CONTENT_W × (3/4)
+  // 2+ รูป → ครึ่งความกว้าง (2 คอลัมน์)
+  //   รูปคี่สุดท้าย → span เต็มแถว
+  // height = width × (3/4)  → aspect-ratio 4:3 เสมอ
+  const IMG_GAP     = 220;                                       // DXA ระหว่าง 2 คอลัมน์
+  const IMG_FULL_W  = CONTENT_W;                                 // 1 คอลัมน์
+  const IMG_HALF_W  = Math.floor((CONTENT_W - IMG_GAP) / 2);    // 2 คอลัมน์
+  const IMG_FULL_H  = Math.floor(IMG_FULL_W * 3 / 4);
+  const IMG_HALF_H  = Math.floor(IMG_HALF_W * 3 / 4);
 
-  const dxaToEmu   = v => Math.round(v * 914400 / 1440);
-  const fullImgPxW = Math.round(dxaToEmu(IMG_COL_W) / 9525);
-  const fullImgPxH = Math.round(dxaToEmu(IMG_FULL_H) / 9525);
-  const halfImgPxW = Math.round(dxaToEmu(IMG_HALF_W) / 9525);
-  const halfImgPxH = Math.round(dxaToEmu(IMG_HALF_H) / 9525);
-  const noTableBorders={
-    top:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
-    bottom:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
-    left:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
-    right:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
-    insideHorizontal:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
-    insideVertical:{style:BorderStyle.NONE,size:0,color:'FFFFFF'},
-  };
+  // DXA → EMU (914400 EMU = 1 inch = 1440 DXA)
+  const dxaToEmu = v => Math.round(v * 914400 / 1440);
+  // EMU → screen px (96 DPI)
+  const emuToPx  = v => Math.round(v / 9525);
 
-  // ── Header paragraph ─────────────────────────────────────────
+  // px ที่ใช้ใน canvas resize
+  const FULL_PX_W = emuToPx(dxaToEmu(IMG_FULL_W));
+  const FULL_PX_H = emuToPx(dxaToEmu(IMG_FULL_H));
+  const HALF_PX_W = emuToPx(dxaToEmu(IMG_HALF_W));
+  const HALF_PX_H = emuToPx(dxaToEmu(IMG_HALF_H));
+
+  // borders ล่องหน (ใช้กับตาราง 2 คอลัมน์)
+  const noB={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBorders={top:noB,bottom:noB,left:noB,right:noB,insideHorizontal:noB,insideVertical:noB};
+
+  // ── Header paragraphs ─────────────────────────────────────────
   function makeHeader(){
     const paras=[];
     paras.push(new Paragraph({
@@ -892,81 +1006,186 @@ async function exportDocx(){
     return paras;
   }
 
-  // ── Item block (ข้อความ + รูป) ───────────────────────────────
+  // ── fetch + crop รูปเป็น ArrayBuffer ขนาดเท่ากัน (cover 4:3) ─
+  async function fetchAndCropImg(imgObj, targetW, targetH){
+    let srcBlob = null;
+    // ลอง blob ก่อน
+    if(imgObj.blob instanceof Blob) srcBlob = imgObj.blob;
+    else if(imgObj.url && !imgObj.url.startsWith('blob:')){
+      try{
+        const r=await fetch(imgObj.url);
+        if(r.ok) srcBlob=await r.blob();
+      }catch(e){}
+    }
+    if(!srcBlob && imgObj.url){
+      // fallback: load via Image → canvas
+      return await cropViaCanvas(imgObj.url, targetW, targetH, imgObj.mimeType||'image/jpeg');
+    }
+    // แปลง blob → canvas crop
+    const blobUrl = URL.createObjectURL(srcBlob);
+    try{
+      return await cropViaCanvas(blobUrl, targetW, targetH, imgObj.mimeType||'image/jpeg');
+    }finally{
+      URL.revokeObjectURL(blobUrl);
+    }
+  }
+
+  // crop/resize รูปให้ได้ targetW × targetH (cover)
+  function cropViaCanvas(src, tW, tH, mimeType){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=()=>{
+        const c=document.createElement('canvas');
+        c.width=tW; c.height=tH;
+        const ctx=c.getContext('2d');
+        // cover: คำนวณ scale และ offset
+        const scaleX=tW/img.naturalWidth;
+        const scaleY=tH/img.naturalHeight;
+        const scale=Math.max(scaleX,scaleY);
+        const dw=img.naturalWidth*scale;
+        const dh=img.naturalHeight*scale;
+        const ox=(tW-dw)/2;
+        const oy=(tH-dh)/2;
+        ctx.drawImage(img,ox,oy,dw,dh);
+        c.toBlob(b=>{
+          if(!b){reject(new Error('toBlob failed'));return;}
+          b.arrayBuffer().then(resolve).catch(reject);
+        }, mimeType.includes('png')?'image/png':'image/jpeg', 0.88);
+      };
+      img.onerror=()=>reject(new Error('img load'));
+      img.src=src;
+    });
+  }
+
+  // ── สร้าง ImageRun ────────────────────────────────────────────
+  async function makeImgRun(imgObj, isFull){
+    const tW=isFull?FULL_PX_W:HALF_PX_W;
+    const tH=isFull?FULL_PX_H:HALF_PX_H;
+    const wEmu=dxaToEmu(isFull?IMG_FULL_W:IMG_HALF_W);
+    const hEmu=dxaToEmu(isFull?IMG_FULL_H:IMG_HALF_H);
+    let ab=null;
+    try{ab=await fetchAndCropImg(imgObj,tW,tH);}catch(e){}
+    if(!ab) return null;
+    const ext=(imgObj.mimeType||'image/jpeg').includes('png')?'png':'jpg';
+    return new ImageRun({data:ab,transformation:{width:wEmu,height:hEmu},type:ext});
+  }
+
+  // ── สร้าง paragraph(s) สำหรับรูปทั้งหมดของ 1 item ────────────
+  // ใช้ Table 2 คอลัมน์เมื่อมีรูป 2+ รูป
+  async function makeImgParas(item, imgLoadedRef, totalImgs){
+    const imgs=item.images;
+    if(!imgs.length){
+      return[new Paragraph({
+        indent:{left:300},spacing:{after:60},
+        children:[new TextRun({text:'(ไม่มีรูปภาพ)',size:20,color:'AAAAAA',font:'Angsana New'})],
+      })];
+    }
+    const layout=computeImgLayout(imgs.length);
+    const paras=[];
+
+    if(layout.cols===1){
+      // รูปเดียว เต็มแถว
+      imgLoadedRef.count++;
+      showDocxProgress(`ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75));
+      const run=await makeImgRun(imgs[0],true);
+      paras.push(new Paragraph({
+        spacing:{before:80,after:0},
+        children:run?[run]:[new TextRun({text:'(รูปโหลดไม่สำเร็จ)',size:18,color:'AAAAAA',font:'Angsana New'})],
+      }));
+    } else {
+      // 2 คอลัมน์ — จัดเป็นคู่ๆ โดยใช้ Table
+      for(let i=0;i<imgs.length;i+=2){
+        const img1=imgs[i];
+        const img2=imgs[i+1];
+        const isLastOdd = !img2 && layout.lastSpanFull;
+
+        imgLoadedRef.count++;
+        showDocxProgress(`ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75));
+        const run1=await makeImgRun(img1, isLastOdd);
+
+        let run2=null;
+        if(img2){
+          imgLoadedRef.count++;
+          showDocxProgress(`ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75));
+          run2=await makeImgRun(img2, false);
+        }
+
+        if(isLastOdd){
+          // รูปสุดท้ายคี่ → เต็มแถว
+          paras.push(new Paragraph({
+            spacing:{before:80,after:0},
+            children:run1?[run1]:[new TextRun({text:'(รูปโหลดไม่สำเร็จ)',size:18,color:'AAAAAA',font:'Angsana New'})],
+          }));
+        } else {
+          // ใส่ใน Table 2 คอลัมน์
+          const cell1=new TableCell({
+            borders:noBorders,
+            width:{size:IMG_HALF_W,type:WidthType.DXA},
+            margins:{top:0,bottom:0,left:0,right:Math.floor(IMG_GAP/2)},
+            children:[new Paragraph({spacing:{before:0,after:0},children:run1?[run1]:[new TextRun('')]})]
+          });
+          const cell2=new TableCell({
+            borders:noBorders,
+            width:{size:IMG_HALF_W,type:WidthType.DXA},
+            margins:{top:0,bottom:0,left:Math.floor(IMG_GAP/2),right:0},
+            children:[new Paragraph({spacing:{before:0,after:0},children:run2?[run2]:[new TextRun('')]})]
+          });
+          paras.push(new Table({
+            width:{size:CONTENT_W,type:WidthType.DXA},
+            columnWidths:[IMG_HALF_W,IMG_HALF_W],
+            rows:[new TableRow({children:[cell1,cell2]})],
+            borders:noBorders,
+          }));
+        }
+      }
+    }
+    return paras;
+  }
+
+  // ── Item block ────────────────────────────────────────────────
   async function makeItemBlock(item, globalIdx, totalImgs, imgLoadedRef){
     const blockParas=[];
-
-    // ── หัว: เลขที่ + รหัสทรัพย์สิน / SN
+    // หัว
     const hRuns=[new TextRun({text:`${globalIdx}.  `,bold:true,size:28,font:'Courier New'})];
     if(item.assetNo) hRuns.push(new TextRun({text:item.assetNo,bold:true,size:28,font:'Courier New',underline:{type:'single'}}));
     if(item.assetNo&&item.serial) hRuns.push(new TextRun({text:'    ',size:28,font:'Courier New'}));
     if(item.serial) hRuns.push(new TextRun({text:`S/N; ${item.serial}`,size:26,font:'Courier New'}));
     if(!item.assetNo&&!item.serial&&item.name) hRuns.push(new TextRun({text:item.name,bold:true,size:28,font:'Angsana New',underline:{type:'single'}}));
-    blockParas.push(new Paragraph({spacing:{before:120,after:40},children:hRuns}));
-
+    blockParas.push(new Paragraph({spacing:{before:100,after:40},children:hRuns}));
     // ชื่ออุปกรณ์
     if(item.name&&(item.assetNo||item.serial))
       blockParas.push(new Paragraph({
-        indent:{left:300},spacing:{after:80},
+        indent:{left:300},spacing:{after:60},
         children:[new TextRun({text:item.name,size:24,color:'444444',font:'Angsana New'})],
       }));
-
-    // ── รูปภาพ: แนวตั้ง เต็มความกว้าง เรียงซ้อนกันจากบนลงล่าง ──
-    if(item.images.length){
-      const imgs=item.images;
-      for(let i=0;i<imgs.length;i++){
-        const imgObj=imgs[i];
-        imgLoadedRef.count++;
-        showDocxProgress(
-          `ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,
-          10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75)
-        );
-        let imgRun=null;
-        try{
-          const ab=await fetchImageAsArrayBuffer(imgObj);
-          if(ab){
-            const ext=(imgObj.mimeType||'image/jpeg').includes('png')?'png':'jpg';
-            imgRun=new ImageRun({data:ab,transformation:{width:imgPxW,height:imgPxH},type:ext});
-          }
-        }catch(e){}
-        blockParas.push(new Paragraph({
-          spacing:{before:i===0?60:160,after:0},
-          children:imgRun?[imgRun]:[new TextRun({text:'(ไม่มีรูป)',size:18,color:'AAAAAA',font:'Angsana New'})],
-        }));
-      }
-    } else {
-      blockParas.push(new Paragraph({
-        indent:{left:300},spacing:{after:60},
-        children:[new TextRun({text:'(ไม่มีรูปภาพ)',size:20,color:'AAAAAA',font:'Angsana New'})],
-      }));
-    }
+    // รูป
+    const imgParas=await makeImgParas(item,imgLoadedRef,totalImgs);
+    blockParas.push(...imgParas);
     return blockParas;
   }
 
-  // ── Build sections (แบ่ง 2 รายการต่อหน้า) ────────────────────
+  // ── Build all sections ────────────────────────────────────────
   const groups=groupItems(srcItems);
   const totalImgs=srcItems.reduce((s,it)=>s+it.images.length,0);
   const imgLoadedRef={count:0};
   let globalIdx=0;
 
-  // รวมทุก item ตามลำดับ พร้อม group heading
-  const allBlocks=[]; // [{type:'heading'|'item', ...}]
+  const allBlocks=[];
   for(const grp of groups){
     if(groups.length>1) allBlocks.push({type:'heading',grp});
     for(const item of grp.items) allBlocks.push({type:'item',item});
   }
 
   const children=[...makeHeader()];
-
-  // วน allBlocks: ทุก 2 item ใส่ PageBreak
   let itemCount=0;
+
   for(let bi=0;bi<allBlocks.length;bi++){
     const blk=allBlocks[bi];
     if(blk.type==='heading'){
-      const cat=blk.grp;
       children.push(new Paragraph({
         spacing:{before:160,after:100},
-        children:[new TextRun({text:`▌ ${cat.name}`,bold:true,size:30,font:'Angsana New',color:(cat.color||'#374151').replace('#','')})],
+        children:[new TextRun({text:`▌ ${blk.grp.name}`,bold:true,size:30,font:'Angsana New',color:(blk.grp.color||'#374151').replace('#','')})],
       }));
     } else {
       globalIdx++;
@@ -974,16 +1193,14 @@ async function exportDocx(){
       const paras=await makeItemBlock(blk.item,globalIdx,totalImgs,imgLoadedRef);
       children.push(...paras);
       itemCount++;
-      // หลัง item ที่ 2, 4, 6, ... ใส่ page break (ถ้าไม่ใช่ตัวสุดท้าย)
-      const isLast = bi===allBlocks.length-1 || (allBlocks.slice(bi+1).every(b=>b.type==='heading'));
-      if(itemCount%2===0 && !isLast){
-        children.push(new Paragraph({
-          children:[new TextRun({break:1})],
-          pageBreakBefore:true,
-        }));
-        // reset visual separator; header ซ้ำไม่ต้อง — Word จัดการเอง
-      } else if(itemCount%2===1 && !isLast){
-        // separator เส้นบางๆ ระหว่าง item 1 กับ item 2 ในหน้าเดียวกัน
+      // หลัง item ที่ 2, 4, 6, ... ใส่ page break
+      const isLastBlock = bi===allBlocks.length-1;
+      const nextHasItems = !isLastBlock && allBlocks.slice(bi+1).some(b=>b.type==='item');
+      if(itemCount%2===0 && nextHasItems){
+        // page break
+        children.push(new Paragraph({pageBreakBefore:true,children:[]}));
+      } else if(itemCount%2===1 && !isLastBlock){
+        // divider ระหว่าง item 1 กับ item 2 ในหน้าเดียวกัน
         children.push(new Paragraph({
           spacing:{before:120,after:120},
           border:{bottom:{style:BorderStyle.SINGLE,size:2,color:'DDDDDD',space:1}},
@@ -1024,26 +1241,6 @@ async function exportDocx(){
     saveAs(blob,fname);
     hideDocxProgress();showToast('✅ Export Word สำเร็จ!');
   }catch(e){hideDocxProgress();showToast('Export ไม่สำเร็จ: '+e.message);console.error(e);}
-}
-
-async function fetchImageAsArrayBuffer(imgObj){
-  if(imgObj.blob instanceof Blob)return await imgObj.blob.arrayBuffer();
-  if(imgObj.url&&!imgObj.url.startsWith('blob:')){
-    try{const r=await fetch(imgObj.url);if(r.ok)return await r.arrayBuffer();}catch(e){}
-  }
-  if(imgObj.url)return await urlToArrayBuffer(imgObj.url,imgObj.mimeType||'image/jpeg');
-  return null;
-}
-async function urlToArrayBuffer(url,mimeType){
-  return new Promise((res,rej)=>{
-    const img=new Image();img.crossOrigin='anonymous';
-    img.onload=()=>{
-      const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
-      c.getContext('2d').drawImage(img,0,0);
-      c.toBlob(b=>b?b.arrayBuffer().then(res).catch(rej):rej(new Error('toBlob failed')),mimeType,0.92);
-    };
-    img.onerror=()=>rej(new Error('img load failed'));img.src=url;
-  });
 }
 
 function showDocxProgress(msg,pct){document.getElementById('docxProgress').classList.add('open');document.getElementById('docxProgressSub').textContent=msg;document.getElementById('docxProgressBar').style.width=pct+'%';}
