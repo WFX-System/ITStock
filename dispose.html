@@ -535,7 +535,7 @@ function removeItem(id){
 // 2+ รูป → 2 คอลัมน์ รูปคี่สุดท้ายขยายเต็มแถว
 function computeImgLayout(count){
   if(count<=1)return{cols:1,lastSpanFull:false};
-  return{cols:2,lastSpanFull:count%2===1};
+  return{cols:2,lastSpanFull:false};  // ทุกรูปขนาดเท่ากัน ไม่มีรูปขยายเต็มแถว
 }
 
 // ── render Image Grid (Editor UI) ────────────────────────────────
@@ -1098,7 +1098,7 @@ async function exportDocx(){
       for(let i=0;i<imgs.length;i+=2){
         const img1=imgs[i];
         const img2=imgs[i+1];
-        const isLastOdd = !img2 && layout.lastSpanFull;
+        const isLastOdd = false; // ทุกรูปขนาดเท่ากัน ไม่มีการขยาย
 
         imgLoadedRef.count++;
         showDocxProgress(`ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75));
