@@ -88,23 +88,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 
 .img-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;}
 .img-grid.cols-2{grid-template-columns:1fr 1fr;}
-.img-grid-cell{
-  position:relative;border-radius:9px;border:1.5px solid var(--bdrm);
-  background:#F1F5F9;overflow:hidden;
-  aspect-ratio:4/3;
-}
+.img-grid-cell{position:relative;border-radius:9px;border:1.5px solid var(--bdrm);background:#F1F5F9;overflow:hidden;aspect-ratio:4/3;}
 .img-grid-cell.span-2{grid-column:1/-1;}
 .img-grid-cell.uploading img{opacity:.45;}
-.img-grid-cell img{
-  display:block;width:100%;height:100%;
-  object-fit:cover;
-  border-radius:4px;transition:opacity .2s;
-}
-.img-thumb-del{
-  position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;
-  background:rgba(0,0,0,.65);color:#fff;font-size:12px;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;line-height:1;
-}
+.img-grid-cell img{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px;transition:opacity .2s;}
+.img-thumb-del{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;line-height:1;}
 .upload-status{font-size:11px;color:var(--tx3);margin-top:4px;min-height:14px;}
 
 .btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;transition:all .15s;font-family:var(--font);}
@@ -155,12 +143,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 
 .pi-imgs{display:grid;grid-template-columns:1fr;gap:6px;margin-left:22px;margin-top:4px;}
 .pi-imgs.cols-2{grid-template-columns:1fr 1fr;}
-.pi-img-cell{
-  border:1px solid #ccc;border-radius:6px;overflow:hidden;
-  background:#fafafa;
-  aspect-ratio:4/3;
-  page-break-inside:avoid;
-}
+.pi-img-cell{border:1px solid #ccc;border-radius:6px;overflow:hidden;background:#fafafa;aspect-ratio:4/3;page-break-inside:avoid;}
 .pi-img-cell.span-2{grid-column:1/-1;}
 .pi-img-cell img{display:block;width:100%;height:100%;object-fit:cover;}
 
@@ -171,24 +154,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 
 .preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;overflow-y:auto;padding:20px 10px;}
 .preview-overlay.open{display:block;}
-.preview-toolbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;background:#fff;border-radius:12px 12px 0 0;
-  border-bottom:1px solid #E5E7EB;
-  position:sticky;top:0;z-index:10;
-  max-width:794px;margin:0 auto;
-}
+.preview-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;border-radius:12px 12px 0 0;border-bottom:1px solid #E5E7EB;position:sticky;top:0;z-index:10;max-width:794px;margin:0 auto;}
 .preview-toolbar-title{font-size:13px;font-weight:700;}
 .preview-a4-wrap{max-width:794px;margin:0 auto;}
-.a4-page{
-  background:#fff;
-  width:794px;
-  min-height:1123px;
-  padding:53px 60px;
-  margin-bottom:16px;
-  box-shadow:0 4px 24px rgba(0,0,0,.15);
-  position:relative;
-}
+.a4-page{background:#fff;width:794px;min-height:1123px;padding:53px 60px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);position:relative;}
 .a4-page:first-child .doc-header{display:block;}
 .a4-page:not(:first-child) .doc-header{display:none;}
 
@@ -409,8 +378,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
-const FS_COLLECTION = 'dispose_items';
-const FS_CONFIG_DOC  = 'dispose_config';   // ← collection เก็บ config (categories)
+const FS_COLLECTION  = 'dispose_items';
+const FS_CONFIG_DOC  = 'dispose_config';
 const IMGBB_KEY = '4aecea8adeacd9e1dc7815e351021b99';
 
 document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
@@ -431,6 +400,7 @@ auth.onAuthStateChanged(user => {
     });
   }
 });
+
 function waitForAuth(timeout=8000){
   return new Promise((resolve,reject)=>{
     if(auth.currentUser){resolve(auth.currentUser);return;}
@@ -442,21 +412,48 @@ function waitForAuth(timeout=8000){
 // ── Categories ────────────────────────────────────────────────────
 // ค่า default — ใช้เฉพาะเมื่อ Firestore ยังไม่มีข้อมูล
 let categories = [
-  {id:'cat_computer',name:'คอมพิวเตอร์',  color:'#1D9E75'},
-  {id:'cat_printer', name:'เครื่องพิมพ์', color:'#2B579A'},
-  {id:'cat_network', name:'อุปกรณ์เครือข่าย',color:'#7C3AED'},
-  {id:'cat_phone',   name:'โทรศัพท์ / แท็บเล็ต',color:'#D97706'},
-  {id:'cat_other',   name:'อื่นๆ',         color:'#6B7280'},
+  {id:'cat_computer', name:'คอมพิวเตอร์',           color:'#1D9E75'},
+  {id:'cat_printer',  name:'เครื่องพิมพ์',           color:'#2B579A'},
+  {id:'cat_network',  name:'อุปกรณ์เครือข่าย',       color:'#7C3AED'},
+  {id:'cat_phone',    name:'โทรศัพท์ / แท็บเล็ต',    color:'#D97706'},
+  {id:'cat_other',    name:'อื่นๆ',                  color:'#6B7280'},
 ];
 let filterCat = '__all__';
 let editCatId = null;
 
-function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return{r,g,b};}
-function lightenHex(hex,amt=0.88){const{r,g,b}=hexToRgb(hex);return`rgb(${Math.round(r+(255-r)*amt)},${Math.round(g+(255-g)*amt)},${Math.round(b+(255-b)*amt)})`;}
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return{r,g,b};
+}
+function lightenHex(hex,amt=0.88){
+  const{r,g,b}=hexToRgb(hex);
+  return`rgb(${Math.round(r+(255-r)*amt)},${Math.round(g+(255-g)*amt)},${Math.round(b+(255-b)*amt)})`;
+}
 function getCatById(id){return categories.find(c=>c.id===id)||null;}
 
+// ── FIX: หา category จาก name ถ้า id ไม่ตรง ──────────────────────
+function resolveCatId(categoryId, categoryName){
+  // 1. ถ้ามี id และหาเจอ → ใช้เลย
+  if(categoryId && getCatById(categoryId)) return categoryId;
+
+  // 2. ถ้า id หาไม่เจอ → ลอง match จาก name
+  if(categoryName){
+    const matched = categories.find(c => c.name === categoryName);
+    if(matched) return matched.id;
+
+    // 3. ยังหาไม่เจอ → สร้าง category ใหม่อัตโนมัติ พร้อม id เดิม (ถ้ามี)
+    const newId = categoryId || ('cat_' + Date.now() + '_' + Math.random().toString(36).slice(2,5));
+    categories.push({id: newId, name: categoryName, color: '#6B7280'});
+    // บันทึกกลับ Firestore เงียบๆ
+    saveCategoriesToFirestore();
+    return newId;
+  }
+
+  return '';
+}
+
 function renderCategories(){
-  document.getElementById('catList').innerHTML=categories.map(cat=>`
+  document.getElementById('catList').innerHTML = categories.map(cat => `
     <span class="cat-tag" style="background:${lightenHex(cat.color)};color:${cat.color};border-color:${cat.color}44;">
       ${escHtml(cat.name)}
       <button class="cat-edit-btn" onclick="openEditCat('${cat.id}')" title="แก้ไข">✏️</button>
@@ -467,14 +464,14 @@ function renderCategories(){
 }
 
 function addCategory(){
-  const name=document.getElementById('catAddName').value.trim();
-  const color=document.getElementById('catAddColor').value;
+  const name  = document.getElementById('catAddName').value.trim();
+  const color = document.getElementById('catAddColor').value;
   if(!name){showToast('กรุณากรอกชื่อประเภท');return;}
   if(categories.find(c=>c.name===name)){showToast('มีประเภทนี้อยู่แล้ว');return;}
   categories.push({id:'cat_'+Date.now(),name,color});
   document.getElementById('catAddName').value='';
   renderCategories();
-  saveCategoriesToFirestore();   // ← บันทึกทันที
+  saveCategoriesToFirestore();
   showToast('เพิ่มประเภทแล้ว: '+name);
 }
 
@@ -485,11 +482,17 @@ function deleteCat(id){
   categories=categories.filter(c=>c.id!==id);
   if(filterCat===id)filterCat='__all__';
   renderCategories();
-  saveCategoriesToFirestore();   // ← บันทึกทันที
+  saveCategoriesToFirestore();
   showToast('ลบประเภทแล้ว');
 }
 
-function openEditCat(id){const cat=getCatById(id);if(!cat)return;editCatId=id;document.getElementById('editCatName').value=cat.name;document.getElementById('editCatColor').value=cat.color;document.getElementById('editCatModal').classList.add('open');}
+function openEditCat(id){
+  const cat=getCatById(id);if(!cat)return;
+  editCatId=id;
+  document.getElementById('editCatName').value=cat.name;
+  document.getElementById('editCatColor').value=cat.color;
+  document.getElementById('editCatModal').classList.add('open');
+}
 function closeEditCat(){document.getElementById('editCatModal').classList.remove('open');editCatId=null;}
 function saveEditCat(){
   if(!editCatId)return;const cat=getCatById(editCatId);if(!cat)return;
@@ -498,7 +501,7 @@ function saveEditCat(){
   cat.name=name;cat.color=document.getElementById('editCatColor').value;
   closeEditCat();
   renderCategories();
-  saveCategoriesToFirestore();   // ← บันทึกทันที
+  saveCategoriesToFirestore();
   showToast('แก้ไขประเภทแล้ว');
 }
 
@@ -510,7 +513,6 @@ async function saveCategoriesToFirestore(){
       list: categories,
       updated_at: firebase.firestore.FieldValue.serverTimestamp()
     });
-    // ไม่ต้อง showToast — เงียบๆ ในพื้นหลัง
   }catch(e){
     console.warn('saveCategories error',e);
   }
@@ -529,23 +531,37 @@ async function loadCategoriesFromFirestore(){
   }catch(e){
     console.warn('loadCategories error',e);
   }
-  return false;   // ใช้ default categories
+  return false;
 }
 
 // ── Filter ────────────────────────────────────────────────────────
 function renderFilterBar(){
   const bar=document.getElementById('filterBar');
   const allBtn=`<button class="filter-btn ${filterCat==='__all__'?'active':''}" style="${filterCat==='__all__'?'background:var(--g);':''}" onclick="setFilter('__all__')">ทั้งหมด (${items.length})</button>`;
-  const catBtns=categories.map(cat=>{const count=items.filter(it=>it.category===cat.id).length;const active=filterCat===cat.id;return`<button class="filter-btn ${active?'active':''}" style="${active?`background:${cat.color};`:''}" onclick="setFilter('${cat.id}')">${escHtml(cat.name)} (${count})</button>`;}).join('');
+  const catBtns=categories.map(cat=>{
+    const count=items.filter(it=>it.category===cat.id).length;
+    const active=filterCat===cat.id;
+    return`<button class="filter-btn ${active?'active':''}" style="${active?`background:${cat.color};`:''}" onclick="setFilter('${cat.id}')">${escHtml(cat.name)} (${count})</button>`;
+  }).join('');
   const noCatCount=items.filter(it=>!it.category||!getCatById(it.category)).length;
   const noCatBtn=noCatCount>0?`<button class="filter-btn ${filterCat==='__none__'?'active':''}" style="${filterCat==='__none__'?'background:#6B7280;':''}" onclick="setFilter('__none__')">ไม่ระบุ (${noCatCount})</button>`:'';
   bar.innerHTML=`<span class="filter-label">กรองดู:</span>${allBtn}${catBtns}${noCatBtn}`;
   const info=document.getElementById('filterInfo');
-  if(filterCat!=='__all__'){const filtered=getFilteredItems();const label=filterCat==='__none__'?'ไม่ระบุประเภท':(getCatById(filterCat)?.name||'');document.getElementById('filterInfoText').textContent=`แสดง: ${label} (${filtered.length} รายการ)`;info.style.display='flex';}
-  else{info.style.display='none';}
+  if(filterCat!=='__all__'){
+    const filtered=getFilteredItems();
+    const label=filterCat==='__none__'?'ไม่ระบุประเภท':(getCatById(filterCat)?.name||'');
+    document.getElementById('filterInfoText').textContent=`แสดง: ${label} (${filtered.length} รายการ)`;
+    info.style.display='flex';
+  } else {
+    info.style.display='none';
+  }
 }
 function setFilter(id){filterCat=id;renderFilterBar();renderItems();}
-function getFilteredItems(){if(filterCat==='__all__')return items;if(filterCat==='__none__')return items.filter(it=>!it.category||!getCatById(it.category));return items.filter(it=>it.category===filterCat);}
+function getFilteredItems(){
+  if(filterCat==='__all__')return items;
+  if(filterCat==='__none__')return items.filter(it=>!it.category||!getCatById(it.category));
+  return items.filter(it=>it.category===filterCat);
+}
 
 // ── Items ──────────────────────────────────────────────────────────
 let items = [];
@@ -557,6 +573,7 @@ function addItem(){
   renderItems();renderFilterBar();
   setTimeout(()=>document.getElementById('f_assetNo_'+id)?.focus(),100);
 }
+
 let pendingDeleteId = null;
 
 function removeItem(id){
@@ -614,7 +631,10 @@ function renderImageGrid(item){
 function renderItems(){
   const container=document.getElementById('itemsContainer');
   const filtered=getFilteredItems();
-  if(!filtered.length){container.innerHTML=`<div style="text-align:center;padding:28px;color:var(--tx3);font-size:13px;">ไม่มีรายการในประเภทนี้</div>`;return;}
+  if(!filtered.length){
+    container.innerHTML=`<div style="text-align:center;padding:28px;color:var(--tx3);font-size:13px;">ไม่มีรายการในประเภทนี้</div>`;
+    return;
+  }
   const globalIdxMap={};
   items.forEach((it,i)=>globalIdxMap[it.id]=i+1);
   container.innerHTML=filtered.map(item=>{
@@ -622,7 +642,8 @@ function renderItems(){
     const borderColor=cat?cat.color:'#E5E7EB';
     const numBg=cat?cat.color:'#9CA3AF';
     const dispNum=globalIdxMap[item.id];
-    const catOptions=`<option value="">-- ไม่ระบุ --</option>`+categories.map(c=>`<option value="${c.id}" ${item.category===c.id?'selected':''}>${escHtml(c.name)}</option>`).join('');
+    const catOptions=`<option value="">-- ไม่ระบุ --</option>`+
+      categories.map(c=>`<option value="${c.id}" ${item.category===c.id?'selected':''}>${escHtml(c.name)}</option>`).join('');
     const savedBadge=item.firestoreDocId?`<span class="fs-saved-badge">✅ บันทึกแล้ว</span>`:'';
     return`
     <div class="item-card" id="card_${item.id}" style="border-left-color:${borderColor};">
@@ -682,7 +703,11 @@ function removeImg(itemId,idx){
 }
 
 // ── File upload ───────────────────────────────────────────────────
-function handleDrop(e,id){e.preventDefault();document.getElementById('zone_'+id)?.classList.remove('drag');[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')).forEach(f=>uploadImg(f,id));}
+function handleDrop(e,id){
+  e.preventDefault();
+  document.getElementById('zone_'+id)?.classList.remove('drag');
+  [...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')).forEach(f=>uploadImg(f,id));
+}
 function handleFiles(input,id){[...input.files].forEach(f=>uploadImg(f,id));input.value='';}
 
 async function uploadImg(file,itemId){
@@ -708,25 +733,43 @@ async function uploadImg(file,itemId){
   }catch(e){
     imgObj.uploading=false;imgObj.uploadFailed=true;
     refreshImgGrid(item);
-    setStatus(itemId,'⚠️ อัพโหลดไม่สำเร็จ');showToast('อัพโหลดไม่สำเร็จ: '+e.message);
+    setStatus(itemId,'⚠️ อัพโหลดไม่สำเร็จ');
+    showToast('อัพโหลดไม่สำเร็จ: '+e.message);
   }
 }
 function refreshImgGrid(item){const el=document.getElementById('imgGrid_'+item.id);if(el)el.innerHTML=renderImageGrid(item);}
 function setStatus(itemId,msg){const el=document.getElementById('status_'+itemId);if(el)el.textContent=msg;}
 
 // ── Firestore helpers ─────────────────────────────────────────────
+// FIX: docsToItems ใช้ resolveCatId เพื่อ match category ถูกต้องเสมอ
 function docsToItems(docs){
   return docs.map(doc=>{
     const d=doc.data();
+    // resolve category id — ถ้า id ไม่ตรงจะ fallback จาก name
+    const catId = resolveCatId(d.category_id||'', d.category_name||'');
     return{
-      id:'item_'+doc.id,firestoreDocId:doc.id,
-      assetNo:d.asset_no||'',serial:d.serial||'',name:d.name||'',category:d.category_id||'',
-      images:(d.images||[]).map(img=>({url:img.url||'',thumb_url:img.thumb_url||'',delete_url:img.delete_url||'',mimeType:img.mime_type||'image/jpeg',uploading:false,final:true,blob:null})),
+      id:'item_'+doc.id,
+      firestoreDocId:doc.id,
+      assetNo:d.asset_no||'',
+      serial:d.serial||'',
+      name:d.name||'',
+      category:catId,
+      images:(d.images||[]).map(img=>({
+        url:img.url||'',
+        thumb_url:img.thumb_url||'',
+        delete_url:img.delete_url||'',
+        mimeType:img.mime_type||'image/jpeg',
+        uploading:false,
+        final:true,
+        blob:null
+      })),
     };
   });
 }
+
 function applyDocMeta(docs){
-  if(!docs.length)return;const d=docs[0].data();
+  if(!docs.length)return;
+  const d=docs[0].data();
   if(d.doc_title)document.getElementById('docTitle').value=d.doc_title;
   if(d.doc_ref)document.getElementById('docRef').value=d.doc_ref;
   if(d.doc_dept)document.getElementById('docDept').value=d.doc_dept;
@@ -734,21 +777,39 @@ function applyDocMeta(docs){
 }
 
 // ── Auto-load Firestore ───────────────────────────────────────────
-let autoLoaded=false;
+let autoLoaded = false;
 async function autoLoadFromFirestore(){
   if(autoLoaded)return;autoLoaded=true;
   const banner=document.getElementById('loadBanner');banner.classList.add('open');
   try{
-    // โหลด categories ก่อนเสมอ ก่อน render ใดๆ
+    // FIX: โหลด categories ก่อนเสมอ ก่อน docsToItems
     await loadCategoriesFromFirestore();
-    const snap=await db.collection(FS_COLLECTION).orderBy('saved_at','asc').get().catch(async()=>await db.collection(FS_COLLECTION).get());
+
+    const snap=await db.collection(FS_COLLECTION)
+      .orderBy('saved_at','asc').get()
+      .catch(async()=>await db.collection(FS_COLLECTION).get());
+
     banner.classList.remove('open');
-    if(snap.empty){if(items.length===0)addItem();renderCategories();showToast('ยังไม่มีข้อมูลใน Firestore');return;}
-    applyDocMeta(snap.docs);items=docsToItems(snap.docs);
-    renderCategories();showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
+
+    if(snap.empty){
+      // FIX: renderCategories ก่อน addItem
+      renderCategories();
+      if(items.length===0)addItem();
+      showToast('ยังไม่มีข้อมูลใน Firestore');
+      return;
+    }
+
+    applyDocMeta(snap.docs);
+    // FIX: docsToItems เรียกหลัง categories พร้อมแล้ว
+    items = docsToItems(snap.docs);
+    renderCategories();
+    showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
   }catch(e){
     banner.classList.remove('open');
-    if(items.length===0)addItem();renderCategories();showToast('⚠️ โหลดข้อมูลไม่สำเร็จ: '+e.message);
+    // FIX: renderCategories ก่อน addItem
+    renderCategories();
+    if(items.length===0)addItem();
+    showToast('⚠️ โหลดข้อมูลไม่สำเร็จ: '+e.message);
   }
 }
 
@@ -762,25 +823,47 @@ async function openLoadConfirm(){
     await waitForAuth();
     const snap=await db.collection(FS_COLLECTION).get();
     loadPreviewCount=snap.size;
-    if(loadPreviewCount===0){infoEl.innerHTML='📭 ยังไม่มีข้อมูลใน Firestore';btnConfirm.disabled=true;}
-    else{infoEl.innerHTML=`<b>พบ ${loadPreviewCount} รายการ</b> ใน Firestore<br/>โหลดจะแทนที่ข้อมูลปัจจุบัน ${items.length} รายการ`;btnConfirm.disabled=false;}
+    if(loadPreviewCount===0){
+      infoEl.innerHTML='📭 ยังไม่มีข้อมูลใน Firestore';btnConfirm.disabled=true;
+    } else {
+      infoEl.innerHTML=`<b>พบ ${loadPreviewCount} รายการ</b> ใน Firestore<br/>โหลดจะแทนที่ข้อมูลปัจจุบัน ${items.length} รายการ`;
+      btnConfirm.disabled=false;
+    }
   }catch(e){infoEl.innerHTML=`⚠️ ${e.message}`;btnConfirm.disabled=true;}
 }
 function closeLoadConfirm(){document.getElementById('loadConfirmModal').classList.remove('open');}
+
 async function loadFromFirestore(){
   closeLoadConfirm();
   const banner=document.getElementById('loadBanner');banner.classList.add('open');
   document.getElementById('btnLoadFirestore').disabled=true;
   try{
     await waitForAuth();
-    await loadCategoriesFromFirestore();   // ← โหลด categories ด้วย
-    const snap=await db.collection(FS_COLLECTION).orderBy('saved_at','asc').get().catch(async()=>await db.collection(FS_COLLECTION).get());
-    if(snap.empty){banner.classList.remove('open');document.getElementById('btnLoadFirestore').disabled=false;showToast('ไม่มีข้อมูลใน Firestore');return;}
-    applyDocMeta(snap.docs);items=docsToItems(snap.docs);filterCat='__all__';
-    banner.classList.remove('open');document.getElementById('btnLoadFirestore').disabled=false;
-    renderCategories();showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
+    // FIX: โหลด categories ก่อน docsToItems
+    await loadCategoriesFromFirestore();
+
+    const snap=await db.collection(FS_COLLECTION)
+      .orderBy('saved_at','asc').get()
+      .catch(async()=>await db.collection(FS_COLLECTION).get());
+
+    if(snap.empty){
+      banner.classList.remove('open');
+      document.getElementById('btnLoadFirestore').disabled=false;
+      renderCategories();
+      showToast('ไม่มีข้อมูลใน Firestore');
+      return;
+    }
+
+    applyDocMeta(snap.docs);
+    items=docsToItems(snap.docs);
+    filterCat='__all__';
+    banner.classList.remove('open');
+    document.getElementById('btnLoadFirestore').disabled=false;
+    renderCategories();
+    showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
   }catch(e){
-    banner.classList.remove('open');document.getElementById('btnLoadFirestore').disabled=false;
+    banner.classList.remove('open');
+    document.getElementById('btnLoadFirestore').disabled=false;
     showToast('⚠️ โหลดไม่สำเร็จ: '+e.message);
   }
 }
@@ -813,25 +896,48 @@ async function saveAllToFirestore(){
     const payload={
       doc_title:docTitle,doc_ref:docRef,doc_dept:docDept,doc_date:docDate,
       asset_no:item.assetNo,serial:item.serial,name:item.name,
-      category_id:item.category||'',category_name:cat?cat.name:'',
-      images:item.images.filter(img=>img.final).map(img=>({url:img.url,thumb_url:img.thumb_url||'',delete_url:img.delete_url||'',mime_type:img.mimeType||'image/jpeg'})),
+      // FIX: บันทึกทั้ง id และ name เพื่อใช้ fallback ตอน restore
+      category_id:item.category||'',
+      category_name:cat?cat.name:'',
+      images:item.images.filter(img=>img.final).map(img=>({
+        url:img.url,
+        thumb_url:img.thumb_url||'',
+        delete_url:img.delete_url||'',
+        mime_type:img.mimeType||'image/jpeg'
+      })),
       image_count:item.images.filter(img=>img.final).length,
       saved_at:firebase.firestore.FieldValue.serverTimestamp(),
     };
     try{
       let docId;
-      if(item.firestoreDocId){await db.collection(FS_COLLECTION).doc(item.firestoreDocId).set(payload,{merge:true});docId=item.firestoreDocId;}
-      else{const ref=await db.collection(FS_COLLECTION).add(payload);docId=ref.id;item.firestoreDocId=docId;}
+      if(item.firestoreDocId){
+        await db.collection(FS_COLLECTION).doc(item.firestoreDocId).set(payload,{merge:true});
+        docId=item.firestoreDocId;
+      } else {
+        const ref=await db.collection(FS_COLLECTION).add(payload);
+        docId=ref.id;item.firestoreDocId=docId;
+      }
       success++;fsLog(`✅ ${item.assetNo||item.serial||item.name} → ${docId}`,'ok');
-    }catch(e){fail++;fsLog(`✗ ${item.assetNo||item.serial||item.name}: ${e.message}`,'err');}
+    }catch(e){
+      fail++;fsLog(`✗ ${item.assetNo||item.serial||item.name}: ${e.message}`,'err');
+    }
   }
   document.getElementById('fsProgressFill').style.width='100%';
-  document.getElementById('fsStatusTitle').textContent=`🔥 เสร็จสิ้น: ${success} สำเร็จ${fail>0?`, ${fail} ล้มเหลว`:''}`;
+  document.getElementById('fsStatusTitle').textContent=
+    `🔥 เสร็จสิ้น: ${success} สำเร็จ${fail>0?`, ${fail} ล้มเหลว`:''}`;
   document.getElementById('fsStatusCount').textContent=`${saveItems.length} / ${saveItems.length}`;
   btn.disabled=false;renderItems();
   showToast(fail===0?`✅ บันทึก Firestore สำเร็จ ${success} รายการ`:`⚠️ สำเร็จ ${success} / ล้มเหลว ${fail}`);
 }
-function fsLog(msg,cls=''){const logEl=document.getElementById('fsLog');const line=document.createElement('div');line.className='fs-log-line '+(cls||'');line.textContent=msg;logEl.appendChild(line);logEl.scrollTop=logEl.scrollHeight;}
+
+function fsLog(msg,cls=''){
+  const logEl=document.getElementById('fsLog');
+  const line=document.createElement('div');
+  line.className='fs-log-line '+(cls||'');
+  line.textContent=msg;
+  logEl.appendChild(line);
+  logEl.scrollTop=logEl.scrollHeight;
+}
 
 // ── Build Doc HTML ────────────────────────────────────────────────
 function getDocMeta(){
@@ -868,8 +974,12 @@ function buildItemHTML(item,globalIdx){
 }
 
 function groupItems(srcItems){
-  if(filterCat!=='__all__'){const cat=getCatById(filterCat);return[{name:cat?cat.name:'ไม่ระบุประเภท',color:cat?cat.color:'#9CA3AF',items:srcItems}];}
-  const map={};for(const item of srcItems){const cid=item.category||'__none__';if(!map[cid])map[cid]=[];}
+  if(filterCat!=='__all__'){
+    const cat=getCatById(filterCat);
+    return[{name:cat?cat.name:'ไม่ระบุประเภท',color:cat?cat.color:'#9CA3AF',items:srcItems}];
+  }
+  const map={};
+  for(const item of srcItems){const cid=item.category||'__none__';if(!map[cid])map[cid]=[];}
   for(const item of srcItems){const cid=item.category||'__none__';if(!map[cid])map[cid]=[];map[cid].push(item);}
   const result=[];
   for(const cat of categories){if(map[cat.id]?.length)result.push({name:cat.name,color:cat.color,items:map[cat.id]});}
@@ -1055,7 +1165,9 @@ async function exportDocx(){
 
   async function makeImgParas(item,imgLoadedRef,totalImgs){
     const imgs=item.images;
-    if(!imgs.length){return[new Paragraph({indent:{left:300},spacing:{after:60},children:[new TextRun({text:'(ไม่มีรูปภาพ)',size:20,color:'AAAAAA',font:'Angsana New'})]})];}
+    if(!imgs.length){
+      return[new Paragraph({indent:{left:300},spacing:{after:60},children:[new TextRun({text:'(ไม่มีรูปภาพ)',size:20,color:'AAAAAA',font:'Angsana New'})]})];
+    }
     const layout=computeImgLayout(imgs.length);
     const paras=[];
     if(layout.cols===1){
@@ -1070,7 +1182,11 @@ async function exportDocx(){
         showDocxProgress(`ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75));
         const run1=await makeImgRun(img1,false);
         let run2=null;
-        if(img2){imgLoadedRef.count++;showDocxProgress(`ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75));run2=await makeImgRun(img2,false);}
+        if(img2){
+          imgLoadedRef.count++;
+          showDocxProgress(`ฝังรูปที่ ${imgLoadedRef.count}/${totalImgs}...`,10+Math.round(imgLoadedRef.count/Math.max(totalImgs,1)*75));
+          run2=await makeImgRun(img2,false);
+        }
         const cell1=new TableCell({borders:noBorders,width:{size:IMG_HALF_W,type:WidthType.DXA},margins:{top:0,bottom:0,left:0,right:Math.floor(IMG_GAP/2)},children:[new Paragraph({spacing:{before:0,after:0},children:run1?[run1]:[new TextRun('')]})]});
         const cell2=new TableCell({borders:noBorders,width:{size:IMG_HALF_W,type:WidthType.DXA},margins:{top:0,bottom:0,left:Math.floor(IMG_GAP/2),right:0},children:[new Paragraph({spacing:{before:0,after:0},children:run2?[run2]:[new TextRun('')]})]});
         paras.push(new Table({width:{size:CONTENT_W,type:WidthType.DXA},columnWidths:[IMG_HALF_W,IMG_HALF_W],rows:[new TableRow({children:[cell1,cell2]})],borders:noBorders}));
@@ -1098,7 +1214,10 @@ async function exportDocx(){
   const imgLoadedRef={count:0};
   let globalIdx=0;
   const allBlocks=[];
-  for(const grp of groups){if(groups.length>1)allBlocks.push({type:'heading',grp});for(const item of grp.items)allBlocks.push({type:'item',item});}
+  for(const grp of groups){
+    if(groups.length>1)allBlocks.push({type:'heading',grp});
+    for(const item of grp.items)allBlocks.push({type:'item',item});
+  }
   const children=[...makeHeader()];
   let itemCount=0;
   for(let bi=0;bi<allBlocks.length;bi++){
@@ -1113,11 +1232,17 @@ async function exportDocx(){
       itemCount++;
       const isLastBlock=bi===allBlocks.length-1;
       const nextHasItems=!isLastBlock&&allBlocks.slice(bi+1).some(b=>b.type==='item');
-      if(itemCount%2===0&&nextHasItems){children.push(new Paragraph({pageBreakBefore:true,children:[]}));}
-      else if(itemCount%2===1&&!isLastBlock){children.push(new Paragraph({spacing:{before:120,after:120},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:'DDDDDD',space:1}},children:[]}));}
+      if(itemCount%2===0&&nextHasItems){
+        children.push(new Paragraph({pageBreakBefore:true,children:[]}));
+      } else if(itemCount%2===1&&!isLastBlock){
+        children.push(new Paragraph({spacing:{before:120,after:120},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:'DDDDDD',space:1}},children:[]}));
+      }
     }
   }
-  children.push(new Paragraph({spacing:{before:200},border:{top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC',space:1}},children:[new TextRun({text:`จำนวน ${srcItems.length} รายการ`,size:18,color:'888888',font:'Angsana New'}),new TextRun({text:`     พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}`,size:18,color:'888888',font:'Angsana New'})]}));
+  children.push(new Paragraph({spacing:{before:200},border:{top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC',space:1}},children:[
+    new TextRun({text:`จำนวน ${srcItems.length} รายการ`,size:18,color:'888888',font:'Angsana New'}),
+    new TextRun({text:`     พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}`,size:18,color:'888888',font:'Angsana New'})
+  ]}));
   showDocxProgress('กำลังสร้างไฟล์...',92);
   const doc=new Document({sections:[{properties:{page:{size:{width:PAGE_W,height:PAGE_H},margin:{top:MARGIN,right:MARGIN,bottom:MARGIN,left:MARGIN}}},children}]});
   try{
@@ -1127,10 +1252,16 @@ async function exportDocx(){
     const fname=`dispose${catSuffix}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.docx`;
     saveAs(blob,fname);
     hideDocxProgress();showToast('✅ Export Word สำเร็จ!');
-  }catch(e){hideDocxProgress();showToast('Export ไม่สำเร็จ: '+e.message);console.error(e);}
+  }catch(e){
+    hideDocxProgress();showToast('Export ไม่สำเร็จ: '+e.message);console.error(e);
+  }
 }
 
-function showDocxProgress(msg,pct){document.getElementById('docxProgress').classList.add('open');document.getElementById('docxProgressSub').textContent=msg;document.getElementById('docxProgressBar').style.width=pct+'%';}
+function showDocxProgress(msg,pct){
+  document.getElementById('docxProgress').classList.add('open');
+  document.getElementById('docxProgressSub').textContent=msg;
+  document.getElementById('docxProgressBar').style.width=pct+'%';
+}
 function hideDocxProgress(){document.getElementById('docxProgress').classList.remove('open');}
 
 function clearAll(){
@@ -1143,8 +1274,14 @@ function clearAll(){
   renderCategories();showToast('ล้างข้อมูลแล้ว');
 }
 
-function escHtml(str){return(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function showToast(msg,dur=2400){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+function escHtml(str){
+  return(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg,dur=2400){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
 
 renderCategories();
 </script>
