@@ -410,6 +410,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
   </div>
 </div>
 
+<!-- Delete Confirm Modal -->
+<div class="modal-wrap" id="delConfirmModal">
+  <div class="modal-box" style="max-width:360px;">
+    <div class="modal-title" style="color:#EF4444;">🗑️ ยืนยันการลบ</div>
+    <div id="delConfirmBody" style="font-size:13px;color:var(--tx2);margin-bottom:4px;"></div>
+    <div style="font-size:12px;color:var(--tx3);margin-top:6px;">รายการนี้จะถูกลบออกจาก Firestore และไม่สามารถกู้คืนได้</div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeDelConfirm()">ยกเลิก</button>
+      <button class="btn-sm" id="btnConfirmDel" style="background:#EF4444;color:#fff;border-color:#EF4444;" onclick="confirmDeleteItem()">🗑️ ลบเลย</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -525,8 +538,28 @@ function addItem(){
   renderItems();renderFilterBar();
   setTimeout(()=>document.getElementById('f_assetNo_'+id)?.focus(),100);
 }
-async function removeItem(id){
+let pendingDeleteId = null;
+
+function removeItem(id){
   if(items.length===1){showToast('ต้องมีอย่างน้อย 1 รายการ');return;}
+  const item=items.find(x=>x.id===id);
+  if(!item)return;
+  pendingDeleteId=id;
+  const label=item.assetNo||item.serial||item.name||'รายการนี้';
+  document.getElementById('delConfirmBody').innerHTML=
+    `ต้องการลบ <strong>${label.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</strong> ใช่หรือไม่?`;
+  document.getElementById('delConfirmModal').classList.add('open');
+}
+
+function closeDelConfirm(){
+  document.getElementById('delConfirmModal').classList.remove('open');
+  pendingDeleteId=null;
+}
+
+async function confirmDeleteItem(){
+  if(!pendingDeleteId)return;
+  const id=pendingDeleteId;
+  closeDelConfirm();
   const item=items.find(x=>x.id===id);
   if(item?.firestoreDocId){
     try{await db.collection(FS_COLLECTION).doc(item.firestoreDocId).delete();}
