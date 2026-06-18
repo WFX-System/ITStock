@@ -525,9 +525,16 @@ function addItem(){
   renderItems();renderFilterBar();
   setTimeout(()=>document.getElementById('f_assetNo_'+id)?.focus(),100);
 }
-function removeItem(id){
+async function removeItem(id){
   if(items.length===1){showToast('ต้องมีอย่างน้อย 1 รายการ');return;}
-  items=items.filter(x=>x.id!==id);renderFilterBar();renderItems();
+  const item=items.find(x=>x.id===id);
+  if(item?.firestoreDocId){
+    try{await db.collection(FS_COLLECTION).doc(item.firestoreDocId).delete();}
+    catch(e){showToast('⚠️ ลบ Firestore ไม่สำเร็จ: '+e.message);return;}
+  }
+  items=items.filter(x=>x.id!==id);
+  renderFilterBar();renderItems();
+  showToast('ลบรายการแล้ว');
 }
 
 // ── Image layout helper (ใช้ร่วมกันทุกที่) ─────────────────────
@@ -683,9 +690,11 @@ async function autoLoadFromFirestore(){
   const banner=document.getElementById('loadBanner');banner.classList.add('open');
   try{
     const snap=await db.collection(FS_COLLECTION).orderBy('saved_at','asc').get().catch(async()=>await db.collection(FS_COLLECTION).get());
-    if(snap.empty){banner.classList.remove('open');if(items.length===0)addItem();renderCategories();showToast('ยังไม่มีข้อมูลใน Firestore');return;}
+    banner.classList.remove('open');
+    // ถ้า Firestore ว่าง → แสดงว่าผู้ใช้ลบหมดแล้ว ไม่โหลดทับ เพิ่มแถวว่างแทน
+    if(snap.empty){if(items.length===0)addItem();renderCategories();showToast('ยังไม่มีข้อมูลใน Firestore');return;}
     applyDocMeta(snap.docs);items=docsToItems(snap.docs);
-    banner.classList.remove('open');renderCategories();showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
+    renderCategories();showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
   }catch(e){
     banner.classList.remove('open');
     if(items.length===0)addItem();renderCategories();showToast('⚠️ โหลดข้อมูลไม่สำเร็จ: '+e.message);
