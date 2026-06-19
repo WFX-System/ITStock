@@ -53,8 +53,11 @@
 .sw-row.row-flagged td{color:#7A1F1F;}
 .cat-badge{font-family:var(--mono);font-size:9px;background:var(--bg);border:1px solid var(--bdr);
   border-radius:4px;padding:1px 5px;display:inline-block;white-space:nowrap;margin-right:5px;color:var(--tx3);}
-.lic-badge{font-family:var(--mono);font-size:9px;background:#EFF6FF;border:1px solid #BFDBFE;
-  border-radius:4px;padding:1px 5px;display:inline-block;white-space:nowrap;margin-left:5px;color:#1E40AF;}
+.lic-badge{font-family:var(--mono);font-size:9px;border-radius:4px;padding:1px 5px;
+  display:inline-block;white-space:nowrap;margin-left:5px;font-weight:600;border:1px solid transparent;}
+.lic-badge-OEM{background:#D1FAE5;border-color:#6EE7B7;color:#065F46;}
+.lic-badge-FPP{background:#DBEAFE;border-color:#BFDBFE;color:#1E40AF;}
+.lic-badge-VL{background:#FFEDD5;border-color:#FDBA74;color:#9A3412;}
 
 .prog-flag-cell{width:34px;text-align:center;}
 .prog-flag-check{width:17px;height:17px;cursor:pointer;accent-color:var(--r);}
@@ -314,19 +317,18 @@ function highlight(s,q){
 }
 
 // ── License-type helper (OEM / FPP / PRO ธรรมดา) ────
-// ใช้สำหรับแยกประเภทของ OS ในหน้าสรุปโปรแกรม โดยดูจากคำในคอลัมน์ Version
+// ใช้สำหรับแยกประเภทของ OS ในหน้าสรุปโปรแกรม โดยดูจาก "ชื่อโปรแกรม + เวอร์ชัน" รวมกัน
+// (บางครั้งคำว่า OEM/FPP หลุดไปอยู่ในชื่อโปรแกรม เช่น "...UPGRADE FROM Windows 10 OEM"
+//  ไม่ได้อยู่ในคอลัมน์ Version เสมอไป จึงต้องค้นหาจากทั้งสองช่องรวมกัน)
 // - มีคำว่า OEM  -> ประเภท OEM
 // - มีคำว่า FPP  -> ประเภท FPP
 // - ไม่มีทั้งคู่ และเป็นหมวด OS -> ถือเป็น PRO ธรรมดา (Volume License)
-function detectLicenseType(category,version){
+function detectLicenseType(category,name,version){
   if(category!=='OS') return '';
-  const v=String(version||'').toUpperCase();
-  if(/\bOEM\b/.test(v)) return 'OEM';
-  if(/\bFPP\b/.test(v)) return 'FPP';
+  const hay=(String(name||'')+' '+String(version||'')).toUpperCase();
+  if(/\bOEM\b/.test(hay)) return 'OEM';
+  if(/\bFPP\b/.test(hay)) return 'FPP';
   return 'VL'; // Volume License (PRO ธรรมดา)
-}
-function licenseSuffix(lic){
-  return lic==='VL' ? ' (Volume License)' : '';
 }
 function licenseBadgeLabel(lic){
   if(lic==='OEM') return 'OEM';
@@ -797,12 +799,12 @@ function collapseAll(){
 
 // ── Render: SUMMARY view (แต่ละโปรแกรมใช้กี่เครื่อง) ─
 // OS จะถูกแยกย่อยตามประเภทไลเซนส์ (OEM / FPP / PRO ธรรมดา) เป็นคนละแถวกัน
-// โดย PRO ธรรมดาจะแสดงชื่อพร้อมต่อท้ายด้วย " (Volume License)"
+// แสดงด้วยชื่อโปรแกรมเดิม + badge สีบอกประเภท (ไม่มีข้อความต่อท้ายชื่อ)
 function buildProgramSummary(){
   const map={}; // key: "category||name||lic" -> {category,name,lic,count,machines:[]}
   Object.keys(swData).forEach(ck=>{
     swData[ck].programs.forEach(p=>{
-      const lic=detectLicenseType(p.category,p.version);
+      const lic=detectLicenseType(p.category,p.name,p.version);
       const key=`${p.category}||${p.name}||${lic}`;
       if(!map[key]) map[key]={category:p.category,name:p.name,lic,count:0,machines:[]};
       map[key].count++;
@@ -836,7 +838,7 @@ function renderSummaryView(){
 
   rows.sort((a,b)=>{
     let av,bv;
-    if(_progSort.key==='name'){ av=a.name+licenseSuffix(a.lic); bv=b.name+licenseSuffix(b.lic); }
+    if(_progSort.key==='name'){ av=a.name; bv=b.name; }
     else if(_progSort.key==='category'){ av=a.category; bv=b.category; }
     else { av=a.count; bv=b.count; }
     let cmp = typeof av==='string' ? av.localeCompare(bv,'th') : av-bv;
@@ -868,8 +870,9 @@ function renderSummaryView(){
     const rid=`pm_${idx}`;
     const machineKey=r.category+'||'+r.name+'||'+r.lic;
     const isOpen=_openMachineRows.has(machineKey);
-    const displayName=highlight(r.name,q)+licenseSuffix(r.lic);
-    const licBadge=licenseBadgeLabel(r.lic) ? `<span class="lic-badge">${esc(licenseBadgeLabel(r.lic))}</span>` : '';
+    const displayName=highlight(r.name,q);
+    const licLabel=licenseBadgeLabel(r.lic);
+    const licBadge=licLabel ? `<span class="lic-badge lic-badge-${esc(r.lic)}">${esc(licLabel)}</span>` : '';
     html+=`
     <tr>
       <td class="prog-cat-cell">${r.category?`<span class="cat-badge">${esc(r.category)}</span>`:''}</td>
