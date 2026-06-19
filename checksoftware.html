@@ -51,6 +51,12 @@
 .sw-row td{padding:7px 10px;vertical-align:top;font-size:12px;}
 .sw-row.row-flagged{background:#FFF5F5;}
 .sw-row.row-flagged td{color:#7A1F1F;}
+.sw-row.row-new{background:#FFFBEA;}
+.sw-row.row-new td{color:#7A5B00;}
+.new-tag{font-family:var(--mono);font-size:9px;background:#FEF3C7;border:1px solid #FCD34D;
+  color:#92400E;border-radius:4px;padding:1px 5px;display:inline-block;white-space:nowrap;margin-left:5px;font-weight:700;}
+.lic-badge-new{background:#FEF3C7;border-color:#FCD34D;color:#92400E;}
+.row-new-prog{background:#FFFBEA;}
 .cat-badge{font-family:var(--mono);font-size:9px;background:var(--bg);border:1px solid var(--bdr);
   border-radius:4px;padding:1px 5px;display:inline-block;white-space:nowrap;margin-right:5px;color:var(--tx3);}
 .lic-badge{font-family:var(--mono);font-size:9px;border-radius:4px;padding:1px 5px;
@@ -105,6 +111,16 @@
   border-radius:var(--radsm);padding:8px 10px;white-space:pre-wrap;line-height:1.5;}
 
 .check-date{font-size:10px;color:var(--tx3);}
+
+.addprog-wrap{display:none;border-top:1px dashed var(--bdrm);padding-top:10px;margin-top:4px;}
+.addprog-wrap.open{display:block;}
+.addprog-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.addprog-grid input{padding:7px 9px;border:1.5px solid var(--bdrm);border-radius:var(--radsm);
+  font-size:12px;font-family:inherit;background:var(--surf);color:var(--tx1);box-sizing:border-box;}
+.addprog-grid input:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 2px var(--gll);}
+.btn-add-prog-submit{padding:7px 14px;border-radius:var(--radsm);font-size:12px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--g);background:var(--g);color:#fff;white-space:nowrap;}
+.btn-add-prog-submit:hover{filter:brightness(1.08);}
 .summary-bar{display:flex;gap:16px;flex-wrap:wrap;padding:.8rem 1.2rem;
   background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);margin-bottom:1rem;}
 .sum-item{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px;}
@@ -655,7 +671,7 @@ function renderCheckView(){
       </tr></thead>
       <tbody>
       ${comp.programs.map((p,i)=>`
-      <tr class="sw-row ${flagged.has(i)?'row-flagged':''}">
+      <tr class="sw-row ${flagged.has(i)?'row-flagged':(p.isNew?'row-new':'')}">
         <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
         <td class="prog-flag-cell">
           <input type="checkbox" class="prog-flag-check" id="flag_${cid}_${i}"
@@ -663,7 +679,7 @@ function renderCheckView(){
             onchange="toggleProgFlag(${cid},${i})"/>
         </td>
         <td>${p.category?`<span class="cat-badge">${esc(p.category)}</span>`:''}</td>
-        <td style="font-weight:600;">${highlight(p.name,q)}</td>
+        <td style="font-weight:600;">${highlight(p.name,q)}${p.isNew?'<span class="new-tag">🆕 ใหม่</span>':''}</td>
         <td style="color:var(--tx2);">${highlight(p.version,q)}</td>
         <td style="color:var(--tx3);">${highlight(p.remark,q)}</td>
       </tr>`).join('')}
@@ -687,8 +703,23 @@ function renderCheckView(){
         <button class="btn btn-sm" onclick="saveProgFlags('${esc(ck)}',${cid})" id="saveflags_${cid}">
           💾 บันทึกรายการที่ติ๊ก
         </button>
+        <button class="btn btn-sm" onclick="openAddProgram(${cid},'${esc(ck)}')">
+          ➕ เพิ่มโปรแกรม
+        </button>
         ${st.checkedAt?`<span class="check-date">🕐 ${esc(st.checkedAt)}</span>`:''}
         ${st.checkedBy?`<span class="check-date">👤 ${esc(st.checkedBy)}</span>`:''}
+      </div>
+
+      <div class="addprog-wrap" id="addprog_${cid}">
+        <div class="addprog-grid">
+          <input type="text" id="addprog_cat_${cid}" placeholder="หมวด เช่น ETC, OS, VIRUS (ไม่บังคับ)"/>
+          <input type="text" id="addprog_name_${cid}" placeholder="ชื่อโปรแกรม *"/>
+          <input type="text" id="addprog_ver_${cid}" placeholder="เวอร์ชัน (ไม่บังคับ)"/>
+          <input type="text" id="addprog_rem_${cid}" placeholder="หมายเหตุ (ไม่บังคับ)"/>
+        </div>
+        <button class="btn-add-prog-submit" onclick="submitAddProgram('${esc(ck)}',${cid})">
+          💾 บันทึกโปรแกรมใหม่
+        </button>
       </div>
 
       <div class="issue-note-wrap ${effectiveChecked&&effectiveStatus==='issue'?'open':''}" id="notewrap_${cid}">
@@ -846,12 +877,15 @@ function buildProgramSummary(allowedCks){
   const map={}; // key: "category||name||lic" -> {category,name,lic,count,machines:[]}
   Object.keys(swData).forEach(ck=>{
     if(allowedCks && !allowedCks.has(ck)) return;
-    swData[ck].programs.forEach(p=>{
+    const flagged=new Set((swState[ck]&&swState[ck].issuePrograms)||[]);
+    swData[ck].programs.forEach((p,i)=>{
+      if(flagged.has(i)) return; // ไม่นับโปรแกรมที่ถูกติ๊กว่ามีปัญหา
       const lic=detectLicenseType(p.category,p.name,p.version);
       const key=`${p.category}||${p.name}||${lic}`;
-      if(!map[key]) map[key]={category:p.category,name:p.name,lic,count:0,machines:[]};
+      if(!map[key]) map[key]={category:p.category,name:p.name,lic,count:0,machines:[],hasNew:false};
       map[key].count++;
       map[key].machines.push(ck);
+      if(p.isNew) map[key].hasNew=true;
     });
   });
   return Object.values(map);
@@ -983,10 +1017,11 @@ function renderSummaryView(){
     const displayName=highlight(r.name,q);
     const licLabel=licenseBadgeLabel(r.lic);
     const licBadge=licLabel ? `<span class="lic-badge lic-badge-${esc(r.lic)}">${esc(licLabel)}</span>` : '';
+    const newBadge = r.hasNew ? `<span class="lic-badge lic-badge-new">🆕 ใหม่</span>` : '';
     html+=`
-    <tr>
+    <tr class="${r.hasNew?'row-new-prog':''}">
       <td class="prog-cat-cell">${r.category?`<span class="cat-badge">${esc(r.category)}</span>`:''}</td>
-      <td class="prog-name-cell">${displayName}${licBadge}</td>
+      <td class="prog-name-cell">${displayName}${licBadge}${newBadge}</td>
       <td class="prog-count-cell">${r.count} / ${totalMachines} เครื่อง <span style="color:var(--tx3);font-weight:400;">(${pct}%)</span></td>
       <td><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${barPct}%"></div></div></td>
       <td><span class="prog-machines-toggle" onclick="toggleMachines('${esc(machineKey)}','${rid}')">${isOpen?'ซ่อนเครื่อง ▲':'ดูรายชื่อเครื่อง ▼'}</span></td>
@@ -1014,6 +1049,35 @@ function toggleMachines(progKey,rid){
   if(_openMachineRows.has(progKey)) _openMachineRows.delete(progKey);
   else _openMachineRows.add(progKey);
   renderSummaryView();
+}
+
+// ── Add program manually ──────────────────────────
+function openAddProgram(cid,ck){
+  const el=document.getElementById(`addprog_${cid}`);
+  if(el) el.classList.toggle('open');
+}
+async function submitAddProgram(ck,cid){
+  const catEl=document.getElementById(`addprog_cat_${cid}`);
+  const nameEl=document.getElementById(`addprog_name_${cid}`);
+  const verEl=document.getElementById(`addprog_ver_${cid}`);
+  const remEl=document.getElementById(`addprog_rem_${cid}`);
+  const name=(nameEl?.value||'').trim();
+  if(!name){ showNotif('กรุณากรอกชื่อโปรแกรม','error'); return; }
+  const comp=swData[ck];
+  if(!comp) return;
+  comp.programs.push({
+    category:(catEl?.value||'').trim().toUpperCase(),
+    name,
+    version:(verEl?.value||'').trim(),
+    remark:(remEl?.value||'').trim(),
+    isNew:true,
+  });
+  if(catEl)catEl.value=''; if(nameEl)nameEl.value=''; if(verEl)verEl.value=''; if(remEl)remEl.value='';
+  const wrap=document.getElementById(`addprog_${cid}`);
+  if(wrap) wrap.classList.remove('open');
+  saveStorage();
+  renderCheckView();
+  showNotif('เพิ่มโปรแกรมแล้ว');
 }
 
 // ── Clear all ─────────────────────────────────────
