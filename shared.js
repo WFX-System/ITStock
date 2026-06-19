@@ -89,6 +89,7 @@ const NAV_ITEMS = [
   { id: 'history',   label: 'ประวัติ',       icon: '🕐', href: 'history.html',    adminOnly: false },
   { id: 'dispose',   label: 'ตัดทรัพย์',     icon: '♻️', href: 'dispose.html',    adminOnly: false },
   { id: 'assetcheck',label: 'เช็คทรัพย์สิน', icon: '🔍', href: 'assetcheck.html', adminOnly: false },
+  { id: 'checksoftware',label: 'เช็คซอฟต์แวร์', icon: '🧩', href: 'checksoftware.html', adminOnly: false },
   { id: 'users',     label: 'ผู้ใช้',        icon: '👥', href: 'users.html',      adminOnly: true  },
 ];
 
