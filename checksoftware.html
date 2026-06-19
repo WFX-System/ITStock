@@ -1110,8 +1110,8 @@ function exportLicenseExcel(){
     const isUpgrade = osProg ? /UPGRADE/i.test(osProg.name+' '+osProg.version) : false;
 
     let vlk='', oem='', vlkUp='', oemUp='';
-    if(lic==='OEM'){ if(isUpgrade) oemUp='ü'; else oem='ü'; }
-    else if(lic==='VL'){ if(isUpgrade) vlkUp='ü'; else vlk='ü'; }
+    if(lic==='OEM'){ if(isUpgrade) oemUp=1; else oem=1; }
+    else if(lic==='VL'){ if(isUpgrade) vlkUp=1; else vlk=1; }
     // lic==='FPP' หรือไม่มี OS เลย -> ไม่มีคอลัมน์ให้ใส่ ปล่อยว่างทั้งหมด
 
     aoa.push([
