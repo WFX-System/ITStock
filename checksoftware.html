@@ -144,6 +144,21 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .prog-machines-inner{padding:10px 14px;background:var(--bg);display:flex;flex-wrap:wrap;gap:6px;}
 .prog-machine-chip{font-family:var(--mono);font-size:10px;background:var(--surf);border:1px solid var(--bdr);
   border-radius:4px;padding:2px 7px;}
+
+/* Machine-prefix multi-select dropdown */
+.prefix-filter-wrap{position:relative;display:inline-block;}
+.prefix-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;
+  min-width:220px;max-height:280px;overflow-y:auto;background:var(--surf);border:1.5px solid var(--bdrm);
+  border-radius:var(--radsm);box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;}
+.prefix-dropdown.open{display:block;}
+.prefix-dropdown-actions{display:flex;gap:10px;padding:2px 4px 8px;border-bottom:1px solid var(--bdr);margin-bottom:6px;}
+.prefix-dropdown-link{font-size:11px;color:var(--g);font-weight:700;cursor:pointer;user-select:none;}
+.prefix-dropdown-link:hover{text-decoration:underline;}
+.prefix-opt{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;cursor:pointer;user-select:none;}
+.prefix-opt:hover{background:var(--bg);}
+.prefix-opt input{width:15px;height:15px;cursor:pointer;accent-color:var(--g);flex-shrink:0;}
+.prefix-opt-label{font-size:12px;font-weight:600;flex:1;}
+.prefix-opt-count{font-size:10px;color:var(--tx3);font-family:var(--mono);}
 </style>
 </head>
 <body>
@@ -244,6 +259,18 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
         <select id="progCatSel" class="btn btn-sm" style="padding:6px 10px;font-size:12px;width:auto;cursor:pointer;" onchange="renderSummaryView()">
           <option value="">ทุกหมวด</option>
         </select>
+        <div class="prefix-filter-wrap" id="prefixFilterWrap">
+          <button type="button" class="btn btn-sm" id="prefixFilterBtn" onclick="togglePrefixDropdown(event)">
+            🖥️ กลุ่มเครื่อง: ทั้งหมด
+          </button>
+          <div class="prefix-dropdown" id="prefixDropdown">
+            <div class="prefix-dropdown-actions">
+              <span class="prefix-dropdown-link" onclick="selectAllPrefixes(true)">เลือกทั้งหมด</span>
+              <span class="prefix-dropdown-link" onclick="selectAllPrefixes(false)">ล้างทั้งหมด</span>
+            </div>
+            <div id="prefixDropdownList"></div>
+          </div>
+        </div>
       </div>
       <div id="summaryContent"></div>
     </div>
@@ -337,6 +364,19 @@ function licenseBadgeLabel(lic){
   return '';
 }
 
+// ── Machine-prefix helper (ชื่อย่อหน่วยงาน/กลุ่มเครื่อง) ─
+// ตัดจากตัวอักษรตัวแรกของชื่อเครื่องไปจนถึงก่อนตัวเลขตัวแรก
+// เช่น "WH002-RYG" -> "WH", "ACC001-RYG" -> "ACC", "ENG-PRO-15" -> "ENG-PRO"(ไม่มีเลขนำหน้า ใช้ทั้งก่อนตัวเลขแรกที่เจอ)
+// ถ้าไม่เจอตัวเลขเลย ใช้ชื่อเครื่องทั้งหมดเป็น prefix
+function getMachinePrefix(ck){
+  const m=String(ck||'').match(/^([^\d]*)/);
+  const p=(m?m[1]:'').trim();
+  return p || String(ck||'');
+}
+
+// ── Selected machine-prefix filter (สำหรับหน้าสรุปโปรแกรม) ─
+let _selectedPrefixes=null; // null = ยังไม่ได้ตั้งค่า (= เลือกทั้งหมดโดย default)
+
 // ── View switching ────────────────────────────────
 function switchView(v){
   currentView=v;
@@ -375,6 +415,7 @@ function readExcelFile(file){
       const valid=new Set(Object.keys(swData));
       Object.keys(swState).forEach(k=>{ if(!valid.has(k)) delete swState[k]; });
       _ckIndex={}; _ckIndexRev={};
+      _selectedPrefixes=null; // reset ให้เลือกกลุ่มเครื่องทั้งหมดใหม่ตามข้อมูลที่เพิ่ง import
       saveStorage(); renderAll();
       showNotif(`Import สำเร็จ พบ ${n} เครื่อง`);
     }catch(err){ showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error'); }
@@ -800,9 +841,11 @@ function collapseAll(){
 // ── Render: SUMMARY view (แต่ละโปรแกรมใช้กี่เครื่อง) ─
 // OS จะถูกแยกย่อยตามประเภทไลเซนส์ (OEM / FPP / PRO ธรรมดา) เป็นคนละแถวกัน
 // แสดงด้วยชื่อโปรแกรมเดิม + badge สีบอกประเภท (ไม่มีข้อความต่อท้ายชื่อ)
-function buildProgramSummary(){
+// รองรับการกรองเฉพาะ "กลุ่มเครื่อง" (prefix ของชื่อเครื่อง) ที่เลือกไว้
+function buildProgramSummary(allowedCks){
   const map={}; // key: "category||name||lic" -> {category,name,lic,count,machines:[]}
   Object.keys(swData).forEach(ck=>{
+    if(allowedCks && !allowedCks.has(ck)) return;
     swData[ck].programs.forEach(p=>{
       const lic=detectLicenseType(p.category,p.name,p.version);
       const key=`${p.category}||${p.name}||${lic}`;
@@ -814,14 +857,77 @@ function buildProgramSummary(){
   return Object.values(map);
 }
 
+// ── Machine-prefix dropdown (multi-select) ────────
+function getAllPrefixes(){
+  const set=new Set();
+  Object.keys(swData).forEach(ck=>set.add(getMachinePrefix(ck)));
+  return [...set].sort((a,b)=>a.localeCompare(b,'th'));
+}
+function ensurePrefixSelectionInit(){
+  // เริ่มต้นเลือกทุก prefix เมื่อยังไม่เคยตั้งค่ามาก่อน (ครั้งแรกที่เข้าหน้านี้)
+  if(_selectedPrefixes===null){
+    _selectedPrefixes=new Set(getAllPrefixes());
+  }
+}
+function renderPrefixDropdown(){
+  const all=getAllPrefixes();
+  const listEl=document.getElementById('prefixDropdownList');
+  const btnEl=document.getElementById('prefixFilterBtn');
+  if(!listEl||!btnEl) return;
+
+  const countByPrefix={};
+  Object.keys(swData).forEach(ck=>{
+    const p=getMachinePrefix(ck);
+    countByPrefix[p]=(countByPrefix[p]||0)+1;
+  });
+
+  listEl.innerHTML = all.map(p=>`
+    <label class="prefix-opt">
+      <input type="checkbox" ${_selectedPrefixes.has(p)?'checked':''} onchange="togglePrefixSelect('${esc(p)}')"/>
+      <span class="prefix-opt-label">${esc(p)}</span>
+      <span class="prefix-opt-count">${countByPrefix[p]||0} เครื่อง</span>
+    </label>`).join('');
+
+  const totalAll=all.length;
+  const selCount=_selectedPrefixes.size;
+  btnEl.textContent = selCount===totalAll
+    ? '🖥️ กลุ่มเครื่อง: ทั้งหมด'
+    : selCount===0
+      ? '🖥️ กลุ่มเครื่อง: (ไม่ได้เลือก)'
+      : `🖥️ กลุ่มเครื่อง: ${selCount}/${totalAll} กลุ่ม`;
+}
+function togglePrefixDropdown(ev){
+  ev.stopPropagation();
+  document.getElementById('prefixDropdown').classList.toggle('open');
+}
+document.addEventListener('click',(ev)=>{
+  const wrap=document.getElementById('prefixFilterWrap');
+  const dd=document.getElementById('prefixDropdown');
+  if(dd&&dd.classList.contains('open')&&wrap&&!wrap.contains(ev.target)) dd.classList.remove('open');
+});
+function togglePrefixSelect(p){
+  if(_selectedPrefixes.has(p)) _selectedPrefixes.delete(p);
+  else _selectedPrefixes.add(p);
+  renderSummaryView();
+}
+function selectAllPrefixes(on){
+  const all=getAllPrefixes();
+  _selectedPrefixes = on ? new Set(all) : new Set();
+  renderSummaryView();
+}
+
 function renderSummaryView(){
   const hasData=Object.keys(swData).length>0;
   document.getElementById('summaryToolbarRow').style.display=hasData?'flex':'none';
   const wrap=document.getElementById('summaryContent');
   if(!hasData){ wrap.innerHTML=''; return; }
 
-  const totalMachines=Object.keys(swData).length;
-  let rows=buildProgramSummary();
+  ensurePrefixSelectionInit();
+  renderPrefixDropdown();
+
+  const allowedCks=new Set(Object.keys(swData).filter(ck=>_selectedPrefixes.has(getMachinePrefix(ck))));
+  const totalMachines=allowedCks.size;
+  let rows=buildProgramSummary(allowedCks);
 
   // populate category filter once per render (cheap, list is small)
   const catSel=document.getElementById('progCatSel');
@@ -845,6 +951,10 @@ function renderSummaryView(){
     return _progSort.dir==='desc' ? -cmp : cmp;
   });
 
+  if(!totalMachines){
+    wrap.innerHTML=`<div class="empty-pg"><div class="icon">🖥️</div><p>ไม่ได้เลือกกลุ่มเครื่องใดเลย<br>กรุณาเลือกกลุ่มเครื่องอย่างน้อย 1 กลุ่ม</p></div>`;
+    return;
+  }
   if(!rows.length){
     wrap.innerHTML=`<div class="empty-pg"><div class="icon">🔍</div><p>ไม่พบโปรแกรมที่ตรงกับเงื่อนไข</p></div>`;
     return;
@@ -909,7 +1019,7 @@ function toggleMachines(progKey,rid){
 // ── Clear all ─────────────────────────────────────
 async function confirmClearAll(){
   if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย')) return;
-  swData={}; swState={}; _ckIndex={}; _ckIndexRev={}; _openMachineRows=new Set();
+  swData={}; swState={}; _ckIndex={}; _ckIndexRev={}; _openMachineRows=new Set(); _selectedPrefixes=null;
   try{ await _sessionRef().delete(); }catch(e){}
   renderAll(); showNotif('ลบข้อมูลทั้งหมดแล้ว');
 }
