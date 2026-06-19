@@ -207,6 +207,7 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <button class="btn btn-sm" onclick="downloadTemplate()">📥 ตัวอย่าง</button>
+        <button class="btn btn-sm" onclick="exportLicenseExcel()">📤 Export License</button>
         <label class="btn btn-sm btn-primary" style="cursor:pointer;">
           📂 Import Excel
           <input type="file" id="importFile" accept=".xls,.xlsx" style="display:none" onchange="handleImport(this)"/>
@@ -1078,6 +1079,58 @@ async function submitAddProgram(ck,cid){
   saveStorage();
   renderCheckView();
   showNotif('เพิ่มโปรแกรมแล้ว');
+}
+
+// ── Export License Excel (รูปแบบตามไฟล์ "รายการเครื่องคอมพิวเตอร์ License Windows") ─
+// คอลัมน์: No | Name | User | Description | OS | VLK | OEM | VLK Up Win11 | OEM Up Win11
+// - Name        = ชื่อเครื่อง (Computer name)
+// - User        = ชื่อ-สกุล ผู้ใช้งาน
+// - Description = ตำแหน่ง/แผนก (ใช้ field ตำแหน่งที่มีอยู่)
+// - OS          = ชื่อ+เวอร์ชันของโปรแกรมที่อยู่ในหมวด OS
+// - VLK/OEM/VLK Up Win11/OEM Up Win11 = ใส่ 'ü' ตามประเภทไลเซนส์ที่ตรวจพบจากชื่อโปรแกรม
+//   ถ้าชื่อโปรแกรมมีคำว่า "UPGRADE" (เช่น อัปเกรดจาก Windows 10 มาเป็น Windows 11)
+//   จะถือเป็นคอลัมน์ "...Up Win11" ตามประเภทไลเซนส์เดิม ไม่ใช่คอลัมน์ปกติ
+function findOsProgram(comp){
+  return comp.programs.find(p=>String(p.category||'').toUpperCase()==='OS');
+}
+function exportLicenseExcel(){
+  if(!Object.keys(swData).length){ showNotif('ไม่มีข้อมูลให้ Export','error'); return; }
+
+  const sortedCks=Object.keys(swData).sort((a,b)=>a.localeCompare(b,'th'));
+  const aoa=[
+    [], // แถวแรกเว้นว่างตามไฟล์ต้นฉบับ
+    ['No','Name','User','Description','OS','VLK','OEM','VLK Up Win11','OEM Up Win11'],
+  ];
+
+  sortedCks.forEach((ck,idx)=>{
+    const comp=swData[ck];
+    const osProg=findOsProgram(comp);
+    const osText=osProg ? `${osProg.name}${osProg.version?' '+osProg.version:''}`.trim() : '';
+    const lic=osProg ? detectLicenseType('OS',osProg.name,osProg.version) : '';
+    const isUpgrade = osProg ? /UPGRADE/i.test(osProg.name+' '+osProg.version) : false;
+
+    let vlk='', oem='', vlkUp='', oemUp='';
+    if(lic==='OEM'){ if(isUpgrade) oemUp='ü'; else oem='ü'; }
+    else if(lic==='VL'){ if(isUpgrade) vlkUp='ü'; else vlk='ü'; }
+    // lic==='FPP' หรือไม่มี OS เลย -> ไม่มีคอลัมน์ให้ใส่ ปล่อยว่างทั้งหมด
+
+    aoa.push([
+      idx+1,
+      comp.computerName,
+      comp.employee||'',
+      comp.position||'',
+      osText,
+      vlk, oem, vlkUp, oemUp,
+    ]);
+  });
+
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:6},{wch:18},{wch:24},{wch:18},{wch:44},{wch:7},{wch:7},{wch:13},{wch:13}];
+  XLSX.utils.book_append_sheet(wb,ws,'License');
+  const dateStr=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,`รายการเครื่องคอมพิวเตอร์_License_Windows_${dateStr}.xlsx`);
+  showNotif('Export ไฟล์ License แล้ว');
 }
 
 // ── Clear all ─────────────────────────────────────
