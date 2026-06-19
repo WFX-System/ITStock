@@ -47,10 +47,17 @@
 .sw-table th{padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;
   letter-spacing:.04em;color:var(--tx3);background:var(--bg);border-bottom:1px solid var(--bdr);
   text-align:left;white-space:nowrap;}
-.sw-row{border-bottom:1px solid var(--bdr);}
+.sw-row{border-bottom:1px solid var(--bdr);transition:background .15s;}
 .sw-row td{padding:7px 10px;vertical-align:top;font-size:12px;}
+.sw-row.row-flagged{background:#FFF5F5;}
+.sw-row.row-flagged td{color:#7A1F1F;}
 .cat-badge{font-family:var(--mono);font-size:9px;background:var(--bg);border:1px solid var(--bdr);
   border-radius:4px;padding:1px 5px;display:inline-block;white-space:nowrap;margin-right:5px;color:var(--tx3);}
+.lic-badge{font-family:var(--mono);font-size:9px;background:#EFF6FF;border:1px solid #BFDBFE;
+  border-radius:4px;padding:1px 5px;display:inline-block;white-space:nowrap;margin-left:5px;color:#1E40AF;}
+
+.prog-flag-cell{width:34px;text-align:center;}
+.prog-flag-check{width:17px;height:17px;cursor:pointer;accent-color:var(--r);}
 
 .comp-actions{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-top:1px solid var(--bdr);
   background:var(--bg);}
@@ -67,6 +74,7 @@
   transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
 .btn-bad:hover{background:#FFF0EC;border-color:var(--r);color:var(--r);}
 .btn-bad.active{background:var(--r);border-color:var(--r);color:#fff;}
+.btn-bad.auto-issue{background:#FEE2E2;border-color:var(--r);color:#991B1B;}
 
 .issue-note-wrap{display:none;}
 .issue-note-wrap.open{display:block;}
@@ -75,6 +83,10 @@
   min-height:60px;box-sizing:border-box;transition:border-color .15s;}
 .issue-note:focus{outline:none;border-color:var(--am);box-shadow:0 0 0 2px var(--aml);}
 .issue-note.dirty{border-color:var(--am)!important;background:#FFFBEB!important;}
+
+.flagged-list{font-size:11px;color:#991B1B;background:#FEE2E2;border:1px solid #FCA5A5;
+  border-radius:var(--radsm);padding:8px 10px;line-height:1.7;margin-bottom:6px;}
+.flagged-list b{display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.03em;}
 
 .btn-save-note{display:flex;align-items:center;justify-content:center;gap:6px;
   padding:7px 14px;border-radius:var(--radsm);font-size:12px;font-weight:700;
@@ -301,6 +313,28 @@ function highlight(s,q){
   return esc(s).replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`);
 }
 
+// ── License-type helper (OEM / FPP / PRO ธรรมดา) ────
+// ใช้สำหรับแยกประเภทของ OS ในหน้าสรุปโปรแกรม โดยดูจากคำในคอลัมน์ Version
+// - มีคำว่า OEM  -> ประเภท OEM
+// - มีคำว่า FPP  -> ประเภท FPP
+// - ไม่มีทั้งคู่ และเป็นหมวด OS -> ถือเป็น PRO ธรรมดา (Volume License)
+function detectLicenseType(category,version){
+  if(category!=='OS') return '';
+  const v=String(version||'').toUpperCase();
+  if(/\bOEM\b/.test(v)) return 'OEM';
+  if(/\bFPP\b/.test(v)) return 'FPP';
+  return 'VL'; // Volume License (PRO ธรรมดา)
+}
+function licenseSuffix(lic){
+  return lic==='VL' ? ' (Volume License)' : '';
+}
+function licenseBadgeLabel(lic){
+  if(lic==='OEM') return 'OEM';
+  if(lic==='FPP') return 'FPP';
+  if(lic==='VL')  return 'Volume License';
+  return '';
+}
+
 // ── View switching ────────────────────────────────
 function switchView(v){
   currentView=v;
@@ -430,7 +464,7 @@ function downloadTemplate(){
     ['','','สถานะการใช้งาน INTERNET','CLOSE'],
     ['ข้อมูลซอฟต์แวร์'],
     ['Program','Version','Remark'],
-    ['[OS] Windows 11','',''],
+    ['[OS] Windows 11','PRO',''],
     ['[OFFICE] Office 2021','',''],
     ['[ZIP] 7-Zip','',''],
     ['[VIRUS] Kaspersky V2565','',''],
@@ -512,24 +546,34 @@ function renderCheckView(){
   let html='', visCount=0;
   sortedCks.forEach(ck=>{
     const comp=swData[ck], cid=getCkId(ck), st=swState[ck]||{};
+    const flagged=new Set(st.issuePrograms||[]);
+    const hasFlags=flagged.size>0;
+    // ถ้ามีโปรแกรมถูกมาร์กว่ามีปัญหาอย่างน้อย 1 รายการ ให้ถือว่าเครื่องนี้ "มีปัญหา" โดยอัตโนมัติ
+    const effectiveStatus = hasFlags ? 'issue' : st.status;
+    const effectiveChecked = hasFlags ? true : st.checked;
 
     if(q){
       const progHay=comp.programs.map(p=>`${p.category} ${p.name} ${p.version} ${p.remark}`).join(' ');
       const hay=[ck,comp.ip,comp.employee,comp.position,progHay].join(' ').toLowerCase();
       if(!hay.includes(q)) return;
     }
-    if(filter==='pending' && st.checked) return;
-    if(filter==='ok' && !(st.checked&&st.status==='ok')) return;
-    if(filter==='issue' && !(st.checked&&st.status==='issue')) return;
+    if(filter==='pending' && effectiveChecked) return;
+    if(filter==='ok' && !(effectiveChecked&&effectiveStatus==='ok')) return;
+    if(filter==='issue' && !(effectiveChecked&&effectiveStatus==='issue')) return;
 
     visCount++;
 
     let badgeCls,badgeTxt,nameColor,iconBg,iconBdr;
-    if(st.checked&&st.status==='issue'){ badgeCls='comp-status-issue'; badgeTxt='⚠️ มีปัญหา'; nameColor='#991B1B'; iconBg='#FEE2E2'; iconBdr='#FCA5A5'; }
-    else if(st.checked&&st.status==='ok'){ badgeCls='comp-status-ok'; badgeTxt='✅ ตรงทุกโปรแกรม'; nameColor='#065F46'; iconBg='var(--g)'; iconBdr='var(--g)'; }
+    if(effectiveChecked&&effectiveStatus==='issue'){ badgeCls='comp-status-issue'; badgeTxt='⚠️ มีปัญหา'; nameColor='#991B1B'; iconBg='#FEE2E2'; iconBdr='#FCA5A5'; }
+    else if(effectiveChecked&&effectiveStatus==='ok'){ badgeCls='comp-status-ok'; badgeTxt='✅ ตรงทุกโปรแกรม'; nameColor='#065F46'; iconBg='var(--g)'; iconBdr='var(--g)'; }
     else{ badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค'; nameColor=''; iconBg='var(--bg)'; iconBdr='var(--bdrm)'; }
 
-    const noteDisplay = (st.checked&&st.status==='issue'&&st.note)
+    const flaggedListHtml = hasFlags
+      ? `<div class="flagged-list"><b>⚠️ รายการที่มีปัญหา (${flagged.size})</b>${
+          comp.programs.filter((p,i)=>flagged.has(i)).map(p=>`• ${esc(p.name)}${p.version?` (${esc(p.version)})`:''}`).join('<br>')
+        }</div>` : '';
+
+    const noteDisplay = (effectiveChecked&&effectiveStatus==='issue'&&st.note)
       ? `<div class="issue-note-display">${esc(st.note).replace(/\n/g,'<br>')}</div>` : '';
 
     html+=`
@@ -544,6 +588,7 @@ function renderCheckView(){
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:2px;">
         <span class="comp-status-badge ${badgeCls}">${badgeTxt}</span>
+        ${hasFlags?`<span class="comp-meta" style="color:#991B1B;font-weight:700;">${flagged.size} รายการมีปัญหา</span>`:''}
         ${comp.ip?`<span class="comp-ip">${esc(comp.ip)}</span>`:''}
         ${comp.employee?`<span class="comp-meta">👤 ${highlight(comp.employee,q)}</span>`:''}
         ${comp.position?`<span class="comp-meta">💼 ${highlight(comp.position,q)}</span>`:''}
@@ -559,6 +604,7 @@ function renderCheckView(){
     <table class="sw-table">
       <thead><tr>
         <th style="width:28px;">#</th>
+        <th class="prog-flag-cell" title="มีปัญหา">⚠️</th>
         <th>หมวด</th>
         <th>โปรแกรม</th>
         <th>เวอร์ชัน</th>
@@ -566,8 +612,13 @@ function renderCheckView(){
       </tr></thead>
       <tbody>
       ${comp.programs.map((p,i)=>`
-      <tr class="sw-row">
+      <tr class="sw-row ${flagged.has(i)?'row-flagged':''}">
         <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
+        <td class="prog-flag-cell">
+          <input type="checkbox" class="prog-flag-check" id="flag_${cid}_${i}"
+            ${flagged.has(i)?'checked':''}
+            onchange="toggleProgFlag(${cid},${i})"/>
+        </td>
         <td>${p.category?`<span class="cat-badge">${esc(p.category)}</span>`:''}</td>
         <td style="font-weight:600;">${highlight(p.name,q)}</td>
         <td style="color:var(--tx2);">${highlight(p.version,q)}</td>
@@ -578,23 +629,28 @@ function renderCheckView(){
     </div>
 
     <div class="comp-actions">
+      ${flaggedListHtml}
       <div class="comp-actions-row">
-        <button class="btn-ok ${st.checked&&st.status==='ok'?'active':''}"
+        <button class="btn-ok ${effectiveChecked&&effectiveStatus==='ok'?'active':''}"
+          ${hasFlags?'disabled style="opacity:.5;cursor:not-allowed;"':''}
           onclick="setStatus('${esc(ck)}',${cid},'ok')">
           ✅ ตรงทุกโปรแกรม
         </button>
-        <button class="btn-bad ${st.checked&&st.status==='issue'?'active':''}"
+        <button class="btn-bad ${effectiveChecked&&effectiveStatus==='issue'?'active':''} ${hasFlags&&!(st.checked&&st.status==='issue')?'auto-issue':''}"
           id="btnissue_${cid}"
           onclick="setStatus('${esc(ck)}',${cid},'issue')">
-          ⚠️ มีปัญหา
+          ⚠️ มีปัญหา${hasFlags?' (อัตโนมัติจากรายการที่ติ๊ก)':''}
+        </button>
+        <button class="btn btn-sm" onclick="saveProgFlags('${esc(ck)}',${cid})" id="saveflags_${cid}">
+          💾 บันทึกรายการที่ติ๊ก
         </button>
         ${st.checkedAt?`<span class="check-date">🕐 ${esc(st.checkedAt)}</span>`:''}
         ${st.checkedBy?`<span class="check-date">👤 ${esc(st.checkedBy)}</span>`:''}
       </div>
 
-      <div class="issue-note-wrap ${st.checked&&st.status==='issue'?'open':''}" id="notewrap_${cid}">
+      <div class="issue-note-wrap ${effectiveChecked&&effectiveStatus==='issue'?'open':''}" id="notewrap_${cid}">
         <textarea class="issue-note" id="note_${cid}"
-          placeholder="ระบุรายละเอียดที่ต่างจากทะเบียน เช่น ลงโปรแกรมเพิ่ม / ไม่มีโปรแกรมที่ควรมี / เวอร์ชันไม่ตรง ฯลฯ"
+          placeholder="ระบุรายละเอียดเพิ่มเติม เช่น ลงโปรแกรมเพิ่ม / ไม่มีโปรแกรมที่ควรมี / เวอร์ชันไม่ตรง ฯลฯ (รายการที่ติ๊กด้านบนจะถูกบันทึกแยกให้อัตโนมัติ)"
           oninput="markNoteDirty(${cid})">${esc(st.note||'')}</textarea>
         <button class="btn-save-note" id="savenote_${cid}" onclick="saveNote('${esc(ck)}',${cid})">
           💾 บันทึกรายละเอียด
@@ -614,19 +670,76 @@ function renderCheckView(){
   list.innerHTML=html;
 }
 
+// ── Per-program issue flag (checkbox in table) ────
+// เก็บไว้ใน DOM ชั่วคราว (ยังไม่ commit ลง swState) จนกว่าจะกด "บันทึกรายการที่ติ๊ก"
+// เพื่อป้องกัน sync จาก Firestore realtime มาทับขณะกำลังติ๊กอยู่
+function toggleProgFlag(cid,progIdx){
+  const cb=document.getElementById(`flag_${cid}_${progIdx}`);
+  if(!cb) return;
+  const row=cb.closest('tr');
+  if(row) row.classList.toggle('row-flagged',cb.checked);
+  const saveBtn=document.getElementById(`saveflags_${cid}`);
+  if(saveBtn){ saveBtn.classList.add('dirty'); saveBtn.style.background='var(--am)'; saveBtn.style.borderColor='var(--am)'; saveBtn.style.color='#fff';
+    saveBtn.innerHTML='💾 บันทึกรายการที่ติ๊ก (มีการเปลี่ยนแปลง)'; }
+}
+
+async function saveProgFlags(ck,cid){
+  const comp=swData[ck];
+  if(!comp) return;
+  const saveBtn=document.getElementById(`saveflags_${cid}`);
+  if(saveBtn){ saveBtn.disabled=true; saveBtn.innerHTML='⏳ กำลังบันทึก...'; }
+
+  const flagged=[];
+  comp.programs.forEach((p,i)=>{
+    const cb=document.getElementById(`flag_${cid}_${i}`);
+    if(cb&&cb.checked) flagged.push(i);
+  });
+
+  if(!swState[ck]) swState[ck]={};
+  swState[ck].issuePrograms=flagged;
+  if(flagged.length>0){
+    // มีรายการมีปัญหา -> เครื่องถือว่ามีปัญหาโดยอัตโนมัติ
+    swState[ck].checked=true;
+    swState[ck].status='issue';
+    if(!swState[ck].checkedAt){
+      swState[ck].checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+      swState[ck].checkedBy=currentUser?.displayName||currentUser?.email||'';
+    }
+  } else if(swState[ck].checked && swState[ck].status==='issue' && !swState[ck].note){
+    // ไม่เหลือรายการมีปัญหา และไม่มี note เพิ่มเติม -> ล้างผลการเช็คให้กลับเป็นยังไม่ได้เช็ค
+    delete swState[ck];
+  }
+
+  await new Promise(r=>{ saveStorage(); setTimeout(r,700); });
+
+  showNotif('บันทึกรายการที่มีปัญหาแล้ว');
+  renderCheckView();
+}
+
 // ── Set status (ok / issue) ───────────────────────
 function setStatus(ck,cid,status){
   const st=swState[ck]||{};
+  const flagged=(st.issuePrograms||[]).length>0;
+  if(flagged && status==='ok'){
+    showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ กรุณายกเลิกการติ๊กก่อน','error');
+    return;
+  }
   const turningOff = st.checked && st.status===status;
+  if(turningOff && flagged){
+    showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ ไม่สามารถยกเลิกสถานะนี้ได้','error');
+    return;
+  }
   if(!confirm(turningOff?'ยกเลิกผลการเช็ค?':`ยืนยันว่า "${status==='ok'?'ตรงทุกโปรแกรม':'มีปัญหา'}"?`)) return;
 
   if(turningOff){
     delete swState[ck];
   } else {
     swState[ck]={
+      ...st,
       checked:true,
       status,
       note: status==='issue' ? (st.note||'') : '',
+      issuePrograms: status==='issue' ? (st.issuePrograms||[]) : [],
       checkedAt:new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}),
       checkedBy:currentUser?.displayName||currentUser?.email||'',
     };
@@ -683,12 +796,15 @@ function collapseAll(){
 }
 
 // ── Render: SUMMARY view (แต่ละโปรแกรมใช้กี่เครื่อง) ─
+// OS จะถูกแยกย่อยตามประเภทไลเซนส์ (OEM / FPP / PRO ธรรมดา) เป็นคนละแถวกัน
+// โดย PRO ธรรมดาจะแสดงชื่อพร้อมต่อท้ายด้วย " (Volume License)"
 function buildProgramSummary(){
-  const map={}; // key: "category||name" -> {category,name,count,machines:[]}
+  const map={}; // key: "category||name||lic" -> {category,name,lic,count,machines:[]}
   Object.keys(swData).forEach(ck=>{
     swData[ck].programs.forEach(p=>{
-      const key=`${p.category}||${p.name}`;
-      if(!map[key]) map[key]={category:p.category,name:p.name,count:0,machines:[]};
+      const lic=detectLicenseType(p.category,p.version);
+      const key=`${p.category}||${p.name}||${lic}`;
+      if(!map[key]) map[key]={category:p.category,name:p.name,lic,count:0,machines:[]};
       map[key].count++;
       map[key].machines.push(ck);
     });
@@ -720,7 +836,7 @@ function renderSummaryView(){
 
   rows.sort((a,b)=>{
     let av,bv;
-    if(_progSort.key==='name'){ av=a.name; bv=b.name; }
+    if(_progSort.key==='name'){ av=a.name+licenseSuffix(a.lic); bv=b.name+licenseSuffix(b.lic); }
     else if(_progSort.key==='category'){ av=a.category; bv=b.category; }
     else { av=a.count; bv=b.count; }
     let cmp = typeof av==='string' ? av.localeCompare(bv,'th') : av-bv;
@@ -750,14 +866,17 @@ function renderSummaryView(){
     const pct=Math.round(r.count/totalMachines*100);
     const barPct=Math.round(r.count/maxCount*100);
     const rid=`pm_${idx}`;
-    const isOpen=_openMachineRows.has(r.category+'||'+r.name);
+    const machineKey=r.category+'||'+r.name+'||'+r.lic;
+    const isOpen=_openMachineRows.has(machineKey);
+    const displayName=highlight(r.name,q)+licenseSuffix(r.lic);
+    const licBadge=licenseBadgeLabel(r.lic) ? `<span class="lic-badge">${esc(licenseBadgeLabel(r.lic))}</span>` : '';
     html+=`
     <tr>
       <td class="prog-cat-cell">${r.category?`<span class="cat-badge">${esc(r.category)}</span>`:''}</td>
-      <td class="prog-name-cell">${highlight(r.name,q)}</td>
+      <td class="prog-name-cell">${displayName}${licBadge}</td>
       <td class="prog-count-cell">${r.count} / ${totalMachines} เครื่อง <span style="color:var(--tx3);font-weight:400;">(${pct}%)</span></td>
       <td><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${barPct}%"></div></div></td>
-      <td><span class="prog-machines-toggle" onclick="toggleMachines('${esc(r.category)}||${esc(r.name)}','${rid}')">${isOpen?'ซ่อนเครื่อง ▲':'ดูรายชื่อเครื่อง ▼'}</span></td>
+      <td><span class="prog-machines-toggle" onclick="toggleMachines('${esc(machineKey)}','${rid}')">${isOpen?'ซ่อนเครื่อง ▲':'ดูรายชื่อเครื่อง ▼'}</span></td>
     </tr>
     <tr class="prog-machines-row ${isOpen?'open':''}" id="row_${rid}">
       <td colspan="5">
