@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>RYG Stock — เช็คซอฟต์แวร์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="shared.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:1rem;}
+.search-box{flex:1;min-width:180px;max-width:300px;padding:8px 12px;border:1.5px solid var(--bdrm);
+  border-radius:var(--rad);font-size:13px;background:var(--surf);color:var(--tx1);}
+.search-box:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 3px var(--gll);}
+
+.page-tabs{display:flex;gap:6px;margin-bottom:1rem;border-bottom:1px solid var(--bdr);}
+.page-tab{padding:8px 16px;font-size:13px;font-weight:700;color:var(--tx3);cursor:pointer;
+  border-bottom:2.5px solid transparent;transition:all .15s;user-select:none;white-space:nowrap;}
+.page-tab:hover{color:var(--tx1);}
+.page-tab.active{color:var(--g);border-bottom-color:var(--g);}
+.page-view{display:none;}
+.page-view.active{display:block;}
+
+.comp-group{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);margin-bottom:1rem;overflow:hidden;}
+.comp-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:.75rem 1rem;
+  background:linear-gradient(135deg,var(--gll) 0%,var(--surf) 100%);border-bottom:1px solid var(--bdr);
+  cursor:pointer;user-select:none;}
+.comp-header:hover{filter:brightness(.97);}
+.comp-name{font-size:14px;font-weight:700;}
+.comp-meta{font-size:11px;color:var(--tx3);}
+.comp-ip{font-size:11px;color:var(--tx3);font-family:var(--mono);}
+
+.comp-body{display:none;}
+.comp-body.expanded{display:block;}
+
+.comp-status-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.comp-status-ok{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7;}
+.comp-status-issue{background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;}
+.comp-status-pending{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB;}
+
+.sw-table{width:100%;border-collapse:collapse;}
+.sw-table th{padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--tx3);background:var(--bg);border-bottom:1px solid var(--bdr);
+  text-align:left;white-space:nowrap;}
+.sw-row{border-bottom:1px solid var(--bdr);}
+.sw-row td{padding:7px 10px;vertical-align:top;font-size:12px;}
+.cat-badge{font-family:var(--mono);font-size:9px;background:var(--bg);border:1px solid var(--bdr);
+  border-radius:4px;padding:1px 5px;display:inline-block;white-space:nowrap;margin-right:5px;color:var(--tx3);}
+
+.comp-actions{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-top:1px solid var(--bdr);
+  background:var(--bg);}
+.comp-actions-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+
+.btn-ok{padding:7px 14px;border-radius:var(--radsm);font-size:12px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
+  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.btn-ok:hover{background:var(--gll);border-color:var(--g);color:var(--g);}
+.btn-ok.active{background:var(--g);border-color:var(--g);color:#fff;}
+
+.btn-bad{padding:7px 14px;border-radius:var(--radsm);font-size:12px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
+  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.btn-bad:hover{background:#FFF0EC;border-color:var(--r);color:var(--r);}
+.btn-bad.active{background:var(--r);border-color:var(--r);color:#fff;}
+
+.issue-note-wrap{display:none;}
+.issue-note-wrap.open{display:block;}
+.issue-note{width:100%;padding:8px 10px;border:1.5px solid var(--bdrm);border-radius:var(--radsm);
+  font-size:12px;font-family:inherit;background:var(--surf);color:var(--tx1);resize:vertical;
+  min-height:60px;box-sizing:border-box;transition:border-color .15s;}
+.issue-note:focus{outline:none;border-color:var(--am);box-shadow:0 0 0 2px var(--aml);}
+.issue-note.dirty{border-color:var(--am)!important;background:#FFFBEB!important;}
+
+.btn-save-note{display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:7px 14px;border-radius:var(--radsm);font-size:12px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--g);background:var(--g);color:#fff;
+  transition:all .2s;width:100%;box-sizing:border-box;margin-top:6px;}
+.btn-save-note:hover{filter:brightness(1.08);}
+.btn-save-note.dirty{background:var(--am);border-color:var(--am);color:#fff;}
+.btn-save-note.saving{background:var(--aml);border-color:var(--am);color:var(--am);cursor:default;}
+.btn-save-note.saved{background:#D1FAE5;border-color:#6EE7B7;color:#065F46;cursor:default;}
+.btn-save-note:disabled{opacity:.6;cursor:not-allowed;}
+
+.issue-note-display{font-size:11px;color:#991B1B;background:#FEE2E2;border:1px solid #FCA5A5;
+  border-radius:var(--radsm);padding:8px 10px;white-space:pre-wrap;line-height:1.5;}
+
+.check-date{font-size:10px;color:var(--tx3);}
+.summary-bar{display:flex;gap:16px;flex-wrap:wrap;padding:.8rem 1.2rem;
+  background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);margin-bottom:1rem;}
+.sum-item{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px;}
+.sum-num{font-size:22px;font-weight:700;line-height:1;}
+.sum-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-align:center;}
+
+.import-zone{border:2px dashed var(--bdrm);border-radius:var(--radlg);padding:2.5rem;
+  text-align:center;background:var(--bg);transition:all .2s;cursor:pointer;margin-bottom:1rem;}
+.import-zone.drag-over{border-color:var(--g);background:var(--gll);}
+.import-zone-icon{font-size:36px;margin-bottom:.6rem;}
+.import-zone p{font-size:13px;color:var(--tx3);line-height:1.8;}
+
+mark{background:#FFF176;border-radius:2px;padding:0 1px;}
+.empty-pg{text-align:center;padding:4rem 2rem;color:var(--tx3);}
+.empty-pg .icon{font-size:48px;margin-bottom:1rem;}
+
+/* Program summary table */
+.prog-summary-table{width:100%;border-collapse:collapse;background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--radlg);overflow:hidden;}
+.prog-summary-table th{padding:9px 12px;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--tx3);background:var(--bg);border-bottom:1px solid var(--bdr);
+  text-align:left;cursor:pointer;user-select:none;white-space:nowrap;}
+.prog-summary-table th:hover{color:var(--g);}
+.prog-summary-table th.sorted::after{content:' ▾';}
+.prog-summary-table tbody tr{border-bottom:1px solid var(--bdr);transition:background .15s;}
+.prog-summary-table tbody tr:hover{background:var(--bg);}
+.prog-summary-table td{padding:9px 12px;font-size:12px;vertical-align:middle;}
+.prog-name-cell{font-weight:600;}
+.prog-count-cell{font-weight:700;font-family:var(--mono);}
+.prog-bar-wrap{width:100%;height:16px;background:var(--bg);border-radius:4px;overflow:hidden;
+  position:relative;min-width:90px;}
+.prog-bar-fill{height:100%;background:var(--g);border-radius:4px;}
+.prog-cat-cell{white-space:nowrap;}
+.prog-machines-toggle{font-size:10px;color:var(--g);cursor:pointer;font-weight:700;white-space:nowrap;}
+.prog-machines-row{display:none;}
+.prog-machines-row.open{display:table-row;}
+.prog-machines-inner{padding:10px 14px;background:var(--bg);display:flex;flex-wrap:wrap;gap:6px;}
+.prog-machine-chip{font-family:var(--mono);font-size:10px;background:var(--surf);border:1px solid var(--bdr);
+  border-radius:4px;padding:2px 7px;}
+</style>
+</head>
+<body>
+<div id="loadingScreen">
+  <div style="width:52px;height:52px;background:#1D9E75;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">💿</div>
+  <div style="font-size:15px;font-weight:700;">RYG Stock System</div>
+  <div class="spinner"></div>
+</div>
+
+<div id="mainApp">
+  <div class="topbar">
+    <div class="topbar-logo">📦</div>
+    <span class="topbar-title">RYG Stock</span>
+    <div class="user-mini">
+      <img id="uAvatar" class="user-ava" src="" onerror="this.style.display='none'" alt=""/>
+      <span id="uFallback" class="user-ava"></span>
+      <span id="uName" class="user-name-top"></span>
+      <span id="uRole" class="badge-role badge-admin"></span>
+      <button class="btn-topout" onclick="doLogout()">ออก</button>
+    </div>
+  </div>
+  <div class="nav-tabs" id="navTabs"></div>
+
+  <div class="content">
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
+      <div>
+        <div style="font-size:16px;font-weight:700;">💿 เช็คซอฟต์แวร์</div>
+        <div id="pageSubtitle" style="font-size:12px;color:var(--tx3);margin-top:2px;">กรุณา Import ไฟล์ทะเบียนซอฟต์แวร์ก่อน</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-sm" onclick="downloadTemplate()">📥 ตัวอย่าง</button>
+        <label class="btn btn-sm btn-primary" style="cursor:pointer;">
+          📂 Import Excel
+          <input type="file" id="importFile" accept=".xls,.xlsx" style="display:none" onchange="handleImport(this)"/>
+        </label>
+        <button class="btn btn-sm btn-danger" id="btnClearAll" onclick="confirmClearAll()" style="display:none;">
+          🗑️ ลบทั้งหมด
+        </button>
+      </div>
+    </div>
+
+    <div class="page-tabs" id="pageTabs" style="display:none">
+      <div class="page-tab active" id="tabCheck" onclick="switchView('check')">🖥️ เช็คเครื่อง</div>
+      <div class="page-tab" id="tabSummary" onclick="switchView('summary')">📊 สรุปโปรแกรม</div>
+    </div>
+
+    <!-- ───────── VIEW: CHECK ───────── -->
+    <div class="page-view active" id="viewCheck">
+
+      <div class="summary-bar" id="summaryBar" style="display:none">
+        <div class="sum-item"><div class="sum-num" id="sumComp" style="color:var(--tx2)">0</div><div class="sum-lbl">เครื่อง</div></div>
+        <div class="sum-item"><div class="sum-num" id="sumProgInstall" style="color:var(--tx2)">0</div><div class="sum-lbl">รายการติดตั้งทั้งหมด</div></div>
+        <div class="sum-item"><div class="sum-num" id="sumChecked" style="color:var(--g)">0</div><div class="sum-lbl">เช็คแล้ว</div></div>
+        <div class="sum-item"><div class="sum-num" id="sumOk" style="color:var(--g)">0</div><div class="sum-lbl">ตรงทุกโปรแกรม</div></div>
+        <div class="sum-item"><div class="sum-num" id="sumIssue" style="color:var(--r)">0</div><div class="sum-lbl">พบปัญหา</div></div>
+      </div>
+
+      <div class="toolbar" id="toolbarRow" style="display:none">
+        <input class="search-box" type="text" id="searchInput"
+          placeholder="🔎 ค้นหาชื่อเครื่อง / พนักงาน / โปรแกรม..."
+          oninput="renderCheckView()"/>
+        <select id="filterSel" class="btn btn-sm" style="padding:6px 10px;font-size:12px;width:auto;cursor:pointer;" onchange="renderCheckView()">
+          <option value="">แสดงทั้งหมด</option>
+          <option value="pending">⏳ ยังไม่ได้เช็ค</option>
+          <option value="ok">✅ ตรงทุกโปรแกรม</option>
+          <option value="issue">⚠️ พบปัญหา</option>
+        </select>
+        <select id="sortSel" class="btn btn-sm" style="padding:6px 10px;font-size:12px;width:auto;cursor:pointer;" onchange="renderCheckView()">
+          <option value="name">🔤 เรียงตามชื่อเครื่อง</option>
+          <option value="issue">⚠️ พบปัญหาก่อน</option>
+          <option value="pending">⏳ ยังไม่เช็คก่อน</option>
+        </select>
+        <button class="btn btn-sm" onclick="expandAll()">📂 ขยายทั้งหมด</button>
+        <button class="btn btn-sm" onclick="collapseAll()">📁 ย่อทั้งหมด</button>
+      </div>
+
+      <div class="import-zone" id="importZone"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleDrop(event)"
+        onclick="document.getElementById('importFile').click()">
+        <div class="import-zone-icon">💿</div>
+        <p><strong>คลิกหรือลากไฟล์ Excel มาวางที่นี่</strong><br>
+        รองรับ .xls และ .xlsx (ไฟล์ทะเบียนประวัติซอฟต์แวร์)<br>
+        <span style="font-size:11px;color:#bbb;">โครงสร้าง: Computer name | IP Address | ชื่อ-สกุล | ตำแหน่ง | Program | Version | Remark</span></p>
+      </div>
+
+      <div id="assetList"></div>
+    </div>
+
+    <!-- ───────── VIEW: SUMMARY ───────── -->
+    <div class="page-view" id="viewSummary">
+      <div class="toolbar" id="summaryToolbarRow" style="display:none">
+        <input class="search-box" type="text" id="progSearchInput"
+          placeholder="🔎 ค้นหาชื่อโปรแกรม..."
+          oninput="renderSummaryView()"/>
+        <select id="progCatSel" class="btn btn-sm" style="padding:6px 10px;font-size:12px;width:auto;cursor:pointer;" onchange="renderSummaryView()">
+          <option value="">ทุกหมวด</option>
+        </select>
+      </div>
+      <div id="summaryContent"></div>
+    </div>
+
+  </div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+</div>
+<div id="notif"></div>
+
+<script>
+let currentUser=null, currentRole='user', db=null;
+let swData={}, swState={};
+let currentView='check';
+let _progSort={key:'count',dir:'desc'};
+let _openMachineRows=new Set();
+
+initShell('checksoftware', async(user,role,firestore)=>{
+  currentUser=user; currentRole=role; db=firestore;
+  startRealtimeSync();
+});
+
+function _sessionRef(){ return db.collection('softwareCheckSessions').doc('shared'); }
+
+let _saveTimer=null, _isSaving=false;
+function saveStorage(){
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(async()=>{
+    _isSaving=true;
+    try{
+      await _sessionRef().set({
+        swData:  JSON.stringify(swData),
+        swState: JSON.stringify(swState),
+        updatedAt:  firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy:  currentUser?.uid||'',
+        updatedByName: currentUser?.displayName||currentUser?.email||'',
+      },{merge:true});
+    }catch(e){ console.warn('Firestore save error:',e); }
+    finally{ setTimeout(()=>{ _isSaving=false; },2000); }
+  },600);
+}
+
+let _unsubscribe=null;
+function startRealtimeSync(){
+  if(_unsubscribe) _unsubscribe();
+  _unsubscribe=_sessionRef().onSnapshot(snap=>{
+    if(_isSaving) return;
+    if(snap.exists){
+      const d=snap.data();
+      try{
+        if(d.swData)  swData=JSON.parse(d.swData);
+        if(d.swState) swState=JSON.parse(d.swState);
+      }catch(e){}
+    } else { swData={}; swState={}; }
+    _ckIndex={}; _ckIndexRev={};
+    renderAll();
+    if(snap.exists && snap.data().updatedByName && snap.data().updatedBy!==currentUser?.uid)
+      showNotif(`🔄 ${snap.data().updatedByName} อัปเดตข้อมูลแล้ว`,'info');
+  }, err=>console.warn('Snapshot error:',err));
+}
+
+let _ckIndex={}, _ckIndexRev={};
+function getCkId(ck){
+  if(_ckIndex[ck]===undefined){ const n=Object.keys(_ckIndex).length; _ckIndex[ck]=n; _ckIndexRev[n]=ck; }
+  return _ckIndex[ck];
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function highlight(s,q){
+  if(!q) return esc(s);
+  const e=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return esc(s).replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`);
+}
+
+// ── View switching ────────────────────────────────
+function switchView(v){
+  currentView=v;
+  document.getElementById('tabCheck').classList.toggle('active', v==='check');
+  document.getElementById('tabSummary').classList.toggle('active', v==='summary');
+  document.getElementById('viewCheck').classList.toggle('active', v==='check');
+  document.getElementById('viewSummary').classList.toggle('active', v==='summary');
+  if(v==='summary') renderSummaryView();
+}
+
+// ── Import ────────────────────────────────────────
+function handleImport(input){ const f=input.files[0]; if(!f)return; input.value=''; readExcelFile(f); }
+function handleDrop(e){
+  e.preventDefault(); document.getElementById('importZone').classList.remove('drag-over');
+  const f=e.dataTransfer.files[0]; if(f) readExcelFile(f);
+}
+function readExcelFile(file){
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    try{
+      const buf=ev.target.result; // ArrayBuffer
+      let wb;
+      try{
+        // ไฟล์ทะเบียนซอฟต์แวร์ส่วนใหญ่จริง ๆ แล้วเป็นไฟล์ HTML (นามสกุล .xls) เข้ารหัสแบบ windows-874 (ภาษาไทย)
+        // ต้อง decode ด้วย TextDecoder ก่อน แล้วค่อยให้ SheetJS อ่านแบบ type:'string' ไม่งั้นภาษาไทยจะเพี้ยน
+        const text874=new TextDecoder('windows-874').decode(buf);
+        wb=XLSX.read(text874,{type:'string'});
+      }catch(err){
+        // fallback: ไฟล์ .xlsx/.xls แบบไบนารีจริง
+        wb=XLSX.read(buf,{type:'array'});
+      }
+      const parsed=parseWorkbook(wb);
+      const n=Object.keys(parsed).length;
+      if(n===0){ showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error'); return; }
+      swData=parsed;
+      const valid=new Set(Object.keys(swData));
+      Object.keys(swState).forEach(k=>{ if(!valid.has(k)) delete swState[k]; });
+      _ckIndex={}; _ckIndexRev={};
+      saveStorage(); renderAll();
+      showNotif(`Import สำเร็จ พบ ${n} เครื่อง`);
+    }catch(err){ showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// รองรับไฟล์ทะเบียนซอฟต์แวร์แบบ HTML-export (.xls ที่จริงๆเป็น HTML, encoding windows-874)
+// โครงสร้าง: หลายเครื่อง ๆ ละ 1 "ตาราง" ซ้อนกัน ซึ่ง SheetJS จะแยกเป็นคนละ Sheet (Sheet1, Sheet2, ...)
+// จึงต้องวนอ่านทุก Sheet แล้วต่อแถวรวมกันก่อนค่อยตัดแบ่งเป็นบล็อกเครื่องตาม "Computer name:"
+function rowsFromWorkbook(wb){
+  let rows=[];
+  wb.SheetNames.forEach(name=>{
+    const ws=wb.Sheets[name];
+    rows=rows.concat(XLSX.utils.sheet_to_json(ws,{header:1,defval:''}));
+  });
+  return rows;
+}
+function findLabelValue(row,label,re){
+  const idx=re ? row.findIndex(c=>re.test(c)) : row.findIndex(c=>c===label);
+  if(idx===-1) return '';
+  // ค่ามักอยู่ในเซลล์ถัดไปที่ "ไม่ว่าง" ถัดจาก label (กันกรณี colspan ทำให้มีเซลล์ว่างคั่น)
+  for(let k=idx+1;k<row.length;k++){ if(row[k]) return row[k]; }
+  return '';
+}
+function parseWorkbook(wb){
+  const result={};
+  const rows=rowsFromWorkbook(wb);
+
+  let currentComp=null, ck=null, inItems=false;
+  for(let i=0;i<rows.length;i++){
+    const row=(rows[i]||[]).map(c=>String(c).trim());
+    const ci=row.findIndex(c=>c==='Computer name:');
+    if(ci!==-1){
+      ck=findLabelValue(row,'Computer name:')||`COMP_${i}`;
+      const ip=findLabelValue(row,null,/IP\s*Address/i);
+      // หาแถวชื่อ-สกุล / ตำแหน่ง / สถานะ INTERNET ในบล็อกถัดไปก่อนตาราง Program
+      let emp='', pos='', net='';
+      for(let j=i+1;j<Math.min(i+8,rows.length);j++){
+        const r2=(rows[j]||[]).map(c=>String(c).trim());
+        if(r2.some(c=>c==='ชื่อ-สกุล')) emp=findLabelValue(r2,'ชื่อ-สกุล');
+        if(r2.some(c=>c==='ตำแหน่ง')) pos=findLabelValue(r2,'ตำแหน่ง');
+        if(r2.some(c=>/INTERNET/i.test(c))) net=findLabelValue(r2,null,/INTERNET/i);
+        if(r2.some(c=>c==='Program')) break;
+      }
+      if(!result[ck]) result[ck]={computerName:ck,ip,employee:emp,position:pos,internet:net,programs:[]};
+      currentComp=result[ck]; inItems=false; continue;
+    }
+    if(row.includes('Program')&&row.includes('Version')){ inItems=true; continue; }
+    if(currentComp&&inItems){
+      const has=row.some(c=>c.length>0); if(!has){ inItems=false; continue; }
+      let name=row[0];
+      if(!name) continue;
+      if(name==='Program'||name==='ลำดับ') continue;
+      const version=row[1]||'', remark=row[2]||'';
+      // แยกหมวดหมู่ [OS] [OFFICE] [VIRUS] [ZIP] [WEB] [ETC] ถ้ามี
+      let category='';
+      const catM=name.match(/^\[([A-Za-z]+)\]\s*/);
+      if(catM){ category=catM[1]; name=name.replace(catM[0],''); }
+      currentComp.programs.push({category,name,version,remark});
+    }
+  }
+  Object.keys(result).forEach(k=>{ if(!result[k].programs.length) delete result[k]; });
+  return result;
+}
+
+// ── Template ──────────────────────────────────────
+function downloadTemplate(){
+  const wb=XLSX.utils.book_new();
+  const d=[
+    ['HO'],
+    ['ข้อมูลพนักงานที่รับผิดชอบ',''],
+    ['Computer name:','ACC001-RYG','IP Address','192.168.101.100'],
+    ['ชื่อ-สกุล','สมชาย ตัวอย่าง','ตำแหน่ง','พนักงาน IT'],
+    ['','','สถานะการใช้งาน INTERNET','OPEN'],
+    ['ข้อมูลซอฟต์แวร์'],
+    ['Program','Version','Remark'],
+    ['[OS] Windows 10','PRO OEM 64-bit',''],
+    ['[OFFICE] LibreOffice','',''],
+    ['[ZIP] 7-Zip','',''],
+    ['[VIRUS] Kaspersky V2565','',''],
+    ['[ETC] Google Chrome','',''],
+    ['[ETC] AnyDesk','',''],
+    [''],
+    ['HO'],
+    ['ข้อมูลพนักงานที่รับผิดชอบ',''],
+    ['Computer name:','MMD001-RYG','IP Address','192.168.101.101'],
+    ['ชื่อ-สกุล','สมหญิง ตัวอย่าง','ตำแหน่ง','ผู้จัดการ'],
+    ['','','สถานะการใช้งาน INTERNET','CLOSE'],
+    ['ข้อมูลซอฟต์แวร์'],
+    ['Program','Version','Remark'],
+    ['[OS] Windows 11','',''],
+    ['[OFFICE] Office 2021','',''],
+    ['[ZIP] 7-Zip','',''],
+    ['[VIRUS] Kaspersky V2565','',''],
+    ['[ETC] Adobe Reader','',''],
+    [''],
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(d);
+  ws['!cols']=[{wch:24},{wch:24},{wch:22},{wch:26}];
+  XLSX.utils.book_append_sheet(wb,ws,'SoftwareList');
+  XLSX.writeFile(wb,'checksoftware_template.xlsx');
+  showNotif('ดาวน์โหลดไฟล์ตัวอย่างแล้ว');
+}
+
+// ── Stats ─────────────────────────────────────────
+function calcStats(){
+  let computers=0, progInstalls=0, checked=0, ok=0, issue=0;
+  Object.keys(swData).forEach(ck=>{
+    computers++;
+    progInstalls+=swData[ck].programs.length;
+    const st=swState[ck]||{};
+    if(st.checked){
+      checked++;
+      if(st.status==='issue') issue++; else if(st.status==='ok') ok++;
+    }
+  });
+  return{computers,progInstalls,checked,ok,issue};
+}
+function updateSummary(){
+  const s=calcStats(), el=id=>document.getElementById(id);
+  if(el('sumComp'))         el('sumComp').textContent=s.computers;
+  if(el('sumProgInstall'))  el('sumProgInstall').textContent=s.progInstalls;
+  if(el('sumChecked'))      el('sumChecked').textContent=s.checked;
+  if(el('sumOk'))           el('sumOk').textContent=s.ok;
+  if(el('sumIssue'))        el('sumIssue').textContent=s.issue;
+  if(el('pageSubtitle'))
+    el('pageSubtitle').textContent=`${s.computers} เครื่อง · เช็คแล้ว ${s.checked}/${s.computers} เครื่อง · พบปัญหา ${s.issue} เครื่อง`;
+}
+
+// ── Render (top-level) ────────────────────────────
+function renderAll(){
+  _ckIndex={}; _ckIndexRev={};
+  const hasData=Object.keys(swData).length>0;
+  document.getElementById('pageTabs').style.display=hasData?'flex':'none';
+  document.getElementById('btnClearAll').style.display=hasData?'':'none';
+  if(!hasData){ switchView('check'); }
+  if(currentView==='check') renderCheckView();
+  else renderSummaryView();
+}
+
+// ── Render: CHECK view ────────────────────────────
+function renderCheckView(){
+  const hasData=Object.keys(swData).length>0;
+  const q=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();
+  const filter=document.getElementById('filterSel')?.value||'';
+
+  document.getElementById('importZone').style.display=hasData?'none':'block';
+  document.getElementById('summaryBar').style.display=hasData?'flex':'none';
+  document.getElementById('toolbarRow').style.display=hasData?'flex':'none';
+  if(hasData) updateSummary();
+
+  const list=document.getElementById('assetList');
+  if(!hasData){ list.innerHTML=''; return; }
+
+  const sort=document.getElementById('sortSel')?.value||'name';
+  const sortedCks=Object.keys(swData).sort((a,b)=>{
+    if(sort==='name') return a.localeCompare(b,'th');
+    const stA=swState[a]||{}, stB=swState[b]||{};
+    if(sort==='issue'){
+      const ia=stA.status==='issue'?1:0, ib=stB.status==='issue'?1:0;
+      return ib-ia||a.localeCompare(b,'th');
+    }
+    if(sort==='pending'){
+      const pa=stA.checked?0:1, pb=stB.checked?0:1;
+      return pb-pa||a.localeCompare(b,'th');
+    }
+    return 0;
+  });
+
+  let html='', visCount=0;
+  sortedCks.forEach(ck=>{
+    const comp=swData[ck], cid=getCkId(ck), st=swState[ck]||{};
+
+    if(q){
+      const progHay=comp.programs.map(p=>`${p.category} ${p.name} ${p.version} ${p.remark}`).join(' ');
+      const hay=[ck,comp.ip,comp.employee,comp.position,progHay].join(' ').toLowerCase();
+      if(!hay.includes(q)) return;
+    }
+    if(filter==='pending' && st.checked) return;
+    if(filter==='ok' && !(st.checked&&st.status==='ok')) return;
+    if(filter==='issue' && !(st.checked&&st.status==='issue')) return;
+
+    visCount++;
+
+    let badgeCls,badgeTxt,nameColor,iconBg,iconBdr;
+    if(st.checked&&st.status==='issue'){ badgeCls='comp-status-issue'; badgeTxt='⚠️ มีปัญหา'; nameColor='#991B1B'; iconBg='#FEE2E2'; iconBdr='#FCA5A5'; }
+    else if(st.checked&&st.status==='ok'){ badgeCls='comp-status-ok'; badgeTxt='✅ ตรงทุกโปรแกรม'; nameColor='#065F46'; iconBg='var(--g)'; iconBdr='var(--g)'; }
+    else{ badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค'; nameColor=''; iconBg='var(--bg)'; iconBdr='var(--bdrm)'; }
+
+    const noteDisplay = (st.checked&&st.status==='issue'&&st.note)
+      ? `<div class="issue-note-display">${esc(st.note).replace(/\n/g,'<br>')}</div>` : '';
+
+    html+=`
+<div class="comp-group">
+  <div class="comp-header" onclick="toggleComp(${cid})">
+    <div style="width:34px;height:34px;background:${iconBg};
+      border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;
+      border:1.5px solid ${iconBdr};flex-shrink:0;">🖥️</div>
+    <div style="flex:1;min-width:0;">
+      <div class="comp-name" style="${nameColor?`color:${nameColor};`:''}">
+        ${highlight(comp.computerName,q)}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:2px;">
+        <span class="comp-status-badge ${badgeCls}">${badgeTxt}</span>
+        ${comp.ip?`<span class="comp-ip">${esc(comp.ip)}</span>`:''}
+        ${comp.employee?`<span class="comp-meta">👤 ${highlight(comp.employee,q)}</span>`:''}
+        ${comp.position?`<span class="comp-meta">💼 ${highlight(comp.position,q)}</span>`:''}
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <span class="comp-meta">${comp.programs.length} โปรแกรม</span>
+      <span id="tog${cid}" style="font-size:12px;color:var(--tx3);">▼</span>
+    </div>
+  </div>
+  <div class="comp-body" id="body${cid}">
+    <div style="overflow-x:auto;">
+    <table class="sw-table">
+      <thead><tr>
+        <th style="width:28px;">#</th>
+        <th>หมวด</th>
+        <th>โปรแกรม</th>
+        <th>เวอร์ชัน</th>
+        <th>หมายเหตุในทะเบียน</th>
+      </tr></thead>
+      <tbody>
+      ${comp.programs.map((p,i)=>`
+      <tr class="sw-row">
+        <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
+        <td>${p.category?`<span class="cat-badge">${esc(p.category)}</span>`:''}</td>
+        <td style="font-weight:600;">${highlight(p.name,q)}</td>
+        <td style="color:var(--tx2);">${highlight(p.version,q)}</td>
+        <td style="color:var(--tx3);">${highlight(p.remark,q)}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>
+
+    <div class="comp-actions">
+      <div class="comp-actions-row">
+        <button class="btn-ok ${st.checked&&st.status==='ok'?'active':''}"
+          onclick="setStatus('${esc(ck)}',${cid},'ok')">
+          ✅ ตรงทุกโปรแกรม
+        </button>
+        <button class="btn-bad ${st.checked&&st.status==='issue'?'active':''}"
+          id="btnissue_${cid}"
+          onclick="setStatus('${esc(ck)}',${cid},'issue')">
+          ⚠️ มีปัญหา
+        </button>
+        ${st.checkedAt?`<span class="check-date">🕐 ${esc(st.checkedAt)}</span>`:''}
+        ${st.checkedBy?`<span class="check-date">👤 ${esc(st.checkedBy)}</span>`:''}
+      </div>
+
+      <div class="issue-note-wrap ${st.checked&&st.status==='issue'?'open':''}" id="notewrap_${cid}">
+        <textarea class="issue-note" id="note_${cid}"
+          placeholder="ระบุรายละเอียดที่ต่างจากทะเบียน เช่น ลงโปรแกรมเพิ่ม / ไม่มีโปรแกรมที่ควรมี / เวอร์ชันไม่ตรง ฯลฯ"
+          oninput="markNoteDirty(${cid})">${esc(st.note||'')}</textarea>
+        <button class="btn-save-note" id="savenote_${cid}" onclick="saveNote('${esc(ck)}',${cid})">
+          💾 บันทึกรายละเอียด
+        </button>
+      </div>
+
+      <div id="notedisplay_${cid}">${noteDisplay}</div>
+    </div>
+  </div>
+</div>`;
+  });
+
+  if(!visCount){
+    html=`<div class="empty-pg"><div class="icon">🔍</div>
+      <p>ไม่พบรายการที่ตรงกับเงื่อนไข<br>ลองปรับตัวกรองหรือคำค้นหา</p></div>`;
+  }
+  list.innerHTML=html;
+}
+
+// ── Set status (ok / issue) ───────────────────────
+function setStatus(ck,cid,status){
+  const st=swState[ck]||{};
+  const turningOff = st.checked && st.status===status;
+  if(!confirm(turningOff?'ยกเลิกผลการเช็ค?':`ยืนยันว่า "${status==='ok'?'ตรงทุกโปรแกรม':'มีปัญหา'}"?`)) return;
+
+  if(turningOff){
+    delete swState[ck];
+  } else {
+    swState[ck]={
+      checked:true,
+      status,
+      note: status==='issue' ? (st.note||'') : '',
+      checkedAt:new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}),
+      checkedBy:currentUser?.displayName||currentUser?.email||'',
+    };
+  }
+  saveStorage();
+  renderCheckView();
+}
+
+function markNoteDirty(cid){
+  const ta=document.getElementById(`note_${cid}`);
+  if(ta) ta.classList.add('dirty');
+  const btn=document.getElementById(`savenote_${cid}`);
+  if(btn){ btn.classList.remove('saved'); btn.classList.add('dirty'); btn.innerHTML='💾 บันทึกรายละเอียด (มีการเปลี่ยนแปลง)'; }
+}
+
+async function saveNote(ck,cid){
+  const ta=document.getElementById(`note_${cid}`);
+  const btn=document.getElementById(`savenote_${cid}`);
+  if(!ta) return;
+  const val=ta.value.trim();
+
+  if(btn){ btn.classList.remove('dirty'); btn.classList.add('saving'); btn.innerHTML='⏳ กำลังบันทึก...'; btn.disabled=true; }
+
+  if(!swState[ck]) swState[ck]={checked:true,status:'issue'};
+  swState[ck].note=val;
+  ta.classList.remove('dirty');
+
+  await new Promise(r=>{ saveStorage(); setTimeout(r,700); });
+
+  if(btn){ btn.classList.remove('saving'); btn.classList.add('saved'); btn.innerHTML='✅ บันทึกแล้ว'; btn.disabled=false; }
+
+  const dispEl=document.getElementById(`notedisplay_${cid}`);
+  if(dispEl) dispEl.innerHTML = val ? `<div class="issue-note-display">${esc(val).replace(/\n/g,'<br>')}</div>` : '';
+  updateSummary();
+
+  setTimeout(()=>{
+    const b=document.getElementById(`savenote_${cid}`);
+    if(b){ b.classList.remove('saved'); b.innerHTML='💾 บันทึกรายละเอียด'; }
+  },800);
+}
+
+// ── Comp collapse ─────────────────────────────────
+function toggleComp(cid){
+  const body=document.getElementById('body'+cid), tog=document.getElementById('tog'+cid);
+  if(!body) return;
+  const ex=body.classList.toggle('expanded');
+  if(tog) tog.textContent=ex?'▲':'▼';
+}
+function expandAll(){
+  Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.add('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▲'; });
+}
+function collapseAll(){
+  Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.remove('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▼'; });
+}
+
+// ── Render: SUMMARY view (แต่ละโปรแกรมใช้กี่เครื่อง) ─
+function buildProgramSummary(){
+  const map={}; // key: "category||name" -> {category,name,count,machines:[]}
+  Object.keys(swData).forEach(ck=>{
+    swData[ck].programs.forEach(p=>{
+      const key=`${p.category}||${p.name}`;
+      if(!map[key]) map[key]={category:p.category,name:p.name,count:0,machines:[]};
+      map[key].count++;
+      map[key].machines.push(ck);
+    });
+  });
+  return Object.values(map);
+}
+
+function renderSummaryView(){
+  const hasData=Object.keys(swData).length>0;
+  document.getElementById('summaryToolbarRow').style.display=hasData?'flex':'none';
+  const wrap=document.getElementById('summaryContent');
+  if(!hasData){ wrap.innerHTML=''; return; }
+
+  const totalMachines=Object.keys(swData).length;
+  let rows=buildProgramSummary();
+
+  // populate category filter once per render (cheap, list is small)
+  const catSel=document.getElementById('progCatSel');
+  const cats=[...new Set(rows.map(r=>r.category).filter(Boolean))].sort();
+  const prevCat=catSel.value;
+  catSel.innerHTML='<option value="">ทุกหมวด</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  catSel.value=cats.includes(prevCat)?prevCat:'';
+
+  const q=(document.getElementById('progSearchInput')?.value||'').trim().toLowerCase();
+  const catFilter=catSel.value;
+
+  if(q) rows=rows.filter(r=>`${r.category} ${r.name}`.toLowerCase().includes(q));
+  if(catFilter) rows=rows.filter(r=>r.category===catFilter);
+
+  rows.sort((a,b)=>{
+    let av,bv;
+    if(_progSort.key==='name'){ av=a.name; bv=b.name; }
+    else if(_progSort.key==='category'){ av=a.category; bv=b.category; }
+    else { av=a.count; bv=b.count; }
+    let cmp = typeof av==='string' ? av.localeCompare(bv,'th') : av-bv;
+    return _progSort.dir==='desc' ? -cmp : cmp;
+  });
+
+  if(!rows.length){
+    wrap.innerHTML=`<div class="empty-pg"><div class="icon">🔍</div><p>ไม่พบโปรแกรมที่ตรงกับเงื่อนไข</p></div>`;
+    return;
+  }
+
+  const maxCount=Math.max(...rows.map(r=>r.count),1);
+  const arrow=(key)=>_progSort.key===key?(_progSort.dir==='desc'?' ▾':' ▴'):'';
+
+  let html=`
+  <table class="prog-summary-table">
+    <thead><tr>
+      <th onclick="sortProgBy('category')">หมวด${arrow('category')}</th>
+      <th onclick="sortProgBy('name')">ชื่อโปรแกรม${arrow('name')}</th>
+      <th onclick="sortProgBy('count')">จำนวนเครื่องที่ติดตั้ง${arrow('count')}</th>
+      <th>สัดส่วน</th>
+      <th></th>
+    </tr></thead>
+    <tbody>`;
+
+  rows.forEach((r,idx)=>{
+    const pct=Math.round(r.count/totalMachines*100);
+    const barPct=Math.round(r.count/maxCount*100);
+    const rid=`pm_${idx}`;
+    const isOpen=_openMachineRows.has(r.category+'||'+r.name);
+    html+=`
+    <tr>
+      <td class="prog-cat-cell">${r.category?`<span class="cat-badge">${esc(r.category)}</span>`:''}</td>
+      <td class="prog-name-cell">${highlight(r.name,q)}</td>
+      <td class="prog-count-cell">${r.count} / ${totalMachines} เครื่อง <span style="color:var(--tx3);font-weight:400;">(${pct}%)</span></td>
+      <td><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${barPct}%"></div></div></td>
+      <td><span class="prog-machines-toggle" onclick="toggleMachines('${esc(r.category)}||${esc(r.name)}','${rid}')">${isOpen?'ซ่อนเครื่อง ▲':'ดูรายชื่อเครื่อง ▼'}</span></td>
+    </tr>
+    <tr class="prog-machines-row ${isOpen?'open':''}" id="row_${rid}">
+      <td colspan="5">
+        <div class="prog-machines-inner">
+          ${r.machines.sort((a,b)=>a.localeCompare(b,'th')).map(m=>`<span class="prog-machine-chip">${esc(m)}</span>`).join('')}
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+function sortProgBy(key){
+  if(_progSort.key===key) _progSort.dir=_progSort.dir==='desc'?'asc':'desc';
+  else { _progSort.key=key; _progSort.dir = key==='count' ? 'desc' : 'asc'; }
+  renderSummaryView();
+}
+
+function toggleMachines(progKey,rid){
+  if(_openMachineRows.has(progKey)) _openMachineRows.delete(progKey);
+  else _openMachineRows.add(progKey);
+  renderSummaryView();
+}
+
+// ── Clear all ─────────────────────────────────────
+async function confirmClearAll(){
+  if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย')) return;
+  swData={}; swState={}; _ckIndex={}; _ckIndexRev={}; _openMachineRows=new Set();
+  try{ await _sessionRef().delete(); }catch(e){}
+  renderAll(); showNotif('ลบข้อมูลทั้งหมดแล้ว');
+}
+</script>
+</body>
+</html>
