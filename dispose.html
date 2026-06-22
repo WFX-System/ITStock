@@ -134,6 +134,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .doc-title{font-size:18pt;font-weight:700;margin-bottom:4px;}
 .doc-meta{font-size:11pt;color:#555;margin-top:4px;}
 
+.print-page{display:flex;flex-direction:column;min-height:259mm;}
+.print-page-items{flex:1;display:flex;flex-direction:column;justify-content:center;gap:28px;}
+.print-page-items.count-1{justify-content:center;}
+.print-page-items.count-2{justify-content:space-evenly;}
+
 .pi{page-break-inside:avoid;}
 .pi-hdr{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;}
 .pi-num{font-size:13pt;font-weight:700;}
@@ -141,7 +146,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .pi-sn{font-size:12pt;font-family:'IBM Plex Mono',monospace;}
 .pi-name{font-size:11pt;color:#444;margin-bottom:6px;margin-left:22px;}
 
-.pi-imgs{display:grid;grid-template-columns:1fr;gap:6px;margin-left:22px;margin-top:4px;}
+.pi-imgs{display:grid;grid-template-columns:1fr;gap:10px;margin-left:22px;margin-top:6px;}
 .pi-imgs.cols-2{grid-template-columns:1fr 1fr;}
 .pi-img-cell{border:1px solid #ccc;border-radius:6px;overflow:hidden;background:#fafafa;aspect-ratio:4/3;page-break-inside:avoid;}
 .pi-img-cell.span-2{grid-column:1/-1;}
@@ -157,7 +162,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .preview-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;border-radius:12px 12px 0 0;border-bottom:1px solid #E5E7EB;position:sticky;top:0;z-index:10;max-width:794px;margin:0 auto;}
 .preview-toolbar-title{font-size:13px;font-weight:700;}
 .preview-a4-wrap{max-width:794px;margin:0 auto;}
-.a4-page{background:#fff;width:794px;min-height:1123px;padding:53px 60px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);position:relative;}
+.a4-page{background:#fff;width:794px;min-height:1123px;padding:53px 60px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,.15);position:relative;display:flex;flex-direction:column;}
 .a4-page:first-child .doc-header{display:block;}
 .a4-page:not(:first-child) .doc-header{display:none;}
 
@@ -970,7 +975,7 @@ function buildItemHTML(item,globalIdx){
   } else {
     imgsHTML=`<div style="margin-left:22px;font-size:10pt;color:#aaa;padding:4px 0;">(ไม่มีรูปภาพ)</div>`;
   }
-  return`<div class="pi"><div class="pi-hdr">${hdr}</div>${nameRow}${imgsHTML}</div>`;
+  return`<div class="pi">${`<div class="pi-hdr">${hdr}</div>${nameRow}${imgsHTML}`}</div>`;
 }
 
 function groupItems(srcItems){
@@ -1011,24 +1016,25 @@ function buildPages(srcItems){
 function buildPageHTML(pageBlocks,isFirst,meta,totalItems){
   const{title,ref,dept,dateStr}=meta;
   const metaParts=[dept&&`🏢 ${dept}`,ref&&`📄 ${ref}`,dateStr&&`📅 ${dateStr}`].filter(Boolean).join(' · ');
-  let html='';
+  let headHTML='';
   if(isFirst){
-    html+=`<div class="doc-header">
+    headHTML+=`<div class="doc-header">
       <div class="doc-title">${escHtml(title)}</div>
       ${metaParts?`<div class="doc-meta">${metaParts}</div>`:''}
     </div>`;
   }
+  const headingBlocks=pageBlocks.filter(b=>b.type==='heading');
   const itemsInPage=pageBlocks.filter(b=>b.type==='item');
-  pageBlocks.forEach((blk,bi)=>{
+  let bodyHTML='';
+  pageBlocks.forEach((blk)=>{
     if(blk.type==='heading'){
-      html+=`<div class="pi-cat-heading" style="background:${lightenHex(blk.grp.color||'#9CA3AF')};color:${blk.grp.color||'#374151'};">🏷️ ${escHtml(blk.grp.name)}</div>`;
+      bodyHTML+=`<div class="pi-cat-heading" style="background:${lightenHex(blk.grp.color||'#9CA3AF')};color:${blk.grp.color||'#374151'};">🏷️ ${escHtml(blk.grp.name)}</div>`;
     } else {
-      const itemIdx=itemsInPage.indexOf(blk);
-      if(itemIdx===1){html+=`<hr class="pi-divider"/>`;}
-      html+=buildItemHTML(blk.item,blk.globalIdx);
+      bodyHTML+=buildItemHTML(blk.item,blk.globalIdx);
     }
   });
-  return html;
+  const countClass='count-'+Math.min(itemsInPage.length,2);
+  return`${headHTML}<div class="print-page-items ${countClass}">${bodyHTML}</div>`;
 }
 
 // ── Preview ───────────────────────────────────────────────────────
@@ -1042,13 +1048,14 @@ function openPreview(){
   pages.forEach((pageBlocks,pi)=>{
     const div=document.createElement('div');
     div.className='a4-page doc-render';
-    div.innerHTML=buildPageHTML(pageBlocks,pi===0,meta,srcItems.length);
+    let inner=buildPageHTML(pageBlocks,pi===0,meta,srcItems.length);
     if(pi===pages.length-1){
-      div.innerHTML+=`<div class="doc-footer">
+      inner+=`<div class="doc-footer">
         <span>จำนวน ${srcItems.length} รายการ</span>
         <span>พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</span>
       </div>`;
     }
+    div.innerHTML=inner;
     wrap.appendChild(div);
   });
   document.getElementById('previewOverlay').classList.add('open');
@@ -1070,7 +1077,7 @@ function doPrint(){
       <span>จำนวน ${srcItems.length} รายการ</span>
       <span>พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</span>
     </div>`:'';
-    html+=`<div style="${!isLast?'page-break-after:always;':''}">${pageContent}${footer}</div>`;
+    html+=`<div class="print-page" style="${!isLast?'page-break-after:always;':''}">${pageContent}${footer}</div>`;
   });
   html+='</div>';
   document.getElementById('printArea').innerHTML=html;
