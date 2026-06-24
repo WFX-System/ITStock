@@ -586,25 +586,60 @@ function getOsGroupName(name){
    KEYWORD PICKER HELPERS
    ══════════════════════════════════════════ */
 
-/** Windows version keywords that can be toggled individually */
-const WIN_VERSION_KEYWORDS=[
-  'windows xp','windows vista','windows 7','windows 8','windows 8.1',
-  'windows 10','windows 11','windows server 2008','windows server 2012',
-  'windows server 2016','windows server 2019','windows server 2022',
+/**
+ * Windows versions we recognise.
+ * Each entry: { ver: 'windows 10', label: '10' }
+ */
+const WIN_VERSIONS=[
+  {ver:'windows xp',      label:'XP'},
+  {ver:'windows vista',   label:'Vista'},
+  {ver:'windows 7',       label:'7'},
+  {ver:'windows 8',       label:'8'},
+  {ver:'windows 8.1',     label:'8.1'},
+  {ver:'windows 10',      label:'10'},
+  {ver:'windows 11',      label:'11'},
+  {ver:'windows server 2008', label:'Server 2008'},
+  {ver:'windows server 2012', label:'Server 2012'},
+  {ver:'windows server 2016', label:'Server 2016'},
+  {ver:'windows server 2019', label:'Server 2019'},
+  {ver:'windows server 2022', label:'Server 2022'},
 ];
+
+/**
+ * License type suffixes appended to build the final keyword.
+ * A keyword like "windows 10|oem" means: match windows 10 AND remark/name contains OEM.
+ * We encode this as a pipe-delimited string so a single "keyword" = (version)|(lictype).
+ * countUsage() must understand this format.
+ *
+ * Special value 'any' = match the version regardless of licence type.
+ */
+const WIN_LIC_TYPES=[
+  {id:'any', label:'ทุกประเภท', badge:''},
+  {id:'vl',  label:'Volume License', badge:'VL'},
+  {id:'oem', label:'OEM',            badge:'OEM'},
+  {id:'oei', label:'OEI',            badge:'OEI'},
+  {id:'fpp', label:'FPP',            badge:'FPP'},
+];
+
+/** Encode a win-version+lic combo as a storable keyword string */
+function encodeWinKw(ver, licId){ return licId==='any'?`win:${ver}`:`win:${ver}|${licId}`; }
+function isWinKw(kw){ return String(kw||'').startsWith('win:'); }
+function decodeWinKw(kw){
+  const s=String(kw).replace(/^win:/,'');
+  const [ver,licId='']=s.split('|');
+  return {ver, licId: licId||'any'};
+}
 
 /** Collect all unique program names from swData, grouped by category */
 function collectProgramList(){
-  const map={}; // category -> Set of names
+  const map={};
   Object.values(swData).forEach(comp=>{
     comp.programs.forEach(p=>{
       const cat=(p.category||'OTHER').toUpperCase();
       if(!map[cat]) map[cat]=new Set();
-      // store lowercase for matching; display original
       map[cat].add(p.name);
     });
   });
-  // convert to sorted arrays
   const result={};
   Object.keys(map).sort().forEach(cat=>{
     result[cat]=[...map[cat]].sort((a,b)=>a.localeCompare(b,'th'));
@@ -612,26 +647,25 @@ function collectProgramList(){
   return result;
 }
 
-/** Check if a program name is a "Windows" product */
-function isWindowsProgram(name){
-  return /^windows/i.test(String(name||'').trim());
-}
+function isWindowsProgram(name){ return /^windows/i.test(String(name||'').trim()); }
 
 /**
  * Render keyword picker into container element.
- * selectedKws: Set of currently-selected keywords (lowercase strings).
+ * selectedKws: Set of currently-selected keywords (strings).
  * onChange: callback(newSet) called on every change.
  */
 function renderKwPicker(container, selectedKws, onChange){
   const progList=collectProgramList();
   const hasData=Object.keys(swData).length>0;
-
-  // clone so we can mutate
   let sel=new Set([...selectedKws]);
+
+  // Which windows versions are open for lic-type selection (Set of ver strings)
+  let _openWinVers=new Set(
+    [...sel].filter(isWinKw).map(k=>decodeWinKw(k).ver)
+  );
 
   function rebuild(){
     const cats=Object.keys(progList);
-
     let html=`<div class="kw-picker-panel">`;
     html+=`<div class="kw-picker-title">${hasData?'เลือกจากโปรแกรมที่มีในระบบ':'ยังไม่มีข้อมูล — กรุณา Import ก่อน'}</div>`;
 
@@ -645,36 +679,44 @@ function renderKwPicker(container, selectedKws, onChange){
         html+=`<div class="kw-picker-sec-lbl">${esc(cat)}</div>`;
         html+=`<div class="kw-prog-list">`;
 
-        // Windows group (special)
+        // ── Windows version buttons ──
         if(hasWin){
-          const winSelected=WIN_VERSION_KEYWORDS.some(k=>sel.has(k));
-          html+=`<button type="button" class="kw-prog-btn kw-win ${winSelected?'selected':''}"
-            onclick="__kwPickerToggleWin(this)">🪟 Windows …</button>`;
+          WIN_VERSIONS.forEach(({ver,label})=>{
+            const anySelForVer=[...sel].some(k=>isWinKw(k)&&decodeWinKw(k).ver===ver);
+            const isOpen=_openWinVers.has(ver);
+            html+=`<button type="button" class="kw-prog-btn kw-win ${anySelForVer?'selected':''}"
+              onclick="__kwWinVerClick('${esc(ver)}')">🪟 ${esc(label)}</button>`;
+
+            // ── License type sub-row for this version ──
+            if(isOpen){
+              html+=`</div><div class="kw-win-type-row">`;
+              html+=`<div class="kw-win-type-lbl">🪟 Windows ${esc(label)} — เลือกประเภท License:</div>`;
+              WIN_LIC_TYPES.forEach(({id,label:lbl,badge})=>{
+                const kw=encodeWinKw(ver,id);
+                const active=sel.has(kw);
+                const badgeHtml=badge?`<span style="font-size:9px;background:${
+                  id==='oem'?'#D1FAE5':id==='oei'?'#EDE9FE':id==='fpp'?'#DBEAFE':'#FFEDD5'
+                };border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;color:${
+                  id==='oem'?'#065F46':id==='oei'?'#5B21B6':id==='fpp'?'#1E40AF':'#9A3412'
+                };">${esc(badge)}</span>`:'';
+                html+=`<button type="button" class="kw-win-type-btn ${active?'selected':''}"
+                  onclick="__kwWinLicClick('${esc(kw)}')">${esc(lbl)}${badgeHtml}</button>`;
+              });
+              html+=`<button type="button" class="kw-win-type-btn" style="margin-left:auto;color:var(--r);border-color:var(--r);"
+                onclick="__kwWinVerClose('${esc(ver)}')">✕ ปิด</button>`;
+              html+=`</div><div class="kw-prog-list">`;
+            }
+          });
         }
 
         // Non-windows programs
         nonWinProgs.forEach(name=>{
           const kw=name.toLowerCase();
           html+=`<button type="button" class="kw-prog-btn ${sel.has(kw)?'selected':''}"
-            onclick="__kwPickerToggle('${esc(kw)}',this)">${esc(name)}</button>`;
+            onclick="__kwPickerToggle('${esc(kw)}')">${esc(name)}</button>`;
         });
 
-        html+=`</div>`; // kw-prog-list
-
-        // Windows sub-type selector (shown when Windows group is active)
-        if(hasWin){
-          const anyWin=WIN_VERSION_KEYWORDS.some(k=>sel.has(k));
-          html+=`<div class="kw-win-type-row" id="kwWinTypes_${container.id||'main'}" style="${anyWin?'':'display:none'}">`;
-          html+=`<div class="kw-win-type-lbl">เลือกเวอร์ชัน Windows:</div>`;
-          WIN_VERSION_KEYWORDS.forEach(kw=>{
-            const label=kw.replace(/^windows\s*/i,'').trim()||kw;
-            html+=`<button type="button" class="kw-win-type-btn ${sel.has(kw)?'selected':''}"
-              onclick="__kwPickerToggleWinVer('${esc(kw)}',this,'${esc(container.id||'main')}')">${esc(label)}</button>`;
-          });
-          html+=`</div>`;
-        }
-
-        html+=`</div>`; // kw-picker-section
+        html+=`</div></div>`; // kw-prog-list + kw-picker-section
       });
     }
 
@@ -686,44 +728,42 @@ function renderKwPicker(container, selectedKws, onChange){
       html+=`<span class="kw-empty-hint">ยังไม่ได้เลือก</span>`;
     } else {
       [...sel].sort().forEach(kw=>{
-        html+=`<button type="button" class="kw-chip-del" onclick="__kwPickerRemove('${esc(kw)}')">${esc(kw)}<span>×</span></button>`;
+        let label=kw;
+        if(isWinKw(kw)){
+          const {ver,licId}=decodeWinKw(kw);
+          const verLabel=WIN_VERSIONS.find(v=>v.ver===ver)?.label||ver;
+          const licLabel=WIN_LIC_TYPES.find(l=>l.id===licId)?.badge||licId;
+          label=`🪟 Windows ${verLabel}${licId!=='any'?' · '+licLabel:''}`;
+        }
+        html+=`<button type="button" class="kw-chip-del" onclick="__kwPickerRemove('${esc(kw)}')">${esc(label)}<span>×</span></button>`;
       });
     }
     html+=`</div></div></div>`;
-
     container.innerHTML=html;
 
-    /* attach globals for onclick handlers */
-    window.__kwPickerToggle=(kw,btn)=>{
+    window.__kwPickerToggle=(kw)=>{
       if(sel.has(kw)) sel.delete(kw); else sel.add(kw);
-      onChange(new Set([...sel]));
+      onChange(new Set([...sel])); rebuild();
+    };
+    window.__kwWinVerClick=(ver)=>{
+      if(_openWinVers.has(ver)) _openWinVers.delete(ver);
+      else _openWinVers.add(ver);
       rebuild();
     };
-    window.__kwPickerToggleWin=(btn)=>{
-      // toggle the Windows group: show/hide sub-type panel
-      const panelId='kwWinTypes_'+(container.id||'main');
-      const panel=container.querySelector(`#${panelId}`);
-      if(!panel) return;
-      const showing=panel.style.display!=='none';
-      if(showing){
-        // hide & deselect all win keywords
-        WIN_VERSION_KEYWORDS.forEach(k=>sel.delete(k));
-        panel.style.display='none';
-      } else {
-        panel.style.display='flex';
-      }
-      onChange(new Set([...sel]));
-      rebuild();
+    window.__kwWinVerClose=(ver)=>{
+      _openWinVers.delete(ver);
+      // remove all selections for this ver
+      [...sel].filter(k=>isWinKw(k)&&decodeWinKw(k).ver===ver).forEach(k=>sel.delete(k));
+      onChange(new Set([...sel])); rebuild();
     };
-    window.__kwPickerToggleWinVer=(kw,btn,containerId)=>{
+    window.__kwWinLicClick=(kw)=>{
       if(sel.has(kw)) sel.delete(kw); else sel.add(kw);
-      onChange(new Set([...sel]));
-      rebuild();
+      onChange(new Set([...sel])); rebuild();
     };
     window.__kwPickerRemove=(kw)=>{
       sel.delete(kw);
-      onChange(new Set([...sel]));
-      rebuild();
+      if(isWinKw(kw)) _openWinVers.delete(decodeWinKw(kw).ver);
+      onChange(new Set([...sel])); rebuild();
     };
   }
 
