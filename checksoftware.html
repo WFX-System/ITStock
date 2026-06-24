@@ -371,16 +371,16 @@ function highlight(s,q){
 }
 
 // ── License-type helper (OEM / OEI / FPP / PRO ธรรมดา) ────
-// ใช้สำหรับแยกประเภทของ OS ในหน้าสรุปโปรแกรม โดยดูจาก "ชื่อโปรแกรม + เวอร์ชัน" รวมกัน
+// ใช้สำหรับแยกประเภทของ OS ในหน้าสรุปโปรแกรม โดยดูจาก "ชื่อโปรแกรม + เวอร์ชัน + หมายเหตุ(Remark)" รวมกัน
 // (บางครั้งคำว่า OEM/OEI/FPP หลุดไปอยู่ในชื่อโปรแกรม เช่น "...UPGRADE FROM Windows 10 OEM"
-//  ไม่ได้อยู่ในคอลัมน์ Version เสมอไป จึงต้องค้นหาจากทั้งสองช่องรวมกัน)
+//  หรืออยู่ในช่อง Remark เช่น "6Q724(OEI)" ไม่ได้อยู่ในคอลัมน์ Version เสมอไป จึงต้องค้นหาจากทั้งสามช่องรวมกัน)
 // - มีคำว่า OEM  -> ประเภท OEM (System Builder)
 // - มีคำว่า OEI  -> ประเภท OEI (Original Equipment Integrator)
 // - มีคำว่า FPP  -> ประเภท FPP (Full Packaged Product)
 // - ไม่มีทั้งหมด และเป็นหมวด OS -> ถือเป็น PRO ธรรมดา (Volume License)
-function detectLicenseType(category,name,version){
+function detectLicenseType(category,name,version,remark){
   if(category!=='OS') return '';
-  const hay=(String(name||'')+' '+String(version||'')).toUpperCase();
+  const hay=(String(name||'')+' '+String(version||'')+' '+String(remark||'')).toUpperCase();
   if(/\bOEM\b/.test(hay)) return 'OEM';
   if(/\bOEI\b/.test(hay)) return 'OEI';
   if(/\bFPP\b/.test(hay)) return 'FPP';
@@ -905,7 +905,7 @@ function buildProgramSummary(allowedCks){
     const flagged=new Set((swState[ck]&&swState[ck].issuePrograms)||[]);
     swData[ck].programs.forEach((p,i)=>{
       if(flagged.has(i)) return; // ไม่นับโปรแกรมที่ถูกติ๊กว่ามีปัญหา
-      const lic=detectLicenseType(p.category,p.name,p.version);
+      const lic=detectLicenseType(p.category,p.name,p.version,p.remark);
       const key=`${p.category}||${p.name}||${lic}`;
       if(!map[key]) map[key]={category:p.category,name:p.name,lic,count:0,machines:[],hasNew:false};
       map[key].count++;
@@ -1183,8 +1183,8 @@ function exportLicenseExcel(){
     const comp=swData[ck];
     const osProg=findOsProgram(comp);
     const osText=osProg ? `${osProg.name}${osProg.version?' '+osProg.version:''}`.trim() : '';
-    const lic=osProg ? detectLicenseType('OS',osProg.name,osProg.version) : '';
-    const isUpgrade = osProg ? /UPGRADE/i.test(osProg.name+' '+osProg.version) : false;
+    const lic=osProg ? detectLicenseType('OS',osProg.name,osProg.version,osProg.remark) : '';
+    const isUpgrade = osProg ? /UPGRADE/i.test(osProg.name+' '+osProg.version+' '+osProg.remark) : false;
 
     let vlk='', oem='', oei='', vlkUp='', oemUp='', oeiUp='', fpp='', fppUp='';
     if(lic==='OEM'){ if(isUpgrade) oemUp=1; else oem=1; }
