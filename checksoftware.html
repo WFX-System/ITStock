@@ -181,10 +181,8 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .prefix-opt-count{font-size:10px;color:var(--tx3);font-family:var(--mono);}
 
 /* ══════════════════════════════════════════════════
-   🗂️  LICENSE INVENTORY  (คลังสิทธิ์การใช้งาน)
+   🗂️  LICENSE INVENTORY
    ══════════════════════════════════════════════════ */
-
-/* ── top overview strip ── */
 .lic-overview{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;}
 .lic-overview-card{flex:1;min-width:140px;background:var(--surf);border:1px solid var(--bdr);
   border-radius:var(--radlg);padding:14px 16px;display:flex;flex-direction:column;gap:4px;}
@@ -194,7 +192,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .lic-ov-over{color:#991B1B;}
 .lic-ov-near{color:#92400E;}
 
-/* ── card grid ── */
 .lic-inv-grid{display:grid;gap:14px;}
 
 .lic-inv-card{background:var(--surf);border:2px solid var(--bdr);border-radius:var(--radlg);
@@ -205,7 +202,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .lic-inv-card.status-over {border-color:#FCA5A5;}
 .lic-inv-card.status-zero {border-color:var(--bdrm);}
 
-/* card header */
 .lic-inv-head{display:flex;align-items:center;gap:12px;padding:14px 16px;flex-wrap:wrap;}
 .lic-inv-icon{font-size:24px;flex-shrink:0;}
 .lic-inv-info{flex:1;min-width:0;}
@@ -213,9 +209,13 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .lic-inv-name-input{font-size:14px;font-weight:700;width:100%;padding:4px 8px;
   border:1.5px solid var(--g);border-radius:6px;background:var(--surf);color:var(--tx1);font-family:inherit;}
 .lic-inv-name-input:focus{outline:none;box-shadow:0 0 0 2px var(--gll);}
-.lic-inv-sub{font-size:11px;color:var(--tx3);margin-top:2px;}
+.lic-inv-sub{font-size:11px;color:var(--tx3);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
 
-/* status pill */
+/* keyword chips */
+.kw-chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--bdr);
+  border-radius:20px;padding:2px 9px;font-size:10px;font-family:var(--mono);color:var(--tx2);white-space:nowrap;}
+.kw-chip.kw-win{background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8;}
+
 .lic-status-pill{font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;
   white-space:nowrap;flex-shrink:0;border:1.5px solid transparent;}
 .lic-pill-ok  {background:#D1FAE5;color:#065F46;border-color:#6EE7B7;}
@@ -223,7 +223,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .lic-pill-over{background:#FEE2E2;color:#991B1B;border-color:#FCA5A5;}
 .lic-pill-zero{background:#F3F4F6;color:#6B7280;border-color:#D1D5DB;}
 
-/* progress tube */
 .lic-tube-wrap{padding:0 16px 4px;position:relative;}
 .lic-tube-track{height:18px;background:var(--bg);border-radius:9px;overflow:hidden;
   border:1px solid var(--bdr);position:relative;}
@@ -236,7 +235,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .lic-tube-pct{font-size:9px;font-weight:700;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.3);}
 .lic-tube-pct-dark{color:var(--tx3);}
 
-/* stats row */
 .lic-stats-row{display:flex;align-items:stretch;gap:0;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);}
 .lic-stat{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 8px;gap:2px;}
 .lic-stat+.lic-stat{border-left:1px solid var(--bdr);}
@@ -246,7 +244,6 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .lic-stat-num.clr-over{color:#DC2626;}
 .lic-stat-num.clr-am  {color:#D97706;}
 
-/* footer controls */
 .lic-inv-foot{display:flex;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap;background:var(--bg);}
 .lic-qty-ctrl{display:flex;align-items:center;}
 .lic-qty-btn{width:30px;height:30px;border:1.5px solid var(--bdrm);background:var(--surf);
@@ -267,23 +264,51 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
   border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx3);transition:all .15s;white-space:nowrap;margin-left:auto;}
 .btn-lic-del:hover{background:#FEE2E2;border-color:var(--r);color:var(--r);}
 
-/* add new card */
 .lic-add-card{background:var(--surf);border:2px dashed var(--bdrm);border-radius:var(--radlg);padding:16px;
   display:flex;flex-direction:column;gap:10px;transition:border-color .2s;}
 .lic-add-card:focus-within{border-color:var(--g);}
 .lic-add-card-title{font-size:12px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;}
-.lic-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
-.lic-add-row input[type=text],.lic-add-row input[type=number]{padding:8px 10px;
-  border:1.5px solid var(--bdrm);border-radius:var(--radsm);font-size:13px;
-  font-family:inherit;background:var(--surf);color:var(--tx1);}
-.lic-add-row input[type=text]{flex:1;min-width:160px;}
-.lic-add-row input[type=number]{width:90px;}
-.lic-add-row input:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 2px var(--gll);}
+
+/* ── NEW: keyword picker panel ── */
+.kw-picker-panel{border:1.5px solid var(--bdrm);border-radius:var(--radsm);background:var(--bg);
+  padding:10px;display:flex;flex-direction:column;gap:8px;}
+.kw-picker-title{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.03em;}
+.kw-picker-section{display:flex;flex-direction:column;gap:5px;}
+.kw-picker-sec-lbl{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.03em;padding:2px 0;}
+.kw-prog-list{display:flex;flex-wrap:wrap;gap:5px;}
+.kw-prog-btn{padding:3px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;
+  border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);transition:all .15s;white-space:nowrap;}
+.kw-prog-btn:hover{border-color:var(--g);color:var(--g);background:var(--gll);}
+.kw-prog-btn.selected{background:var(--g);border-color:var(--g);color:#fff;}
+/* Windows sub-type selector */
+.kw-win-type-row{display:flex;flex-wrap:wrap;gap:5px;padding:6px 10px;
+  background:#EFF6FF;border:1px solid #BFDBFE;border-radius:var(--radsm);}
+.kw-win-type-lbl{font-size:10px;color:#1E40AF;font-weight:700;width:100%;margin-bottom:3px;}
+.kw-win-type-btn{padding:3px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;
+  border:1.5px solid #93C5FD;background:#fff;color:#1D4ED8;transition:all .15s;white-space:nowrap;}
+.kw-win-type-btn:hover{background:#DBEAFE;}
+.kw-win-type-btn.selected{background:#1D4ED8;border-color:#1D4ED8;color:#fff;}
+/* selected chips preview */
+.kw-selected-row{display:flex;flex-wrap:wrap;gap:5px;min-height:28px;align-items:center;}
+.kw-chip-del{display:inline-flex;align-items:center;gap:4px;background:var(--g);border:none;
+  border-radius:20px;padding:3px 10px;font-size:11px;font-family:var(--mono);color:#fff;
+  cursor:pointer;white-space:nowrap;}
+.kw-chip-del span{font-size:13px;line-height:1;margin-left:2px;opacity:.75;}
+.kw-chip-del:hover span{opacity:1;}
+.kw-empty-hint{font-size:11px;color:var(--tx3);}
+
+.lic-add-meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.lic-add-meta-row input[type=text]{padding:8px 10px;border:1.5px solid var(--bdrm);border-radius:var(--radsm);
+  font-size:13px;font-family:inherit;background:var(--surf);color:var(--tx1);}
+.lic-add-meta-row input[type=text]:first-child{max-width:80px;}
+.lic-add-meta-row input[type=text]:nth-child(2){flex:1;min-width:160px;}
+.lic-add-meta-row input[type=number]{width:100px;padding:8px 10px;border:1.5px solid var(--bdrm);
+  border-radius:var(--radsm);font-size:13px;font-family:inherit;background:var(--surf);color:var(--tx1);}
+.lic-add-meta-row input:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 2px var(--gll);}
 .btn-lic-add{padding:8px 18px;border-radius:var(--radsm);font-size:13px;font-weight:700;
   cursor:pointer;border:1.5px solid var(--g);background:var(--g);color:#fff;white-space:nowrap;}
 .btn-lic-add:hover{filter:brightness(1.08);}
 
-/* search/filter row inside licinv */
 .lic-filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem;}
 .lic-filter-row .search-box{max-width:260px;}
 
@@ -309,6 +334,9 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .merge-bulk-link{font-size:11px;color:var(--g);font-weight:700;cursor:pointer;user-select:none;}
 .merge-bulk-link:hover{text-decoration:underline;}
 .merge-stat{font-size:11px;color:var(--tx3);flex:1;}
+
+/* Edit keyword picker (inside card) */
+.edit-kw-picker{border:1.5px solid var(--bdrm);border-radius:var(--radsm);background:var(--bg);padding:10px;margin-top:6px;}
 </style>
 </head>
 <body>
@@ -442,7 +470,6 @@ let _progSort={key:'count',dir:'desc'};
 let _openMachineRows=new Set();
 let _collapsedOsGroups=new Set();
 
-/* Default license inventory — pre-loaded with the 8 items */
 const DEFAULT_LIC_ITEMS=[
   {id:'lic_1', name:'Windows 7 Pro',         icon:'🪟', total:70,  matchKeywords:['windows 7']},
   {id:'lic_2', name:'Windows 10 Pro',        icon:'🪟', total:137, matchKeywords:['windows 10']},
@@ -454,7 +481,6 @@ const DEFAULT_LIC_ITEMS=[
   {id:'lic_8', name:'Kaspersky Endpoint',    icon:'🛡️', total:290, matchKeywords:['kaspersky']},
 ];
 
-/* licInvItems = array of {id, name, icon, total, matchKeywords} */
 let licInvItems=[];
 let _licFilter='';
 
@@ -557,16 +583,159 @@ function getOsGroupName(name){
 }
 
 /* ══════════════════════════════════════════
+   KEYWORD PICKER HELPERS
+   ══════════════════════════════════════════ */
+
+/** Windows version keywords that can be toggled individually */
+const WIN_VERSION_KEYWORDS=[
+  'windows xp','windows vista','windows 7','windows 8','windows 8.1',
+  'windows 10','windows 11','windows server 2008','windows server 2012',
+  'windows server 2016','windows server 2019','windows server 2022',
+];
+
+/** Collect all unique program names from swData, grouped by category */
+function collectProgramList(){
+  const map={}; // category -> Set of names
+  Object.values(swData).forEach(comp=>{
+    comp.programs.forEach(p=>{
+      const cat=(p.category||'OTHER').toUpperCase();
+      if(!map[cat]) map[cat]=new Set();
+      // store lowercase for matching; display original
+      map[cat].add(p.name);
+    });
+  });
+  // convert to sorted arrays
+  const result={};
+  Object.keys(map).sort().forEach(cat=>{
+    result[cat]=[...map[cat]].sort((a,b)=>a.localeCompare(b,'th'));
+  });
+  return result;
+}
+
+/** Check if a program name is a "Windows" product */
+function isWindowsProgram(name){
+  return /^windows/i.test(String(name||'').trim());
+}
+
+/**
+ * Render keyword picker into container element.
+ * selectedKws: Set of currently-selected keywords (lowercase strings).
+ * onChange: callback(newSet) called on every change.
+ */
+function renderKwPicker(container, selectedKws, onChange){
+  const progList=collectProgramList();
+  const hasData=Object.keys(swData).length>0;
+
+  // clone so we can mutate
+  let sel=new Set([...selectedKws]);
+
+  function rebuild(){
+    const cats=Object.keys(progList);
+
+    let html=`<div class="kw-picker-panel">`;
+    html+=`<div class="kw-picker-title">${hasData?'เลือกจากโปรแกรมที่มีในระบบ':'ยังไม่มีข้อมูล — กรุณา Import ก่อน'}</div>`;
+
+    if(hasData){
+      cats.forEach(cat=>{
+        const progs=progList[cat];
+        const hasWin=cat==='OS' && progs.some(isWindowsProgram);
+        const nonWinProgs=cat==='OS'?progs.filter(p=>!isWindowsProgram(p)):progs;
+
+        html+=`<div class="kw-picker-section">`;
+        html+=`<div class="kw-picker-sec-lbl">${esc(cat)}</div>`;
+        html+=`<div class="kw-prog-list">`;
+
+        // Windows group (special)
+        if(hasWin){
+          const winSelected=WIN_VERSION_KEYWORDS.some(k=>sel.has(k));
+          html+=`<button type="button" class="kw-prog-btn kw-win ${winSelected?'selected':''}"
+            onclick="__kwPickerToggleWin(this)">🪟 Windows …</button>`;
+        }
+
+        // Non-windows programs
+        nonWinProgs.forEach(name=>{
+          const kw=name.toLowerCase();
+          html+=`<button type="button" class="kw-prog-btn ${sel.has(kw)?'selected':''}"
+            onclick="__kwPickerToggle('${esc(kw)}',this)">${esc(name)}</button>`;
+        });
+
+        html+=`</div>`; // kw-prog-list
+
+        // Windows sub-type selector (shown when Windows group is active)
+        if(hasWin){
+          const anyWin=WIN_VERSION_KEYWORDS.some(k=>sel.has(k));
+          html+=`<div class="kw-win-type-row" id="kwWinTypes_${container.id||'main'}" style="${anyWin?'':'display:none'}">`;
+          html+=`<div class="kw-win-type-lbl">เลือกเวอร์ชัน Windows:</div>`;
+          WIN_VERSION_KEYWORDS.forEach(kw=>{
+            const label=kw.replace(/^windows\s*/i,'').trim()||kw;
+            html+=`<button type="button" class="kw-win-type-btn ${sel.has(kw)?'selected':''}"
+              onclick="__kwPickerToggleWinVer('${esc(kw)}',this,'${esc(container.id||'main')}')">${esc(label)}</button>`;
+          });
+          html+=`</div>`;
+        }
+
+        html+=`</div>`; // kw-picker-section
+      });
+    }
+
+    // Selected preview
+    html+=`<div style="border-top:1px solid var(--bdr);padding-top:8px;margin-top:4px;">`;
+    html+=`<div class="kw-picker-sec-lbl">คีย์เวิร์ดที่เลือกแล้ว</div>`;
+    html+=`<div class="kw-selected-row">`;
+    if(sel.size===0){
+      html+=`<span class="kw-empty-hint">ยังไม่ได้เลือก</span>`;
+    } else {
+      [...sel].sort().forEach(kw=>{
+        html+=`<button type="button" class="kw-chip-del" onclick="__kwPickerRemove('${esc(kw)}')">${esc(kw)}<span>×</span></button>`;
+      });
+    }
+    html+=`</div></div></div>`;
+
+    container.innerHTML=html;
+
+    /* attach globals for onclick handlers */
+    window.__kwPickerToggle=(kw,btn)=>{
+      if(sel.has(kw)) sel.delete(kw); else sel.add(kw);
+      onChange(new Set([...sel]));
+      rebuild();
+    };
+    window.__kwPickerToggleWin=(btn)=>{
+      // toggle the Windows group: show/hide sub-type panel
+      const panelId='kwWinTypes_'+(container.id||'main');
+      const panel=container.querySelector(`#${panelId}`);
+      if(!panel) return;
+      const showing=panel.style.display!=='none';
+      if(showing){
+        // hide & deselect all win keywords
+        WIN_VERSION_KEYWORDS.forEach(k=>sel.delete(k));
+        panel.style.display='none';
+      } else {
+        panel.style.display='flex';
+      }
+      onChange(new Set([...sel]));
+      rebuild();
+    };
+    window.__kwPickerToggleWinVer=(kw,btn,containerId)=>{
+      if(sel.has(kw)) sel.delete(kw); else sel.add(kw);
+      onChange(new Set([...sel]));
+      rebuild();
+    };
+    window.__kwPickerRemove=(kw)=>{
+      sel.delete(kw);
+      onChange(new Set([...sel]));
+      rebuild();
+    };
+  }
+
+  rebuild();
+}
+
+/* ══════════════════════════════════════════
    VIEW SWITCHING
    ══════════════════════════════════════════ */
 let _selectedPrefixes=null;
 function switchView(v){
   currentView=v;
-  ['check','summary','licinv'].forEach(id=>{
-    document.getElementById('tab'+id.charAt(0).toUpperCase()+id.slice(1))?.classList.toggle('active',v===id);
-    document.getElementById('view'+id.charAt(0).toUpperCase()+id.slice(1))?.classList.toggle('active',v===id);
-  });
-  // manual mapping because IDs are capitalised differently
   document.getElementById('tabCheck')  ?.classList.toggle('active',v==='check');
   document.getElementById('tabSummary')?.classList.toggle('active',v==='summary');
   document.getElementById('tabLicInv') ?.classList.toggle('active',v==='licinv');
@@ -844,9 +1013,7 @@ function renderCheckView(){
   list.innerHTML=html;
 }
 
-/* ══════════════════════════════════════════
-   FLAG / STATUS / NOTE
-   ══════════════════════════════════════════ */
+/* FLAG / STATUS / NOTE — unchanged */
 function toggleProgFlag(cid,progIdx){
   const cb=document.getElementById(`flag_${cid}_${progIdx}`); if(!cb)return;
   const row=cb.closest('tr'); if(row) row.classList.toggle('row-flagged',cb.checked);
@@ -894,9 +1061,7 @@ function toggleComp(cid){ const body=document.getElementById('body'+cid),tog=doc
 function expandAll(){ Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.add('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▲'; }); }
 function collapseAll(){ Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.remove('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▼'; }); }
 
-/* ══════════════════════════════════════════
-   SUMMARY VIEW
-   ══════════════════════════════════════════ */
+/* SUMMARY VIEW */
 function buildProgramSummary(allowedCks){
   const map={};
   Object.keys(swData).forEach(ck=>{
@@ -1054,7 +1219,6 @@ async function confirmClearAll(){
    🗂️  LICENSE INVENTORY  VIEW
    ══════════════════════════════════════════════════════════ */
 
-/** count how many computers use a given licInvItem (by keyword match) */
 function countUsage(item){
   if(!item.matchKeywords||!item.matchKeywords.length) return 0;
   const kws=item.matchKeywords.map(k=>k.toLowerCase());
@@ -1088,8 +1252,19 @@ function getLicPillText(used,total,st){
   return `🟢 คงเหลือ ${rem} รายการ`;
 }
 
+/** Render keyword chips for display (in card head) */
+function renderKwChips(matchKeywords){
+  if(!matchKeywords||!matchKeywords.length) return '<span style="color:var(--tx3);font-size:10px;">ไม่มี keywords</span>';
+  return matchKeywords.map(kw=>{
+    const isWin=/^windows/i.test(kw);
+    return `<span class="kw-chip ${isWin?'kw-win':''}">${esc(kw)}</span>`;
+  }).join('');
+}
+
+/* ── temp state for add-new card ── */
+let _newLicKws=new Set();
+
 function renderLicInvView(){
-  /* ensure defaults are loaded if licInvItems is still empty */
   if(!licInvItems||!licInvItems.length){
     licInvItems=JSON.parse(JSON.stringify(DEFAULT_LIC_ITEMS));
   }
@@ -1099,7 +1274,6 @@ function renderLicInvView(){
 
   const hasSwData=Object.keys(swData).length>0;
 
-  /* overview counts */
   let totalOver=0,totalNear=0,totalOk=0,totalItems=licInvItems.length;
   licInvItems.forEach(item=>{
     const used=countUsage(item),st=getLicStatus(used,item.total);
@@ -1108,11 +1282,9 @@ function renderLicInvView(){
     else if(st==='ok') totalOk++;
   });
 
-  /* filter */
   const q=_licFilter.toLowerCase();
   let filtered=licInvItems.filter(item=> !q || item.name.toLowerCase().includes(q));
 
-  /* ── build overview strip ── */
   let html=`
 <div class="lic-filter-row">
   <input class="search-box" type="text" placeholder="🔎 ค้นหาซอฟต์แวร์..."
@@ -1142,7 +1314,7 @@ function renderLicInvView(){
 
 <div class="lic-inv-grid">`;
 
-  filtered.forEach((item,idx)=>{
+  filtered.forEach((item)=>{
     const realIdx=licInvItems.indexOf(item);
     const used=countUsage(item);
     const remaining=item.total-used;
@@ -1151,21 +1323,19 @@ function renderLicInvView(){
     const pillText=getLicPillText(used,item.total,st);
     const tubeCls=getLicTubeClass(st);
     const cardCls=getLicCardClass(st);
-    const pctDark=pct<15; /* text color on tube */
+    const pctDark=pct<15;
 
     html+=`
 <div class="lic-inv-card ${cardCls}" id="liccard_${realIdx}">
-  <!-- head -->
   <div class="lic-inv-head">
     <div class="lic-inv-icon">${esc(item.icon||'📦')}</div>
     <div class="lic-inv-info">
-      <div class="lic-inv-name" id="licname_${realIdx}">${esc(item.name)}</div>
-      <div class="lic-inv-sub">keywords: ${item.matchKeywords?.map(k=>`<code>${esc(k)}</code>`).join(', ')||'—'}</div>
+      <div class="lic-inv-name">${esc(item.name)}</div>
+      <div class="lic-inv-sub">${renderKwChips(item.matchKeywords)}</div>
     </div>
     <span class="lic-status-pill ${getLicPillClass(st)}">${pillText}</span>
   </div>
 
-  <!-- progress tube -->
   <div class="lic-tube-wrap">
     <div class="lic-tube-track">
       <div class="lic-tube-fill ${tubeCls}" style="width:${pct}%">
@@ -1174,7 +1344,6 @@ function renderLicInvView(){
     </div>
   </div>
 
-  <!-- stats -->
   <div class="lic-stats-row">
     <div class="lic-stat">
       <div class="lic-stat-num">${item.total}</div>
@@ -1190,7 +1359,6 @@ function renderLicInvView(){
     </div>
   </div>
 
-  <!-- footer: qty controls -->
   <div class="lic-inv-foot">
     <span class="lic-qty-lbl">สิทธิ์ทั้งหมด:</span>
     <div class="lic-qty-ctrl">
@@ -1205,17 +1373,17 @@ function renderLicInvView(){
 </div>`;
   });
 
-  /* add-new card */
+  /* ── add-new card (hidden by default) ── */
   html+=`
 <div class="lic-add-card" id="addLicCard" style="display:none">
   <div class="lic-add-card-title">➕ เพิ่มซอฟต์แวร์ใหม่</div>
-  <div class="lic-add-row">
-    <input type="text" id="newLicIcon"     placeholder="ไอคอน เช่น 🪟 📄 🛡️" style="max-width:100px;"/>
-    <input type="text" id="newLicName"     placeholder="ชื่อซอฟต์แวร์ *"/>
-    <input type="number" id="newLicTotal"  placeholder="จำนวนสิทธิ์" min="0" style="width:120px;"/>
+  <div class="lic-add-meta-row">
+    <input type="text" id="newLicIcon" placeholder="ไอคอน 📦"/>
+    <input type="text" id="newLicName" placeholder="ชื่อซอฟต์แวร์ *"/>
+    <input type="number" id="newLicTotal" placeholder="จำนวนสิทธิ์" min="0"/>
   </div>
-  <div class="lic-add-row">
-    <input type="text" id="newLicKeywords" placeholder="คีย์เวิร์ดค้นหา (คั่นด้วย ,) เช่น windows 10,win10" style="flex:1"/>
+  <div id="newLicKwPickerContainer"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
     <button class="btn-lic-add" onclick="submitAddLicCard()">💾 บันทึก</button>
     <button class="btn btn-sm" onclick="closeAddLicCard()">ยกเลิก</button>
   </div>
@@ -1229,18 +1397,26 @@ function renderLicInvView(){
 /* ── License inventory actions ── */
 function openAddLicCard(){
   const el=document.getElementById('addLicCard');
-  if(el){ el.style.display='flex'; el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  if(!el) return;
+  el.style.display='flex';
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // init keyword picker for new card
+  _newLicKws=new Set();
+  const container=document.getElementById('newLicKwPickerContainer');
+  if(container){
+    container.id='newLicKwPickerContainer'; // keep id
+    renderKwPicker(container, _newLicKws, (newSet)=>{ _newLicKws=newSet; });
+  }
 }
 function closeAddLicCard(){
   const el=document.getElementById('addLicCard'); if(el) el.style.display='none';
-  ['newLicIcon','newLicName','newLicTotal','newLicKeywords'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  _newLicKws=new Set();
 }
 function submitAddLicCard(){
   const icon=(document.getElementById('newLicIcon')?.value||'').trim()||'📦';
   const name=(document.getElementById('newLicName')?.value||'').trim();
   const total=parseInt(document.getElementById('newLicTotal')?.value||'0',10)||0;
-  const kwRaw=(document.getElementById('newLicKeywords')?.value||'').trim();
-  const matchKeywords=kwRaw?kwRaw.split(',').map(k=>k.trim()).filter(Boolean):[];
+  const matchKeywords=[..._newLicKws];
   if(!name){ showNotif('กรุณากรอกชื่อซอฟต์แวร์','error'); return; }
   licInvItems.push({ id:'lic_'+Date.now(), name, icon, total, matchKeywords });
   closeAddLicCard();
@@ -1267,12 +1443,16 @@ function deleteLicCard(idx){
   showNotif('ลบรายการแล้ว');
 }
 
-/* inline edit card */
+/* ── inline edit with keyword picker ── */
+let _editLicKws={};   // idx -> Set
+
 function editLicCard(idx){
   const item=licInvItems[idx]; if(!item) return;
   const card=document.getElementById(`liccard_${idx}`); if(!card) return;
 
-  /* replace head with inputs */
+  // init edit kw set from current item
+  _editLicKws[idx]=new Set((item.matchKeywords||[]).map(k=>k.toLowerCase()));
+
   const head=card.querySelector('.lic-inv-head');
   const foot=card.querySelector('.lic-inv-foot');
 
@@ -1282,29 +1462,43 @@ function editLicCard(idx){
     </div>
     <div class="lic-inv-info" style="flex:1;min-width:0;">
       <input class="lic-inv-name-input" id="edit_name_${idx}" value="${esc(item.name)}" placeholder="ชื่อซอฟต์แวร์"/>
-      <input type="text" style="width:100%;margin-top:5px;padding:4px 8px;border:1.5px solid var(--bdrm);border-radius:6px;font-size:11px;background:var(--surf);color:var(--tx1);" id="edit_kw_${idx}" value="${esc((item.matchKeywords||[]).join(', '))}" placeholder="keywords คั่นด้วยเครื่องหมาย ,"/>
+      <div class="edit-kw-picker" id="editKwPicker_${idx}"></div>
     </div>`;
 
   foot.innerHTML=`
     <span class="lic-qty-lbl">สิทธิ์ทั้งหมด:</span>
     <div class="lic-qty-ctrl">
-      <button class="lic-qty-btn" onclick="changeLicTotal(${idx},-1);editLicCard(${idx})">−</button>
+      <button class="lic-qty-btn" onclick="changeLicTotalInEdit(${idx},-1)">−</button>
       <input class="lic-qty-input" type="number" min="0" value="${item.total}" id="edit_total_${idx}"/>
-      <button class="lic-qty-btn" onclick="changeLicTotal(${idx},+1);editLicCard(${idx})">+</button>
+      <button class="lic-qty-btn" onclick="changeLicTotalInEdit(${idx},+1)">+</button>
     </div>
     <button class="btn-lic-edit saving-mode" onclick="saveEditLicCard(${idx})">✅ บันทึก</button>
     <button class="btn btn-sm" onclick="renderLicInvView()">ยกเลิก</button>
     <button class="btn-lic-del" onclick="deleteLicCard(${idx})">🗑️ ลบ</button>`;
+
+  // render picker
+  const pickerContainer=document.getElementById(`editKwPicker_${idx}`);
+  if(pickerContainer){
+    pickerContainer.id=`editKwPicker_${idx}`;
+    renderKwPicker(pickerContainer, _editLicKws[idx], (newSet)=>{ _editLicKws[idx]=newSet; });
+  }
+}
+
+function changeLicTotalInEdit(idx,delta){
+  const inp=document.getElementById(`edit_total_${idx}`); if(!inp) return;
+  const cur=parseInt(inp.value||'0',10)||0;
+  inp.value=Math.max(0,cur+delta);
 }
 
 function saveEditLicCard(idx){
   const item=licInvItems[idx]; if(!item) return;
   const icon=(document.getElementById(`edit_icon_${idx}`)?.value||'').trim()||'📦';
   const name=(document.getElementById(`edit_name_${idx}`)?.value||'').trim();
-  const kwRaw=(document.getElementById(`edit_kw_${idx}`)?.value||'').trim();
   const total=parseInt(document.getElementById(`edit_total_${idx}`)?.value||'0',10)||0;
+  const matchKeywords=[...(_editLicKws[idx]||new Set())];
   if(!name){ showNotif('กรุณากรอกชื่อซอฟต์แวร์','error'); return; }
-  licInvItems[idx]={ ...item, icon, name, total, matchKeywords: kwRaw?kwRaw.split(',').map(k=>k.trim()).filter(Boolean):[] };
+  licInvItems[idx]={ ...item, icon, name, total, matchKeywords };
+  delete _editLicKws[idx];
   saveStorage(); renderLicInvView();
   showNotif('บันทึกแล้ว');
 }
