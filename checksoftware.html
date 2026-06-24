@@ -378,20 +378,21 @@ function highlight(s,q){
 // - มีคำว่า OEI  -> ประเภท OEI (Original Equipment Integrator)
 // - มีคำว่า FPP  -> ประเภท FPP (Full Packaged Product)
 // - ไม่มีทั้งหมด และเป็นหมวด OS -> ถือเป็น PRO ธรรมดา (Volume License)
-function detectLicenseType(category,name,version,remark){
-  if(category!=='OS') return '';
-  const hay=(String(name||'')+' '+String(version||'')+' '+String(remark||'')).toUpperCase();
-  if(/\bOEM\b/.test(hay)) return 'OEM';
-  if(/\bOEI\b/.test(hay)) return 'OEI';
-  if(/\bFPP\b/.test(hay)) return 'FPP';
-  return 'VL'; // Volume License (PRO ธรรมดา)
-}
-function licenseBadgeLabel(lic){
-  if(lic==='OEM') return 'OEM';
-  if(lic==='OEI') return 'OEI';
-  if(lic==='FPP') return 'FPP';
-  if(lic==='VL')  return 'Volume License';
-  return '';
+function detectLicenseType(category, name, version, remark) {
+  if (category !== 'OS') return '';
+  
+  // ตรวจ Remark ก่อน — ถ้าระบุชัดเจนให้ใช้เลย
+  const rem = String(remark || '').toUpperCase();
+  if (/\bOEI\b/.test(rem)) return 'OEI';
+  if (/\bOEM\b/.test(rem)) return 'OEM';
+  if (/\bFPP\b/.test(rem)) return 'FPP';
+
+  // ถ้า Remark ไม่มี ค่อยดูจากชื่อโปรแกรม + Version
+  const hay = (String(name || '') + ' ' + String(version || '')).toUpperCase();
+  if (/\bOEM\b/.test(hay)) return 'OEM';
+  if (/\bOEI\b/.test(hay)) return 'OEI';
+  if (/\bFPP\b/.test(hay)) return 'FPP';
+  return 'VL';
 }
 
 // ── Machine-prefix helper (ชื่อย่อหน่วยงาน/กลุ่มเครื่อง) ─
