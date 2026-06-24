@@ -69,19 +69,16 @@
 .prog-flag-cell{width:34px;text-align:center;}
 .prog-flag-check{width:17px;height:17px;cursor:pointer;accent-color:var(--r);}
 
-.comp-actions{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-top:1px solid var(--bdr);
-  background:var(--bg);}
+.comp-actions{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-top:1px solid var(--bdr);background:var(--bg);}
 .comp-actions-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 
 .btn-ok{padding:7px 14px;border-radius:var(--radsm);font-size:12px;font-weight:700;
-  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
-  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
 .btn-ok:hover{background:var(--gll);border-color:var(--g);color:var(--g);}
 .btn-ok.active{background:var(--g);border-color:var(--g);color:#fff;}
 
 .btn-bad{padding:7px 14px;border-radius:var(--radsm);font-size:12px;font-weight:700;
-  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);
-  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
 .btn-bad:hover{background:#FFF0EC;border-color:var(--r);color:var(--r);}
 .btn-bad.active{background:var(--r);border-color:var(--r);color:#fff;}
 .btn-bad.auto-issue{background:#FEE2E2;border-color:var(--r);color:#991B1B;}
@@ -151,16 +148,14 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .prog-summary-table td{padding:9px 12px;font-size:12px;vertical-align:middle;}
 .prog-name-cell{font-weight:600;}
 .prog-count-cell{font-weight:700;font-family:var(--mono);}
-.prog-bar-wrap{width:100%;height:16px;background:var(--bg);border-radius:4px;overflow:hidden;
-  position:relative;min-width:90px;}
+.prog-bar-wrap{width:100%;height:16px;background:var(--bg);border-radius:4px;overflow:hidden;position:relative;min-width:90px;}
 .prog-bar-fill{height:100%;background:var(--g);border-radius:4px;}
 .prog-cat-cell{white-space:nowrap;}
 .prog-machines-toggle{font-size:10px;color:var(--g);cursor:pointer;font-weight:700;white-space:nowrap;}
 .prog-machines-row{display:none;}
 .prog-machines-row.open{display:table-row;}
 .prog-machines-inner{padding:10px 14px;background:var(--bg);display:flex;flex-wrap:wrap;gap:6px;}
-.prog-machine-chip{font-family:var(--mono);font-size:10px;background:var(--surf);border:1px solid var(--bdr);
-  border-radius:4px;padding:2px 7px;}
+.prog-machine-chip{font-family:var(--mono);font-size:10px;background:var(--surf);border:1px solid var(--bdr);border-radius:4px;padding:2px 7px;}
 
 /* OS version grouping */
 .prog-group-row{background:#F1F5F9;}
@@ -185,93 +180,132 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .prefix-opt-label{font-size:12px;font-weight:600;flex:1;}
 .prefix-opt-count{font-size:10px;color:var(--tx3);font-family:var(--mono);}
 
-/* ── License Inventory ───────────────────────────── */
-.lic-inv-grid{display:grid;gap:12px;margin-top:4px;}
-.lic-inv-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radlg);
-  overflow:hidden;transition:box-shadow .15s;}
-.lic-inv-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.07);}
-.lic-inv-card.over-quota{border-color:#FCA5A5;}
-.lic-inv-card.near-quota{border-color:#FCD34D;}
-.lic-inv-card.ok-quota{border-color:#6EE7B7;}
+/* ══════════════════════════════════════════════════
+   🗂️  LICENSE INVENTORY  (คลังสิทธิ์การใช้งาน)
+   ══════════════════════════════════════════════════ */
 
-.lic-inv-head{display:flex;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap;}
-.lic-inv-name{font-size:13px;font-weight:700;flex:1;min-width:0;}
-.lic-inv-name-input{font-size:13px;font-weight:700;flex:1;min-width:120px;
-  padding:3px 7px;border:1.5px solid var(--g);border-radius:6px;
-  background:var(--surf);color:var(--tx1);font-family:inherit;}
+/* ── top overview strip ── */
+.lic-overview{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;}
+.lic-overview-card{flex:1;min-width:140px;background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--radlg);padding:14px 16px;display:flex;flex-direction:column;gap:4px;}
+.lic-ov-num{font-size:26px;font-weight:700;font-family:var(--mono);line-height:1;}
+.lic-ov-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.lic-ov-ok{color:#065F46;}
+.lic-ov-over{color:#991B1B;}
+.lic-ov-near{color:#92400E;}
+
+/* ── card grid ── */
+.lic-inv-grid{display:grid;gap:14px;}
+
+.lic-inv-card{background:var(--surf);border:2px solid var(--bdr);border-radius:var(--radlg);
+  overflow:hidden;transition:box-shadow .2s,border-color .2s;}
+.lic-inv-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);}
+.lic-inv-card.status-ok   {border-color:#6EE7B7;}
+.lic-inv-card.status-near {border-color:#FCD34D;}
+.lic-inv-card.status-over {border-color:#FCA5A5;}
+.lic-inv-card.status-zero {border-color:var(--bdrm);}
+
+/* card header */
+.lic-inv-head{display:flex;align-items:center;gap:12px;padding:14px 16px;flex-wrap:wrap;}
+.lic-inv-icon{font-size:24px;flex-shrink:0;}
+.lic-inv-info{flex:1;min-width:0;}
+.lic-inv-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lic-inv-name-input{font-size:14px;font-weight:700;width:100%;padding:4px 8px;
+  border:1.5px solid var(--g);border-radius:6px;background:var(--surf);color:var(--tx1);font-family:inherit;}
 .lic-inv-name-input:focus{outline:none;box-shadow:0 0 0 2px var(--gll);}
+.lic-inv-sub{font-size:11px;color:var(--tx3);margin-top:2px;}
 
-.lic-inv-counts{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;}
-.lic-inv-stat{display:flex;flex-direction:column;align-items:center;min-width:52px;}
-.lic-inv-stat-num{font-size:18px;font-weight:700;font-family:var(--mono);line-height:1.1;}
-.lic-inv-stat-lbl{font-size:9px;color:var(--tx3);font-weight:600;text-transform:uppercase;}
-.lic-inv-divider{width:1px;height:32px;background:var(--bdr);}
+/* status pill */
+.lic-status-pill{font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;
+  white-space:nowrap;flex-shrink:0;border:1.5px solid transparent;}
+.lic-pill-ok  {background:#D1FAE5;color:#065F46;border-color:#6EE7B7;}
+.lic-pill-near{background:#FEF3C7;color:#92400E;border-color:#FCD34D;}
+.lic-pill-over{background:#FEE2E2;color:#991B1B;border-color:#FCA5A5;}
+.lic-pill-zero{background:#F3F4F6;color:#6B7280;border-color:#D1D5DB;}
 
-.lic-bar-wrap{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin:0 14px 10px;}
-.lic-bar-fill{height:100%;border-radius:6px;transition:width .4s;}
-.lic-bar-ok{background:var(--g);}
-.lic-bar-near{background:#F59E0B;}
-.lic-bar-over{background:var(--r);}
+/* progress tube */
+.lic-tube-wrap{padding:0 16px 4px;position:relative;}
+.lic-tube-track{height:18px;background:var(--bg);border-radius:9px;overflow:hidden;
+  border:1px solid var(--bdr);position:relative;}
+.lic-tube-fill{height:100%;border-radius:9px;transition:width .5s cubic-bezier(.4,0,.2,1);
+  position:relative;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;}
+.lic-tube-fill-ok  {background:linear-gradient(90deg,#34D399,#10B981);}
+.lic-tube-fill-near{background:linear-gradient(90deg,#FCD34D,#F59E0B);}
+.lic-tube-fill-over{background:linear-gradient(90deg,#FCA5A5,#EF4444);}
+.lic-tube-fill-zero{background:#E5E7EB;}
+.lic-tube-pct{font-size:9px;font-weight:700;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.3);}
+.lic-tube-pct-dark{color:var(--tx3);}
 
-.lic-inv-foot{display:flex;align-items:center;gap:8px;padding:8px 14px;
-  border-top:1px solid var(--bdr);background:var(--bg);flex-wrap:wrap;}
-.lic-qty-ctrl{display:flex;align-items:center;gap:0;}
-.lic-qty-btn{width:28px;height:28px;border:1.5px solid var(--bdrm);background:var(--surf);
-  cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;
-  transition:all .15s;flex-shrink:0;}
+/* stats row */
+.lic-stats-row{display:flex;align-items:stretch;gap:0;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);}
+.lic-stat{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 8px;gap:2px;}
+.lic-stat+.lic-stat{border-left:1px solid var(--bdr);}
+.lic-stat-num{font-size:20px;font-weight:700;font-family:var(--mono);line-height:1;}
+.lic-stat-lbl{font-size:9px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:center;}
+.lic-stat-num.clr-ok  {color:#059669;}
+.lic-stat-num.clr-over{color:#DC2626;}
+.lic-stat-num.clr-am  {color:#D97706;}
+
+/* footer controls */
+.lic-inv-foot{display:flex;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap;background:var(--bg);}
+.lic-qty-ctrl{display:flex;align-items:center;}
+.lic-qty-btn{width:30px;height:30px;border:1.5px solid var(--bdrm);background:var(--surf);
+  cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .lic-qty-btn:first-child{border-radius:6px 0 0 6px;}
 .lic-qty-btn:last-child{border-radius:0 6px 6px 0;}
 .lic-qty-btn:hover{background:var(--gll);border-color:var(--g);color:var(--g);}
-.lic-qty-input{width:52px;height:28px;border:1.5px solid var(--bdrm);border-left:none;border-right:none;
-  text-align:center;font-size:13px;font-weight:700;font-family:var(--mono);
-  background:var(--surf);color:var(--tx1);}
+.lic-qty-input{width:60px;height:30px;border:1.5px solid var(--bdrm);border-left:none;border-right:none;
+  text-align:center;font-size:14px;font-weight:700;font-family:var(--mono);background:var(--surf);color:var(--tx1);}
 .lic-qty-input:focus{outline:none;border-color:var(--g);z-index:1;position:relative;}
-.lic-match-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
-.lic-match-ok{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7;}
-.lic-match-over{background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;}
-.lic-match-near{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;}
-.lic-match-zero{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB;}
-.btn-lic-del{padding:4px 9px;border-radius:6px;font-size:11px;font-weight:700;
-  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx3);
-  transition:all .15s;white-space:nowrap;margin-left:auto;}
+.lic-qty-lbl{font-size:11px;color:var(--tx3);white-space:nowrap;}
+
+.btn-lic-edit{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+  border:1.5px solid var(--g);background:var(--surf);color:var(--g);transition:all .15s;white-space:nowrap;}
+.btn-lic-edit:hover{background:var(--gll);}
+.btn-lic-edit.saving-mode{background:var(--g);color:#fff;}
+.btn-lic-del{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+  border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx3);transition:all .15s;white-space:nowrap;margin-left:auto;}
 .btn-lic-del:hover{background:#FEE2E2;border-color:var(--r);color:var(--r);}
-.btn-lic-del.editing{background:var(--g);border-color:var(--g);color:#fff;}
-.btn-lic-del.editing:hover{filter:brightness(1.08);}
 
-.lic-add-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
-  padding:10px 14px;background:var(--surf);border:1.5px dashed var(--bdrm);
-  border-radius:var(--radlg);margin-top:4px;}
-.lic-add-row input[type=text]{flex:1;min-width:160px;padding:7px 10px;
-  border:1.5px solid var(--bdrm);border-radius:var(--radsm);font-size:12px;
+/* add new card */
+.lic-add-card{background:var(--surf);border:2px dashed var(--bdrm);border-radius:var(--radlg);padding:16px;
+  display:flex;flex-direction:column;gap:10px;transition:border-color .2s;}
+.lic-add-card:focus-within{border-color:var(--g);}
+.lic-add-card-title{font-size:12px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;}
+.lic-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.lic-add-row input[type=text],.lic-add-row input[type=number]{padding:8px 10px;
+  border:1.5px solid var(--bdrm);border-radius:var(--radsm);font-size:13px;
   font-family:inherit;background:var(--surf);color:var(--tx1);}
-.lic-add-row input[type=text]:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 2px var(--gll);}
-.lic-inv-summary{display:flex;gap:10px;flex-wrap:wrap;padding:10px 14px;
-  background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);margin-bottom:12px;}
-.lic-inv-summary-item{font-size:11px;color:var(--tx3);}
-.lic-inv-summary-item b{color:var(--tx1);}
+.lic-add-row input[type=text]{flex:1;min-width:160px;}
+.lic-add-row input[type=number]{width:90px;}
+.lic-add-row input:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 2px var(--gll);}
+.btn-lic-add{padding:8px 18px;border-radius:var(--radsm);font-size:13px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--g);background:var(--g);color:#fff;white-space:nowrap;}
+.btn-lic-add:hover{filter:brightness(1.08);}
 
-/* ── Merge Dialog ────────────────────────────────── */
+/* search/filter row inside licinv */
+.lic-filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem;}
+.lic-filter-row .search-box{max-width:260px;}
+
+/* Merge Dialog */
 .merge-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;
   display:flex;align-items:center;justify-content:center;padding:16px;}
 .merge-dialog{background:var(--surf);border:1.5px solid var(--bdrm);border-radius:var(--radlg);
-  width:100%;max-width:580px;max-height:85vh;display:flex;flex-direction:column;
-  box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  width:100%;max-width:580px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 .merge-dialog-head{padding:16px 18px 12px;border-bottom:1px solid var(--bdr);}
 .merge-dialog-head h3{margin:0 0 4px;font-size:15px;}
 .merge-dialog-head p{margin:0;font-size:12px;color:var(--tx3);line-height:1.7;}
 .merge-dialog-body{flex:1;overflow-y:auto;padding:6px 18px;}
-.merge-item{display:flex;align-items:center;gap:10px;padding:8px 4px;
-  border-bottom:1px solid var(--bdr);font-size:12px;}
+.merge-item{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--bdr);font-size:12px;}
 .merge-item:last-child{border-bottom:none;}
 .merge-ck-name{flex:1;font-weight:600;font-family:var(--mono);font-size:11.5px;word-break:break-all;}
 .merge-item-sel{display:flex;gap:6px;flex-shrink:0;}
-.merge-btn{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:700;
-  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);transition:all .15s;white-space:nowrap;}
+.merge-btn{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;
+  border:1.5px solid var(--bdrm);background:var(--surf);transition:all .15s;white-space:nowrap;}
 .merge-btn.overwrite{border-color:#F59E0B;color:#92400E;}
 .merge-btn.overwrite.sel{background:#F59E0B;border-color:#F59E0B;color:#fff;}
 .merge-btn.skip.sel{background:#6B7280;border-color:#6B7280;color:#fff;}
-.merge-dialog-foot{padding:12px 18px;border-top:1px solid var(--bdr);
-  display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.merge-dialog-foot{padding:12px 18px;border-top:1px solid var(--bdr);display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
 .merge-bulk-link{font-size:11px;color:var(--g);font-weight:700;cursor:pointer;user-select:none;}
 .merge-bulk-link:hover{text-decoration:underline;}
 .merge-stat{font-size:11px;color:var(--tx3);flex:1;}
@@ -319,20 +353,19 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
     </div>
 
     <div class="page-tabs" id="pageTabs" style="display:none">
-      <div class="page-tab active" id="tabCheck" onclick="switchView('check')">🖥️ เช็คเครื่อง</div>
-      <div class="page-tab" id="tabSummary" onclick="switchView('summary')">📊 สรุปโปรแกรม</div>
-      <div class="page-tab" id="tabLicInv" onclick="switchView('licinv')">🗂️ คลังสิทธิ์</div>
+      <div class="page-tab active" id="tabCheck"   onclick="switchView('check')">🖥️ เช็คเครื่อง</div>
+      <div class="page-tab"        id="tabSummary" onclick="switchView('summary')">📊 สรุปโปรแกรม</div>
+      <div class="page-tab"        id="tabLicInv"  onclick="switchView('licinv')">🗂️ คลังสิทธิ์</div>
     </div>
 
-    <!-- ───────── VIEW: CHECK ───────── -->
+    <!-- ═══════════ VIEW: CHECK ═══════════ -->
     <div class="page-view active" id="viewCheck">
-
       <div class="summary-bar" id="summaryBar" style="display:none">
-        <div class="sum-item"><div class="sum-num" id="sumComp" style="color:var(--tx2)">0</div><div class="sum-lbl">เครื่อง</div></div>
+        <div class="sum-item"><div class="sum-num" id="sumComp"        style="color:var(--tx2)">0</div><div class="sum-lbl">เครื่อง</div></div>
         <div class="sum-item"><div class="sum-num" id="sumProgInstall" style="color:var(--tx2)">0</div><div class="sum-lbl">รายการติดตั้งทั้งหมด</div></div>
-        <div class="sum-item"><div class="sum-num" id="sumChecked" style="color:var(--g)">0</div><div class="sum-lbl">เช็คแล้ว</div></div>
-        <div class="sum-item"><div class="sum-num" id="sumOk" style="color:var(--g)">0</div><div class="sum-lbl">ตรงทุกโปรแกรม</div></div>
-        <div class="sum-item"><div class="sum-num" id="sumIssue" style="color:var(--r)">0</div><div class="sum-lbl">พบปัญหา</div></div>
+        <div class="sum-item"><div class="sum-num" id="sumChecked"     style="color:var(--g)">0</div><div class="sum-lbl">เช็คแล้ว</div></div>
+        <div class="sum-item"><div class="sum-num" id="sumOk"          style="color:var(--g)">0</div><div class="sum-lbl">ตรงทุกโปรแกรม</div></div>
+        <div class="sum-item"><div class="sum-num" id="sumIssue"       style="color:var(--r)">0</div><div class="sum-lbl">พบปัญหา</div></div>
       </div>
 
       <div class="toolbar" id="toolbarRow" style="display:none">
@@ -364,23 +397,18 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
         รองรับ .xls และ .xlsx (ไฟล์ทะเบียนประวัติซอฟต์แวร์)<br>
         <span style="font-size:11px;color:#bbb;">โครงสร้าง: Computer name | IP Address | ชื่อ-สกุล | ตำแหน่ง | Program | Version | Remark</span></p>
       </div>
-
       <div id="assetList"></div>
     </div>
 
-    <!-- ───────── VIEW: SUMMARY ───────── -->
+    <!-- ═══════════ VIEW: SUMMARY ═══════════ -->
     <div class="page-view" id="viewSummary">
       <div class="toolbar" id="summaryToolbarRow" style="display:none">
-        <input class="search-box" type="text" id="progSearchInput"
-          placeholder="🔎 ค้นหาชื่อโปรแกรม..."
-          oninput="renderSummaryView()"/>
+        <input class="search-box" type="text" id="progSearchInput" placeholder="🔎 ค้นหาชื่อโปรแกรม..." oninput="renderSummaryView()"/>
         <select id="progCatSel" class="btn btn-sm" style="padding:6px 10px;font-size:12px;width:auto;cursor:pointer;" onchange="renderSummaryView()">
           <option value="">ทุกหมวด</option>
         </select>
         <div class="prefix-filter-wrap" id="prefixFilterWrap">
-          <button type="button" class="btn btn-sm" id="prefixFilterBtn" onclick="togglePrefixDropdown(event)">
-            🖥️ กลุ่มเครื่อง: ทั้งหมด
-          </button>
+          <button type="button" class="btn btn-sm" id="prefixFilterBtn" onclick="togglePrefixDropdown(event)">🖥️ กลุ่มเครื่อง: ทั้งหมด</button>
           <div class="prefix-dropdown" id="prefixDropdown">
             <div class="prefix-dropdown-actions">
               <span class="prefix-dropdown-link" onclick="selectAllPrefixes(true)">เลือกทั้งหมด</span>
@@ -393,12 +421,20 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
       <div id="summaryContent"></div>
     </div>
 
+    <!-- ═══════════ VIEW: LICENSE INVENTORY ═══════════ -->
+    <div class="page-view" id="viewLicInv">
+      <div id="licInvContent"></div>
+    </div>
+
   </div>
   <nav class="bottom-nav" id="bottomNav"></nav>
 </div>
 <div id="notif"></div>
 
 <script>
+/* ══════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════ */
 let currentUser=null, currentRole='user', db=null;
 let swData={}, swState={};
 let currentView='check';
@@ -406,6 +442,25 @@ let _progSort={key:'count',dir:'desc'};
 let _openMachineRows=new Set();
 let _collapsedOsGroups=new Set();
 
+/* Default license inventory — pre-loaded with the 8 items */
+const DEFAULT_LIC_ITEMS=[
+  {id:'lic_1', name:'Windows 7 Pro',         icon:'🪟', total:70,  matchKeywords:['windows 7']},
+  {id:'lic_2', name:'Windows 10 Pro',        icon:'🪟', total:137, matchKeywords:['windows 10']},
+  {id:'lic_3', name:'Windows Server 2019',   icon:'🖧', total:6,   matchKeywords:['server 2019']},
+  {id:'lic_4', name:'MS Office 365',         icon:'📄', total:30,  matchKeywords:['office 365','office365']},
+  {id:'lic_5', name:'MS Office 2016',        icon:'📄', total:5,   matchKeywords:['office 2016']},
+  {id:'lic_6', name:'MS Office 2013',        icon:'📄', total:5,   matchKeywords:['office 2013']},
+  {id:'lic_7', name:'MS Office 2010',        icon:'📄', total:3,   matchKeywords:['office 2010']},
+  {id:'lic_8', name:'Kaspersky Endpoint',    icon:'🛡️', total:290, matchKeywords:['kaspersky']},
+];
+
+/* licInvItems = array of {id, name, icon, total, matchKeywords} */
+let licInvItems=[];
+let _licFilter='';
+
+/* ══════════════════════════════════════════
+   FIREBASE / INIT
+   ══════════════════════════════════════════ */
 initShell('checksoftware', async(user,role,firestore)=>{
   currentUser=user; currentRole=role; db=firestore;
   startRealtimeSync();
@@ -420,11 +475,12 @@ function saveStorage(){
     _isSaving=true;
     try{
       await _sessionRef().set({
-        swData:  JSON.stringify(swData),
-        swState: JSON.stringify(swState),
-        updatedAt:  firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy:  currentUser?.uid||'',
-        updatedByName: currentUser?.displayName||currentUser?.email||'',
+        swData:       JSON.stringify(swData),
+        swState:      JSON.stringify(swState),
+        licInvItems:  JSON.stringify(licInvItems),
+        updatedAt:    firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy:    currentUser?.uid||'',
+        updatedByName:currentUser?.displayName||currentUser?.email||'',
       },{merge:true});
     }catch(e){ console.warn('Firestore save error:',e); }
     finally{ setTimeout(()=>{ _isSaving=false; },2000); }
@@ -439,10 +495,15 @@ function startRealtimeSync(){
     if(snap.exists){
       const d=snap.data();
       try{
-        if(d.swData)  swData=JSON.parse(d.swData);
-        if(d.swState) swState=JSON.parse(d.swState);
+        if(d.swData)      swData=JSON.parse(d.swData);
+        if(d.swState)     swState=JSON.parse(d.swState);
+        if(d.licInvItems) licInvItems=JSON.parse(d.licInvItems);
+        else if(!licInvItems.length) licInvItems=JSON.parse(JSON.stringify(DEFAULT_LIC_ITEMS));
       }catch(e){}
-    } else { swData={}; swState={}; }
+    } else {
+      swData={}; swState={};
+      licInvItems=JSON.parse(JSON.stringify(DEFAULT_LIC_ITEMS));
+    }
     _ckIndex={}; _ckIndexRev={};
     renderAll();
     if(snap.exists && snap.data().updatedByName && snap.data().updatedBy!==currentUser?.uid)
@@ -450,6 +511,9 @@ function startRealtimeSync(){
   }, err=>console.warn('Snapshot error:',err));
 }
 
+/* ══════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════ */
 let _ckIndex={}, _ckIndexRev={};
 function getCkId(ck){
   if(_ckIndex[ck]===undefined){ const n=Object.keys(_ckIndex).length; _ckIndex[ck]=n; _ckIndexRev[n]=ck; }
@@ -461,18 +525,16 @@ function highlight(s,q){
   const e=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   return esc(s).replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`);
 }
-
-// ── License-type helper ──────────────────────────
-function detectLicenseType(category, name, version, remark) {
-  if (category !== 'OS') return '';
-  const rem = String(remark || '').toUpperCase();
-  if (/\bOEI\b/.test(rem)) return 'OEI';
-  if (/\bOEM\b/.test(rem)) return 'OEM';
-  if (/\bFPP\b/.test(rem)) return 'FPP';
-  const hay = (String(name || '') + ' ' + String(version || '')).toUpperCase();
-  if (/\bOEM\b/.test(hay)) return 'OEM';
-  if (/\bOEI\b/.test(hay)) return 'OEI';
-  if (/\bFPP\b/.test(hay)) return 'FPP';
+function detectLicenseType(category,name,version,remark){
+  if(category!=='OS') return '';
+  const rem=String(remark||'').toUpperCase();
+  if(/\bOEI\b/.test(rem)) return 'OEI';
+  if(/\bOEM\b/.test(rem)) return 'OEM';
+  if(/\bFPP\b/.test(rem)) return 'FPP';
+  const hay=(String(name||'')+' '+String(version||'')).toUpperCase();
+  if(/\bOEM\b/.test(hay)) return 'OEM';
+  if(/\bOEI\b/.test(hay)) return 'OEI';
+  if(/\bFPP\b/.test(hay)) return 'FPP';
   return 'VL';
 }
 function licenseBadgeLabel(lic){
@@ -482,204 +544,147 @@ function licenseBadgeLabel(lic){
   if(lic==='VL')  return 'Volume License';
   return '';
 }
-
 function getMachinePrefix(ck){
   const m=String(ck||'').match(/^([^\d]*)/);
   const p=(m?m[1]:'').trim();
-  return p || String(ck||'');
+  return p||String(ck||'');
 }
 function getOsGroupName(name){
   let n=String(name||'').replace(/\(.*?\)/g,'').trim();
   n=n.replace(/^Microsoft\s+/i,'').trim();
   n=n.replace(/\s{2,}/g,' ');
-  return n || String(name||'');
+  return n||String(name||'');
 }
 
+/* ══════════════════════════════════════════
+   VIEW SWITCHING
+   ══════════════════════════════════════════ */
 let _selectedPrefixes=null;
-
 function switchView(v){
   currentView=v;
-  document.getElementById('tabCheck').classList.toggle('active', v==='check');
-  document.getElementById('tabSummary').classList.toggle('active', v==='summary');
-  document.getElementById('viewCheck').classList.toggle('active', v==='check');
-  document.getElementById('viewSummary').classList.toggle('active', v==='summary');
+  ['check','summary','licinv'].forEach(id=>{
+    document.getElementById('tab'+id.charAt(0).toUpperCase()+id.slice(1))?.classList.toggle('active',v===id);
+    document.getElementById('view'+id.charAt(0).toUpperCase()+id.slice(1))?.classList.toggle('active',v===id);
+  });
+  // manual mapping because IDs are capitalised differently
+  document.getElementById('tabCheck')  ?.classList.toggle('active',v==='check');
+  document.getElementById('tabSummary')?.classList.toggle('active',v==='summary');
+  document.getElementById('tabLicInv') ?.classList.toggle('active',v==='licinv');
+  document.getElementById('viewCheck')  ?.classList.toggle('active',v==='check');
+  document.getElementById('viewSummary')?.classList.toggle('active',v==='summary');
+  document.getElementById('viewLicInv') ?.classList.toggle('active',v==='licinv');
   if(v==='summary') renderSummaryView();
+  if(v==='licinv')  renderLicInvView();
 }
 
-// ── Import ────────────────────────────────────────
+/* ══════════════════════════════════════════
+   IMPORT
+   ══════════════════════════════════════════ */
 function handleImport(input){ const f=input.files[0]; if(!f)return; input.value=''; readExcelFile(f); }
 function handleDrop(e){
   e.preventDefault(); document.getElementById('importZone').classList.remove('drag-over');
   const f=e.dataTransfer.files[0]; if(f) readExcelFile(f);
 }
-
-// ── readExcelFile: merge mode ─────────────────────
 function readExcelFile(file){
   const reader=new FileReader();
   reader.onload=(ev)=>{
     try{
       const buf=ev.target.result;
       let wb;
-      try{
-        const text874=new TextDecoder('windows-874').decode(buf);
-        wb=XLSX.read(text874,{type:'string'});
-      }catch(err){
-        wb=XLSX.read(buf,{type:'array'});
-      }
+      try{ const text874=new TextDecoder('windows-874').decode(buf); wb=XLSX.read(text874,{type:'string'}); }
+      catch(err){ wb=XLSX.read(buf,{type:'array'}); }
       const parsed=parseWorkbook(wb);
       const n=Object.keys(parsed).length;
       if(n===0){ showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error'); return; }
-
-      // แบ่งเครื่องใหม่ vs ซ้ำ
-      const newCks=[], dupCks=[];
-      Object.keys(parsed).forEach(ck=>{
-        if(swData[ck]) dupCks.push(ck);
-        else newCks.push(ck);
-      });
-
-      // ไม่มีซ้ำ → merge ทันที
-      if(!dupCks.length){
-        _mergeImport(parsed, {}, newCks);
-        showNotif(`Import สำเร็จ เพิ่ม ${newCks.length} เครื่อง`);
-        return;
-      }
-
-      // มีซ้ำ → แสดง dialog ถาม
-      showMergeDialog(parsed, newCks, dupCks);
+      const newCks=[],dupCks=[];
+      Object.keys(parsed).forEach(ck=>{ if(swData[ck]) dupCks.push(ck); else newCks.push(ck); });
+      if(!dupCks.length){ _mergeImport(parsed,{},newCks); showNotif(`Import สำเร็จ เพิ่ม ${newCks.length} เครื่อง`); return; }
+      showMergeDialog(parsed,newCks,dupCks);
     }catch(err){ showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error'); }
   };
   reader.readAsArrayBuffer(file);
 }
-
-function _mergeImport(parsed, decisions, newCks){
+function _mergeImport(parsed,decisions,newCks){
   newCks.forEach(ck=>{ swData[ck]=parsed[ck]; });
-  Object.keys(decisions).forEach(ck=>{
-    if(decisions[ck]==='overwrite'){
-      swData[ck]=parsed[ck];
-      delete swState[ck]; // reset ผลเช็คเดิม
-    }
-    // 'skip' → คงของเดิมไว้
-  });
-  _ckIndex={}; _ckIndexRev={};
-  _selectedPrefixes=null;
+  Object.keys(decisions).forEach(ck=>{ if(decisions[ck]==='overwrite'){ swData[ck]=parsed[ck]; delete swState[ck]; } });
+  _ckIndex={}; _ckIndexRev={}; _selectedPrefixes=null;
   saveStorage(); renderAll();
 }
-
-// ── Merge dialog ──────────────────────────────────
-function showMergeDialog(parsed, newCks, dupCks){
+function showMergeDialog(parsed,newCks,dupCks){
   const decisions={};
-  dupCks.forEach(ck=>{ decisions[ck]='skip'; }); // default: ข้าม
-
+  dupCks.forEach(ck=>{ decisions[ck]='skip'; });
   const overlay=document.createElement('div');
   overlay.className='merge-overlay';
-
   function buildHtml(){
     const overCnt=dupCks.filter(ck=>decisions[ck]==='overwrite').length;
     const skipCnt=dupCks.filter(ck=>decisions[ck]==='skip').length;
-    return `
-<div class="merge-dialog">
-  <div class="merge-dialog-head">
-    <h3>⚠️ พบชื่อเครื่องซ้ำ ${dupCks.length} เครื่อง</h3>
-    <p>
-      เครื่องใหม่ที่ไม่ซ้ำ <strong>${newCks.length} เครื่อง</strong> จะถูกเพิ่มอัตโนมัติ<br>
-      กรุณาเลือกการจัดการสำหรับเครื่องที่ชื่อซ้ำ:<br>
-      <span style="color:#92400E;font-weight:700;">🔄 วางทับ</span> = แทนที่ข้อมูล (ผลเช็คเดิมจะถูกลบ) &nbsp;|&nbsp;
-      <span style="color:var(--tx2);font-weight:700;">⏭️ ข้าม</span> = คงข้อมูลเดิมไว้
-    </p>
-  </div>
-  <div class="merge-dialog-body">
-    ${dupCks.map(ck=>`
-    <div class="merge-item">
-      <span class="merge-ck-name">🖥️ ${esc(ck)}</span>
-      <div class="merge-item-sel">
-        <button class="merge-btn overwrite ${decisions[ck]==='overwrite'?'sel':''}"
-          onclick="_mergeDlgDecide('${esc(ck)}','overwrite')">🔄 วางทับ</button>
-        <button class="merge-btn skip ${decisions[ck]==='skip'?'sel':''}"
-          onclick="_mergeDlgDecide('${esc(ck)}','skip')">⏭️ ข้าม</button>
-      </div>
-    </div>`).join('')}
-  </div>
+    return `<div class="merge-dialog">
+  <div class="merge-dialog-head"><h3>⚠️ พบชื่อเครื่องซ้ำ ${dupCks.length} เครื่อง</h3>
+  <p>เครื่องใหม่ที่ไม่ซ้ำ <strong>${newCks.length} เครื่อง</strong> จะถูกเพิ่มอัตโนมัติ<br>
+  <span style="color:#92400E;font-weight:700;">🔄 วางทับ</span> = แทนที่ข้อมูล &nbsp;|&nbsp;
+  <span style="color:var(--tx2);font-weight:700;">⏭️ ข้าม</span> = คงข้อมูลเดิมไว้</p></div>
+  <div class="merge-dialog-body">${dupCks.map(ck=>`
+    <div class="merge-item"><span class="merge-ck-name">🖥️ ${esc(ck)}</span>
+    <div class="merge-item-sel">
+      <button class="merge-btn overwrite ${decisions[ck]==='overwrite'?'sel':''}" onclick="_mergeDlgDecide('${esc(ck)}','overwrite')">🔄 วางทับ</button>
+      <button class="merge-btn skip ${decisions[ck]==='skip'?'sel':''}" onclick="_mergeDlgDecide('${esc(ck)}','skip')">⏭️ ข้าม</button>
+    </div></div>`).join('')}</div>
   <div class="merge-dialog-foot">
     <span class="merge-bulk-link" onclick="_mergeDlgAll('overwrite')">วางทับทั้งหมด</span>
     <span class="merge-bulk-link" onclick="_mergeDlgAll('skip')">ข้ามทั้งหมด</span>
     <span class="merge-stat">วางทับ ${overCnt} · ข้าม ${skipCnt}</span>
     <button class="btn btn-sm" onclick="_mergeDlgCancel()">ยกเลิก</button>
     <button class="btn btn-sm btn-primary" onclick="_mergeDlgConfirm()">✅ ยืนยัน Import</button>
-  </div>
-</div>`;
+  </div></div>`;
   }
-
   function rerender(){ overlay.innerHTML=buildHtml(); }
-
   window._mergeDlgDecide=(ck,val)=>{ decisions[ck]=val; rerender(); };
   window._mergeDlgAll=(val)=>{ dupCks.forEach(ck=>{ decisions[ck]=val; }); rerender(); };
   window._mergeDlgCancel=()=>{ document.body.removeChild(overlay); _cleanMergeGlobals(); };
   window._mergeDlgConfirm=()=>{
     const overCnt=dupCks.filter(ck=>decisions[ck]==='overwrite').length;
     const skipCnt=dupCks.filter(ck=>decisions[ck]==='skip').length;
-    document.body.removeChild(overlay);
-    _cleanMergeGlobals();
-    _mergeImport(parsed, decisions, newCks);
+    document.body.removeChild(overlay); _cleanMergeGlobals();
+    _mergeImport(parsed,decisions,newCks);
     const parts=[];
     if(newCks.length) parts.push(`เพิ่มใหม่ ${newCks.length}`);
     if(overCnt) parts.push(`วางทับ ${overCnt}`);
     if(skipCnt) parts.push(`ข้าม ${skipCnt}`);
     showNotif(`Import สำเร็จ · ${parts.join(' · ')} เครื่อง`);
   };
-
   overlay.innerHTML=buildHtml();
   document.body.appendChild(overlay);
 }
+function _cleanMergeGlobals(){ delete window._mergeDlgDecide; delete window._mergeDlgAll; delete window._mergeDlgCancel; delete window._mergeDlgConfirm; }
 
-function _cleanMergeGlobals(){
-  delete window._mergeDlgDecide;
-  delete window._mergeDlgAll;
-  delete window._mergeDlgCancel;
-  delete window._mergeDlgConfirm;
-}
-
-function rowsFromWorkbook(wb){
-  let rows=[];
-  wb.SheetNames.forEach(name=>{
-    const ws=wb.Sheets[name];
-    rows=rows.concat(XLSX.utils.sheet_to_json(ws,{header:1,defval:''}));
-  });
-  return rows;
-}
-function findLabelValue(row,label,re){
-  const idx=re ? row.findIndex(c=>re.test(c)) : row.findIndex(c=>c===label);
-  if(idx===-1) return '';
-  for(let k=idx+1;k<row.length;k++){ if(row[k]) return row[k]; }
-  return '';
-}
+function rowsFromWorkbook(wb){ let rows=[]; wb.SheetNames.forEach(name=>{ const ws=wb.Sheets[name]; rows=rows.concat(XLSX.utils.sheet_to_json(ws,{header:1,defval:''})); }); return rows; }
+function findLabelValue(row,label,re){ const idx=re?row.findIndex(c=>re.test(c)):row.findIndex(c=>c===label); if(idx===-1)return ''; for(let k=idx+1;k<row.length;k++){ if(row[k])return row[k]; } return ''; }
 function parseWorkbook(wb){
   const result={};
   const rows=rowsFromWorkbook(wb);
-  let currentComp=null, ck=null, inItems=false;
+  let currentComp=null,ck=null,inItems=false;
   for(let i=0;i<rows.length;i++){
     const row=(rows[i]||[]).map(c=>String(c).trim());
     const ci=row.findIndex(c=>c==='Computer name:');
     if(ci!==-1){
       ck=findLabelValue(row,'Computer name:')||`COMP_${i}`;
       const ip=findLabelValue(row,null,/IP\s*Address/i);
-      let emp='', pos='', net='';
+      let emp='',pos='';
       for(let j=i+1;j<Math.min(i+8,rows.length);j++){
         const r2=(rows[j]||[]).map(c=>String(c).trim());
         if(r2.some(c=>c==='ชื่อ-สกุล')) emp=findLabelValue(r2,'ชื่อ-สกุล');
         if(r2.some(c=>c==='ตำแหน่ง')) pos=findLabelValue(r2,'ตำแหน่ง');
-        if(r2.some(c=>/INTERNET/i.test(c))) net=findLabelValue(r2,null,/INTERNET/i);
         if(r2.some(c=>c==='Program')) break;
       }
-      if(!result[ck]) result[ck]={computerName:ck,ip,employee:emp,position:pos,internet:net,programs:[]};
+      if(!result[ck]) result[ck]={computerName:ck,ip,employee:emp,position:pos,programs:[]};
       currentComp=result[ck]; inItems=false; continue;
     }
     if(row.includes('Program')&&row.includes('Version')){ inItems=true; continue; }
     if(currentComp&&inItems){
       const has=row.some(c=>c.length>0); if(!has){ inItems=false; continue; }
-      let name=row[0];
-      if(!name) continue;
+      let name=row[0]; if(!name) continue;
       if(name==='Program'||name==='ลำดับ') continue;
-      const version=row[1]||'', remark=row[2]||'';
+      const version=row[1]||'',remark=row[2]||'';
       let category='';
       const catM=name.match(/^\[([A-Za-z]+)\]\s*/);
       if(catM){ category=catM[1]; name=name.replace(catM[0],''); }
@@ -690,26 +695,12 @@ function parseWorkbook(wb){
   return result;
 }
 
-// ── Template ──────────────────────────────────────
+/* ══════════════════════════════════════════
+   TEMPLATE / STATS
+   ══════════════════════════════════════════ */
 function downloadTemplate(){
   const wb=XLSX.utils.book_new();
-  const d=[
-    ['HO'],['ข้อมูลพนักงานที่รับผิดชอบ',''],
-    ['Computer name:','ACC001-RYG','IP Address','192.168.101.100'],
-    ['ชื่อ-สกุล','สมชาย ตัวอย่าง','ตำแหน่ง','พนักงาน IT'],
-    ['','','สถานะการใช้งาน INTERNET','OPEN'],['ข้อมูลซอฟต์แวร์'],
-    ['Program','Version','Remark'],
-    ['[OS] Windows 10','PRO OEM 64-bit','6Q724(OEI)'],
-    ['[OFFICE] LibreOffice','',''],['[ZIP] 7-Zip','',''],
-    ['[VIRUS] Kaspersky V2565','',''],['[ETC] Google Chrome','',''],['[ETC] AnyDesk','',''],
-    [''],['HO'],['ข้อมูลพนักงานที่รับผิดชอบ',''],
-    ['Computer name:','MMD001-RYG','IP Address','192.168.101.101'],
-    ['ชื่อ-สกุล','สมหญิง ตัวอย่าง','ตำแหน่ง','ผู้จัดการ'],
-    ['','','สถานะการใช้งาน INTERNET','CLOSE'],['ข้อมูลซอฟต์แวร์'],
-    ['Program','Version','Remark'],
-    ['[OS] Windows 11','PRO',''],['[OFFICE] Office 2021','',''],['[ZIP] 7-Zip','',''],
-    ['[VIRUS] Kaspersky V2565','',''],['[ETC] Adobe Reader','',''],[''],
-  ];
+  const d=[['HO'],['ข้อมูลพนักงานที่รับผิดชอบ',''],['Computer name:','ACC001-RYG','IP Address','192.168.101.100'],['ชื่อ-สกุล','สมชาย ตัวอย่าง','ตำแหน่ง','พนักงาน IT'],['','','สถานะการใช้งาน INTERNET','OPEN'],['ข้อมูลซอฟต์แวร์'],['Program','Version','Remark'],['[OS] Windows 10','PRO OEM 64-bit','6Q724(OEI)'],['[OFFICE] LibreOffice','',''],['[ZIP] 7-Zip','',''],['[VIRUS] Kaspersky V2565','',''],['[ETC] Google Chrome','',''],['[ETC] AnyDesk','',''],[''],['HO'],['ข้อมูลพนักงานที่รับผิดชอบ',''],['Computer name:','MMD001-RYG','IP Address','192.168.101.101'],['ชื่อ-สกุล','สมหญิง ตัวอย่าง','ตำแหน่ง','ผู้จัดการ'],['','','สถานะการใช้งาน INTERNET','CLOSE'],['ข้อมูลซอฟต์แวร์'],['Program','Version','Remark'],['[OS] Windows 11','PRO',''],['[OFFICE] Office 2021','',''],['[ZIP] 7-Zip','',''],['[VIRUS] Kaspersky V2565','',''],['[ETC] Adobe Reader','',''],['']];
   const ws=XLSX.utils.aoa_to_sheet(d);
   ws['!cols']=[{wch:24},{wch:24},{wch:22},{wch:26}];
   XLSX.utils.book_append_sheet(wb,ws,'SoftwareList');
@@ -717,109 +708,80 @@ function downloadTemplate(){
   showNotif('ดาวน์โหลดไฟล์ตัวอย่างแล้ว');
 }
 
-// ── Stats ─────────────────────────────────────────
 function calcStats(){
-  let computers=0, progInstalls=0, checked=0, ok=0, issue=0;
-  Object.keys(swData).forEach(ck=>{
-    computers++; progInstalls+=swData[ck].programs.length;
-    const st=swState[ck]||{};
-    if(st.checked){ checked++; if(st.status==='issue') issue++; else if(st.status==='ok') ok++; }
-  });
+  let computers=0,progInstalls=0,checked=0,ok=0,issue=0;
+  Object.keys(swData).forEach(ck=>{ computers++; progInstalls+=swData[ck].programs.length; const st=swState[ck]||{}; if(st.checked){ checked++; if(st.status==='issue') issue++; else if(st.status==='ok') ok++; } });
   return{computers,progInstalls,checked,ok,issue};
 }
 function updateSummary(){
-  const s=calcStats(), el=id=>document.getElementById(id);
+  const s=calcStats(),el=id=>document.getElementById(id);
   if(el('sumComp'))        el('sumComp').textContent=s.computers;
   if(el('sumProgInstall')) el('sumProgInstall').textContent=s.progInstalls;
   if(el('sumChecked'))     el('sumChecked').textContent=s.checked;
   if(el('sumOk'))          el('sumOk').textContent=s.ok;
   if(el('sumIssue'))       el('sumIssue').textContent=s.issue;
-  if(el('pageSubtitle'))
-    el('pageSubtitle').textContent=`${s.computers} เครื่อง · เช็คแล้ว ${s.checked}/${s.computers} เครื่อง · พบปัญหา ${s.issue} เครื่อง`;
+  if(el('pageSubtitle'))   el('pageSubtitle').textContent=`${s.computers} เครื่อง · เช็คแล้ว ${s.checked}/${s.computers} เครื่อง · พบปัญหา ${s.issue} เครื่อง`;
 }
 
-// ── Render (top-level) ────────────────────────────
+/* ══════════════════════════════════════════
+   RENDER ALL
+   ══════════════════════════════════════════ */
 function renderAll(){
   _ckIndex={}; _ckIndexRev={};
   const hasData=Object.keys(swData).length>0;
   document.getElementById('pageTabs').style.display=hasData?'flex':'none';
   document.getElementById('btnClearAll').style.display=hasData?'':'none';
-  if(!hasData){ switchView('check'); }
-  if(currentView==='check') renderCheckView();
-  else renderSummaryView();
+  if(!hasData) switchView('check');
+  if(currentView==='check')   renderCheckView();
+  else if(currentView==='summary') renderSummaryView();
+  else if(currentView==='licinv')  renderLicInvView();
 }
 
-// ── Render: CHECK view ────────────────────────────
+/* ══════════════════════════════════════════
+   CHECK VIEW
+   ══════════════════════════════════════════ */
 function renderCheckView(){
   const hasData=Object.keys(swData).length>0;
   const q=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();
   const filter=document.getElementById('filterSel')?.value||'';
-
   document.getElementById('importZone').style.display=hasData?'none':'block';
   document.getElementById('summaryBar').style.display=hasData?'flex':'none';
   document.getElementById('toolbarRow').style.display=hasData?'flex':'none';
   if(hasData) updateSummary();
-
   const list=document.getElementById('assetList');
   if(!hasData){ list.innerHTML=''; return; }
-
   const sort=document.getElementById('sortSel')?.value||'name';
   const sortedCks=Object.keys(swData).sort((a,b)=>{
     if(sort==='name') return a.localeCompare(b,'th');
-    const stA=swState[a]||{}, stB=swState[b]||{};
-    if(sort==='issue'){
-      const ia=stA.status==='issue'?1:0, ib=stB.status==='issue'?1:0;
-      return ib-ia||a.localeCompare(b,'th');
-    }
-    if(sort==='pending'){
-      const pa=stA.checked?0:1, pb=stB.checked?0:1;
-      return pb-pa||a.localeCompare(b,'th');
-    }
+    const stA=swState[a]||{},stB=swState[b]||{};
+    if(sort==='issue'){ const ia=stA.status==='issue'?1:0,ib=stB.status==='issue'?1:0; return ib-ia||a.localeCompare(b,'th'); }
+    if(sort==='pending'){ const pa=stA.checked?0:1,pb=stB.checked?0:1; return pb-pa||a.localeCompare(b,'th'); }
     return 0;
   });
-
-  let html='', visCount=0;
+  let html='',visCount=0;
   sortedCks.forEach(ck=>{
-    const comp=swData[ck], cid=getCkId(ck), st=swState[ck]||{};
+    const comp=swData[ck],cid=getCkId(ck),st=swState[ck]||{};
     const flagged=new Set(st.issuePrograms||[]);
     const hasFlags=flagged.size>0;
-    const effectiveStatus = hasFlags ? 'issue' : st.status;
-    const effectiveChecked = hasFlags ? true : st.checked;
-
-    if(q){
-      const progHay=comp.programs.map(p=>`${p.category} ${p.name} ${p.version} ${p.remark}`).join(' ');
-      const hay=[ck,comp.ip,comp.employee,comp.position,progHay].join(' ').toLowerCase();
-      if(!hay.includes(q)) return;
-    }
-    if(filter==='pending' && effectiveChecked) return;
-    if(filter==='ok' && !(effectiveChecked&&effectiveStatus==='ok')) return;
-    if(filter==='issue' && !(effectiveChecked&&effectiveStatus==='issue')) return;
-
+    const effectiveStatus=hasFlags?'issue':st.status;
+    const effectiveChecked=hasFlags?true:st.checked;
+    if(q){ const progHay=comp.programs.map(p=>`${p.category} ${p.name} ${p.version} ${p.remark}`).join(' '); const hay=[ck,comp.ip,comp.employee,comp.position,progHay].join(' ').toLowerCase(); if(!hay.includes(q)) return; }
+    if(filter==='pending'&&effectiveChecked) return;
+    if(filter==='ok'&&!(effectiveChecked&&effectiveStatus==='ok')) return;
+    if(filter==='issue'&&!(effectiveChecked&&effectiveStatus==='issue')) return;
     visCount++;
-
     let badgeCls,badgeTxt,nameColor,iconBg,iconBdr;
     if(effectiveChecked&&effectiveStatus==='issue'){ badgeCls='comp-status-issue'; badgeTxt='⚠️ มีปัญหา'; nameColor='#991B1B'; iconBg='#FEE2E2'; iconBdr='#FCA5A5'; }
     else if(effectiveChecked&&effectiveStatus==='ok'){ badgeCls='comp-status-ok'; badgeTxt='✅ ตรงทุกโปรแกรม'; nameColor='#065F46'; iconBg='var(--g)'; iconBdr='var(--g)'; }
     else{ badgeCls='comp-status-pending'; badgeTxt='○ ยังไม่ได้เช็ค'; nameColor=''; iconBg='var(--bg)'; iconBdr='var(--bdrm)'; }
-
-    const flaggedListHtml = hasFlags
-      ? `<div class="flagged-list"><b>⚠️ รายการที่มีปัญหา (${flagged.size})</b>${
-          comp.programs.filter((p,i)=>flagged.has(i)).map(p=>`• ${esc(p.name)}${p.version?` (${esc(p.version)})`:''}`).join('<br>')
-        }</div>` : '';
-
-    const noteDisplay = (effectiveChecked&&effectiveStatus==='issue'&&st.note)
-      ? `<div class="issue-note-display">${esc(st.note).replace(/\n/g,'<br>')}</div>` : '';
-
+    const flaggedListHtml=hasFlags?`<div class="flagged-list"><b>⚠️ รายการที่มีปัญหา (${flagged.size})</b>${comp.programs.filter((p,i)=>flagged.has(i)).map(p=>`• ${esc(p.name)}${p.version?` (${esc(p.version)})`:''}`).join('<br>')}</div>`:'';
+    const noteDisplay=(effectiveChecked&&effectiveStatus==='issue'&&st.note)?`<div class="issue-note-display">${esc(st.note).replace(/\n/g,'<br>')}</div>`:'';
     html+=`
 <div class="comp-group">
   <div class="comp-header" onclick="toggleComp(${cid})">
-    <div style="width:34px;height:34px;background:${iconBg};
-      border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;
-      border:1.5px solid ${iconBdr};flex-shrink:0;">🖥️</div>
+    <div style="width:34px;height:34px;background:${iconBg};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;border:1.5px solid ${iconBdr};flex-shrink:0;">🖥️</div>
     <div style="flex:1;min-width:0;">
-      <div class="comp-name" style="${nameColor?`color:${nameColor};`:''}">
-        ${highlight(comp.computerName,q)}
-      </div>
+      <div class="comp-name" style="${nameColor?`color:${nameColor};`:''}">${highlight(comp.computerName,q)}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:2px;">
         <span class="comp-status-badge ${badgeCls}">${badgeTxt}</span>
         ${hasFlags?`<span class="comp-meta" style="color:#991B1B;font-weight:700;">${flagged.size} รายการมีปัญหา</span>`:''}
@@ -835,56 +797,31 @@ function renderCheckView(){
   </div>
   <div class="comp-body" id="body${cid}">
     <div style="overflow-x:auto;">
-    <table class="sw-table">
-      <thead><tr>
-        <th style="width:28px;">#</th>
-        <th class="prog-flag-cell" title="มีปัญหา">⚠️</th>
-        <th>หมวด</th>
-        <th>โปรแกรม</th>
-        <th>เวอร์ชัน</th>
-        <th>หมายเหตุในทะเบียน</th>
-      </tr></thead>
-      <tbody>
-      ${comp.programs.map((p,i)=>`
-      <tr class="sw-row ${flagged.has(i)?'row-flagged':(p.isNew?'row-new':'')}">
-        <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
-        <td class="prog-flag-cell">
-          <input type="checkbox" class="prog-flag-check" id="flag_${cid}_${i}"
-            ${flagged.has(i)?'checked':''}
-            onchange="toggleProgFlag(${cid},${i})"/>
-        </td>
-        <td>${p.category?`<span class="cat-badge">${esc(p.category)}</span>`:''}</td>
-        <td style="font-weight:600;">${highlight(p.name,q)}${p.isNew?'<span class="new-tag">🆕 ใหม่</span>':''}</td>
-        <td style="color:var(--tx2);">${highlight(p.version,q)}</td>
-        <td style="color:var(--tx3);">${highlight(p.remark,q)}</td>
-      </tr>`).join('')}
-      </tbody>
-    </table>
-    </div>
-
+    <table class="sw-table"><thead><tr>
+      <th style="width:28px;">#</th>
+      <th class="prog-flag-cell" title="มีปัญหา">⚠️</th>
+      <th>หมวด</th><th>โปรแกรม</th><th>เวอร์ชัน</th><th>หมายเหตุในทะเบียน</th>
+    </tr></thead><tbody>
+    ${comp.programs.map((p,i)=>`
+    <tr class="sw-row ${flagged.has(i)?'row-flagged':(p.isNew?'row-new':'')}">
+      <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
+      <td class="prog-flag-cell"><input type="checkbox" class="prog-flag-check" id="flag_${cid}_${i}" ${flagged.has(i)?'checked':''} onchange="toggleProgFlag(${cid},${i})"/></td>
+      <td>${p.category?`<span class="cat-badge">${esc(p.category)}</span>`:''}</td>
+      <td style="font-weight:600;">${highlight(p.name,q)}${p.isNew?'<span class="new-tag">🆕 ใหม่</span>':''}</td>
+      <td style="color:var(--tx2);">${highlight(p.version,q)}</td>
+      <td style="color:var(--tx3);">${highlight(p.remark,q)}</td>
+    </tr>`).join('')}
+    </tbody></table></div>
     <div class="comp-actions">
       ${flaggedListHtml}
       <div class="comp-actions-row">
-        <button class="btn-ok ${effectiveChecked&&effectiveStatus==='ok'?'active':''}"
-          ${hasFlags?'disabled style="opacity:.5;cursor:not-allowed;"':''}
-          onclick="setStatus('${esc(ck)}',${cid},'ok')">
-          ✅ ตรงทุกโปรแกรม
-        </button>
-        <button class="btn-bad ${effectiveChecked&&effectiveStatus==='issue'?'active':''} ${hasFlags&&!(st.checked&&st.status==='issue')?'auto-issue':''}"
-          id="btnissue_${cid}"
-          onclick="setStatus('${esc(ck)}',${cid},'issue')">
-          ⚠️ มีปัญหา${hasFlags?' (อัตโนมัติจากรายการที่ติ๊ก)':''}
-        </button>
-        <button class="btn btn-sm" onclick="saveProgFlags('${esc(ck)}',${cid})" id="saveflags_${cid}">
-          💾 บันทึกรายการที่ติ๊ก
-        </button>
-        <button class="btn btn-sm" onclick="openAddProgram(${cid},'${esc(ck)}')">
-          ➕ เพิ่มโปรแกรม
-        </button>
+        <button class="btn-ok ${effectiveChecked&&effectiveStatus==='ok'?'active':''}" ${hasFlags?'disabled style="opacity:.5;cursor:not-allowed;"':''} onclick="setStatus('${esc(ck)}',${cid},'ok')">✅ ตรงทุกโปรแกรม</button>
+        <button class="btn-bad ${effectiveChecked&&effectiveStatus==='issue'?'active':''} ${hasFlags&&!(st.checked&&st.status==='issue')?'auto-issue':''}" id="btnissue_${cid}" onclick="setStatus('${esc(ck)}',${cid},'issue')">⚠️ มีปัญหา${hasFlags?' (อัตโนมัติจากรายการที่ติ๊ก)':''}</button>
+        <button class="btn btn-sm" onclick="saveProgFlags('${esc(ck)}',${cid})" id="saveflags_${cid}">💾 บันทึกรายการที่ติ๊ก</button>
+        <button class="btn btn-sm" onclick="openAddProgram(${cid},'${esc(ck)}')">➕ เพิ่มโปรแกรม</button>
         ${st.checkedAt?`<span class="check-date">🕐 ${esc(st.checkedAt)}</span>`:''}
         ${st.checkedBy?`<span class="check-date">👤 ${esc(st.checkedBy)}</span>`:''}
       </div>
-
       <div class="addprog-wrap" id="addprog_${cid}">
         <div class="addprog-grid">
           <input type="text" id="addprog_cat_${cid}" placeholder="หมวด เช่น ETC, OS, VIRUS (ไม่บังคับ)"/>
@@ -892,117 +829,78 @@ function renderCheckView(){
           <input type="text" id="addprog_ver_${cid}" placeholder="เวอร์ชัน (ไม่บังคับ)"/>
           <input type="text" id="addprog_rem_${cid}" placeholder="หมายเหตุ (ไม่บังคับ)"/>
         </div>
-        <button class="btn-add-prog-submit" onclick="submitAddProgram('${esc(ck)}',${cid})">
-          💾 บันทึกโปรแกรมใหม่
-        </button>
+        <button class="btn-add-prog-submit" onclick="submitAddProgram('${esc(ck)}',${cid})">💾 บันทึกโปรแกรมใหม่</button>
       </div>
-
       <div class="issue-note-wrap ${effectiveChecked&&effectiveStatus==='issue'?'open':''}" id="notewrap_${cid}">
-        <textarea class="issue-note" id="note_${cid}"
-          placeholder="ระบุรายละเอียดเพิ่มเติม เช่น ลงโปรแกรมเพิ่ม / ไม่มีโปรแกรมที่ควรมี / เวอร์ชันไม่ตรง ฯลฯ (รายการที่ติ๊กด้านบนจะถูกบันทึกแยกให้อัตโนมัติ)"
-          oninput="markNoteDirty(${cid})">${esc(st.note||'')}</textarea>
-        <button class="btn-save-note" id="savenote_${cid}" onclick="saveNote('${esc(ck)}',${cid})">
-          💾 บันทึกรายละเอียด
-        </button>
+        <textarea class="issue-note" id="note_${cid}" placeholder="ระบุรายละเอียดเพิ่มเติม..." oninput="markNoteDirty(${cid})">${esc(st.note||'')}</textarea>
+        <button class="btn-save-note" id="savenote_${cid}" onclick="saveNote('${esc(ck)}',${cid})">💾 บันทึกรายละเอียด</button>
       </div>
-
       <div id="notedisplay_${cid}">${noteDisplay}</div>
     </div>
   </div>
 </div>`;
   });
-
-  if(!visCount){
-    html=`<div class="empty-pg"><div class="icon">🔍</div>
-      <p>ไม่พบรายการที่ตรงกับเงื่อนไข<br>ลองปรับตัวกรองหรือคำค้นหา</p></div>`;
-  }
+  if(!visCount) html=`<div class="empty-pg"><div class="icon">🔍</div><p>ไม่พบรายการที่ตรงกับเงื่อนไข</p></div>`;
   list.innerHTML=html;
 }
 
-// ── Per-program issue flag ────────────────────────
+/* ══════════════════════════════════════════
+   FLAG / STATUS / NOTE
+   ══════════════════════════════════════════ */
 function toggleProgFlag(cid,progIdx){
-  const cb=document.getElementById(`flag_${cid}_${progIdx}`);
-  if(!cb) return;
-  const row=cb.closest('tr');
-  if(row) row.classList.toggle('row-flagged',cb.checked);
+  const cb=document.getElementById(`flag_${cid}_${progIdx}`); if(!cb)return;
+  const row=cb.closest('tr'); if(row) row.classList.toggle('row-flagged',cb.checked);
   const saveBtn=document.getElementById(`saveflags_${cid}`);
-  if(saveBtn){ saveBtn.classList.add('dirty'); saveBtn.style.background='var(--am)'; saveBtn.style.borderColor='var(--am)'; saveBtn.style.color='#fff';
-    saveBtn.innerHTML='💾 บันทึกรายการที่ติ๊ก (มีการเปลี่ยนแปลง)'; }
+  if(saveBtn){ saveBtn.classList.add('dirty'); saveBtn.style.background='var(--am)'; saveBtn.style.borderColor='var(--am)'; saveBtn.style.color='#fff'; saveBtn.innerHTML='💾 บันทึกรายการที่ติ๊ก (มีการเปลี่ยนแปลง)'; }
 }
-
 async function saveProgFlags(ck,cid){
-  const comp=swData[ck];
-  if(!comp) return;
-  const saveBtn=document.getElementById(`saveflags_${cid}`);
-  if(saveBtn){ saveBtn.disabled=true; saveBtn.innerHTML='⏳ กำลังบันทึก...'; }
+  const comp=swData[ck]; if(!comp)return;
+  const saveBtn=document.getElementById(`saveflags_${cid}`); if(saveBtn){ saveBtn.disabled=true; saveBtn.innerHTML='⏳ กำลังบันทึก...'; }
   const flagged=[];
   comp.programs.forEach((p,i)=>{ const cb=document.getElementById(`flag_${cid}_${i}`); if(cb&&cb.checked) flagged.push(i); });
   if(!swState[ck]) swState[ck]={};
   swState[ck].issuePrograms=flagged;
-  if(flagged.length>0){
-    swState[ck].checked=true; swState[ck].status='issue';
-    if(!swState[ck].checkedAt){
-      swState[ck].checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
-      swState[ck].checkedBy=currentUser?.displayName||currentUser?.email||'';
-    }
-  } else if(swState[ck].checked && swState[ck].status==='issue' && !swState[ck].note){ delete swState[ck]; }
+  if(flagged.length>0){ swState[ck].checked=true; swState[ck].status='issue'; if(!swState[ck].checkedAt){ swState[ck].checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}); swState[ck].checkedBy=currentUser?.displayName||currentUser?.email||''; } }
+  else if(swState[ck].checked&&swState[ck].status==='issue'&&!swState[ck].note){ delete swState[ck]; }
   await new Promise(r=>{ saveStorage(); setTimeout(r,700); });
-  showNotif('บันทึกรายการที่มีปัญหาแล้ว');
-  renderCheckView();
+  showNotif('บันทึกรายการที่มีปัญหาแล้ว'); renderCheckView();
 }
-
 function setStatus(ck,cid,status){
   const st=swState[ck]||{};
   const flagged=(st.issuePrograms||[]).length>0;
-  if(flagged && status==='ok'){ showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ กรุณายกเลิกการติ๊กก่อน','error'); return; }
-  const turningOff = st.checked && st.status===status;
-  if(turningOff && flagged){ showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ ไม่สามารถยกเลิกสถานะนี้ได้','error'); return; }
+  if(flagged&&status==='ok'){ showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ กรุณายกเลิกการติ๊กก่อน','error'); return; }
+  const turningOff=st.checked&&st.status===status;
+  if(turningOff&&flagged){ showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ ไม่สามารถยกเลิกสถานะนี้ได้','error'); return; }
   if(!confirm(turningOff?'ยกเลิกผลการเช็ค?':`ยืนยันว่า "${status==='ok'?'ตรงทุกโปรแกรม':'มีปัญหา'}"?`)) return;
   if(turningOff){ delete swState[ck]; }
-  else{ swState[ck]={ ...st, checked:true, status, note: status==='issue'?(st.note||''):'', issuePrograms: status==='issue'?(st.issuePrograms||[]):[],
-    checkedAt:new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}),
-    checkedBy:currentUser?.displayName||currentUser?.email||'', }; }
+  else{ swState[ck]={...st,checked:true,status,note:status==='issue'?(st.note||''):'',issuePrograms:status==='issue'?(st.issuePrograms||[]):[],checkedAt:new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}),checkedBy:currentUser?.displayName||currentUser?.email||''}; }
   saveStorage(); renderCheckView();
 }
-
-function markNoteDirty(cid){
-  const ta=document.getElementById(`note_${cid}`);
-  if(ta) ta.classList.add('dirty');
-  const btn=document.getElementById(`savenote_${cid}`);
-  if(btn){ btn.classList.remove('saved'); btn.classList.add('dirty'); btn.innerHTML='💾 บันทึกรายละเอียด (มีการเปลี่ยนแปลง)'; }
-}
-
+function markNoteDirty(cid){ const ta=document.getElementById(`note_${cid}`); if(ta) ta.classList.add('dirty'); const btn=document.getElementById(`savenote_${cid}`); if(btn){ btn.classList.remove('saved'); btn.classList.add('dirty'); btn.innerHTML='💾 บันทึกรายละเอียด (มีการเปลี่ยนแปลง)'; } }
 async function saveNote(ck,cid){
-  const ta=document.getElementById(`note_${cid}`);
-  const btn=document.getElementById(`savenote_${cid}`);
-  if(!ta) return;
+  const ta=document.getElementById(`note_${cid}`),btn=document.getElementById(`savenote_${cid}`); if(!ta)return;
   const val=ta.value.trim();
   if(btn){ btn.classList.remove('dirty'); btn.classList.add('saving'); btn.innerHTML='⏳ กำลังบันทึก...'; btn.disabled=true; }
   if(!swState[ck]) swState[ck]={checked:true,status:'issue'};
-  swState[ck].note=val;
-  ta.classList.remove('dirty');
+  swState[ck].note=val; ta.classList.remove('dirty');
   await new Promise(r=>{ saveStorage(); setTimeout(r,700); });
   if(btn){ btn.classList.remove('saving'); btn.classList.add('saved'); btn.innerHTML='✅ บันทึกแล้ว'; btn.disabled=false; }
   const dispEl=document.getElementById(`notedisplay_${cid}`);
-  if(dispEl) dispEl.innerHTML = val ? `<div class="issue-note-display">${esc(val).replace(/\n/g,'<br>')}</div>` : '';
+  if(dispEl) dispEl.innerHTML=val?`<div class="issue-note-display">${esc(val).replace(/\n/g,'<br>')}</div>`:'';
   updateSummary();
   setTimeout(()=>{ const b=document.getElementById(`savenote_${cid}`); if(b){ b.classList.remove('saved'); b.innerHTML='💾 บันทึกรายละเอียด'; } },800);
 }
-
-function toggleComp(cid){
-  const body=document.getElementById('body'+cid), tog=document.getElementById('tog'+cid);
-  if(!body) return;
-  const ex=body.classList.toggle('expanded');
-  if(tog) tog.textContent=ex?'▲':'▼';
-}
+function toggleComp(cid){ const body=document.getElementById('body'+cid),tog=document.getElementById('tog'+cid); if(!body)return; const ex=body.classList.toggle('expanded'); if(tog) tog.textContent=ex?'▲':'▼'; }
 function expandAll(){ Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.add('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▲'; }); }
 function collapseAll(){ Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.remove('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▼'; }); }
 
-// ── Summary view ──────────────────────────────────
+/* ══════════════════════════════════════════
+   SUMMARY VIEW
+   ══════════════════════════════════════════ */
 function buildProgramSummary(allowedCks){
   const map={};
   Object.keys(swData).forEach(ck=>{
-    if(allowedCks && !allowedCks.has(ck)) return;
+    if(allowedCks&&!allowedCks.has(ck)) return;
     const flagged=new Set((swState[ck]&&swState[ck].issuePrograms)||[]);
     swData[ck].programs.forEach((p,i)=>{
       if(flagged.has(i)) return;
@@ -1015,41 +913,22 @@ function buildProgramSummary(allowedCks){
   });
   return Object.values(map);
 }
-
-function getAllPrefixes(){
-  const set=new Set();
-  Object.keys(swData).forEach(ck=>set.add(getMachinePrefix(ck)));
-  return [...set].sort((a,b)=>a.localeCompare(b,'th'));
-}
-function ensurePrefixSelectionInit(){
-  if(_selectedPrefixes===null){ _selectedPrefixes=new Set(getAllPrefixes()); }
-}
+function getAllPrefixes(){ const set=new Set(); Object.keys(swData).forEach(ck=>set.add(getMachinePrefix(ck))); return [...set].sort((a,b)=>a.localeCompare(b,'th')); }
+function ensurePrefixSelectionInit(){ if(_selectedPrefixes===null){ _selectedPrefixes=new Set(getAllPrefixes()); } }
 function renderPrefixDropdown(){
   const all=getAllPrefixes();
-  const listEl=document.getElementById('prefixDropdownList');
-  const btnEl=document.getElementById('prefixFilterBtn');
+  const listEl=document.getElementById('prefixDropdownList'),btnEl=document.getElementById('prefixFilterBtn');
   if(!listEl||!btnEl) return;
   const countByPrefix={};
   Object.keys(swData).forEach(ck=>{ const p=getMachinePrefix(ck); countByPrefix[p]=(countByPrefix[p]||0)+1; });
-  listEl.innerHTML = all.map(p=>`
-    <label class="prefix-opt">
-      <input type="checkbox" ${_selectedPrefixes.has(p)?'checked':''} onchange="togglePrefixSelect('${esc(p)}')"/>
-      <span class="prefix-opt-label">${esc(p)}</span>
-      <span class="prefix-opt-count">${countByPrefix[p]||0} เครื่อง</span>
-    </label>`).join('');
+  listEl.innerHTML=all.map(p=>`<label class="prefix-opt"><input type="checkbox" ${_selectedPrefixes.has(p)?'checked':''} onchange="togglePrefixSelect('${esc(p)}')"/><span class="prefix-opt-label">${esc(p)}</span><span class="prefix-opt-count">${countByPrefix[p]||0} เครื่อง</span></label>`).join('');
   const selCount=_selectedPrefixes.size;
-  btnEl.textContent = selCount===all.length ? '🖥️ กลุ่มเครื่อง: ทั้งหมด'
-    : selCount===0 ? '🖥️ กลุ่มเครื่อง: (ไม่ได้เลือก)'
-    : `🖥️ กลุ่มเครื่อง: ${selCount}/${all.length} กลุ่ม`;
+  btnEl.textContent=selCount===all.length?'🖥️ กลุ่มเครื่อง: ทั้งหมด':selCount===0?'🖥️ กลุ่มเครื่อง: (ไม่ได้เลือก)':`🖥️ กลุ่มเครื่อง: ${selCount}/${all.length} กลุ่ม`;
 }
 function togglePrefixDropdown(ev){ ev.stopPropagation(); document.getElementById('prefixDropdown').classList.toggle('open'); }
-document.addEventListener('click',(ev)=>{
-  const wrap=document.getElementById('prefixFilterWrap');
-  const dd=document.getElementById('prefixDropdown');
-  if(dd&&dd.classList.contains('open')&&wrap&&!wrap.contains(ev.target)) dd.classList.remove('open');
-});
+document.addEventListener('click',(ev)=>{ const wrap=document.getElementById('prefixFilterWrap'),dd=document.getElementById('prefixDropdown'); if(dd&&dd.classList.contains('open')&&wrap&&!wrap.contains(ev.target)) dd.classList.remove('open'); });
 function togglePrefixSelect(p){ if(_selectedPrefixes.has(p)) _selectedPrefixes.delete(p); else _selectedPrefixes.add(p); renderSummaryView(); }
-function selectAllPrefixes(on){ _selectedPrefixes = on ? new Set(getAllPrefixes()) : new Set(); renderSummaryView(); }
+function selectAllPrefixes(on){ _selectedPrefixes=on?new Set(getAllPrefixes()):new Set(); renderSummaryView(); }
 function toggleOsGroup(groupName){ if(_collapsedOsGroups.has(groupName)) _collapsedOsGroups.delete(groupName); else _collapsedOsGroups.add(groupName); renderSummaryView(); }
 
 function renderSummaryView(){
@@ -1072,74 +951,47 @@ function renderSummaryView(){
   if(catFilter) rows=rows.filter(r=>r.category===catFilter);
   if(!totalMachines){ wrap.innerHTML=`<div class="empty-pg"><div class="icon">🖥️</div><p>ไม่ได้เลือกกลุ่มเครื่องใดเลย</p></div>`; return; }
   if(!rows.length){ wrap.innerHTML=`<div class="empty-pg"><div class="icon">🔍</div><p>ไม่พบโปรแกรมที่ตรงกับเงื่อนไข</p></div>`; return; }
-
-  const osRowsRaw=rows.filter(r=>r.category==='OS');
-  const otherRows=rows.filter(r=>r.category!=='OS');
+  const osRowsRaw=rows.filter(r=>r.category==='OS'),otherRows=rows.filter(r=>r.category!=='OS');
   const osGroupsMap={};
   osRowsRaw.forEach(r=>{ const g=getOsGroupName(r.name); if(!osGroupsMap[g]) osGroupsMap[g]={category:'OS',name:g,count:0,hasNew:false,children:[]}; osGroupsMap[g].count+=r.count; if(r.hasNew) osGroupsMap[g].hasNew=true; osGroupsMap[g].children.push(r); });
   const osGroups=Object.values(osGroupsMap);
   osGroups.forEach(g=>g.children.sort((a,b)=>b.count-a.count));
-
   let entries=[...otherRows.map(r=>({kind:'item',row:r})),...osGroups.map(g=>({kind:'group',group:g}))];
-  entries.sort((a,b)=>{
-    const av=a.kind==='group'?a.group:a.row, bv=b.kind==='group'?b.group:b.row;
-    let aval,bval;
-    if(_progSort.key==='name'){ aval=av.name; bval=bv.name; }
-    else if(_progSort.key==='category'){ aval=av.category; bval=bv.category; }
-    else{ aval=av.count; bval=bv.count; }
-    let cmp=typeof aval==='string'?aval.localeCompare(bval,'th'):aval-bval;
-    return _progSort.dir==='desc'?-cmp:cmp;
-  });
-
+  entries.sort((a,b)=>{ const av=a.kind==='group'?a.group:a.row,bv=b.kind==='group'?b.group:b.row; let aval,bval; if(_progSort.key==='name'){ aval=av.name; bval=bv.name; } else if(_progSort.key==='category'){ aval=av.category; bval=bv.category; } else{ aval=av.count; bval=bv.count; } let cmp=typeof aval==='string'?aval.localeCompare(bval,'th'):aval-bval; return _progSort.dir==='desc'?-cmp:cmp; });
   const maxCount=Math.max(...entries.map(e=>(e.kind==='group'?e.group.count:e.row.count)),1);
   const arrow=(key)=>_progSort.key===key?(_progSort.dir==='desc'?' ▾':' ▴'):'';
-
   function renderItemRow(r,rid,indent){
-    const pct=Math.round(r.count/totalMachines*100);
-    const barPct=Math.round(r.count/maxCount*100);
-    const machineKey=r.category+'||'+r.name+'||'+r.lic;
-    const isOpen=_openMachineRows.has(machineKey);
-    const displayName=highlight(r.name,q);
+    const pct=Math.round(r.count/totalMachines*100),barPct=Math.round(r.count/maxCount*100);
+    const machineKey=r.category+'||'+r.name+'||'+r.lic,isOpen=_openMachineRows.has(machineKey);
     const licLabel=licenseBadgeLabel(r.lic);
     const licBadge=licLabel?`<span class="lic-badge lic-badge-${esc(r.lic)}">${esc(licLabel)}</span>`:'';
     const newBadge=r.hasNew?`<span class="lic-badge lic-badge-new">🆕 ใหม่</span>`:'';
-    return `
-    <tr class="${r.hasNew?'row-new-prog':''} ${indent?'prog-subrow':''}">
+    return `<tr class="${r.hasNew?'row-new-prog':''} ${indent?'prog-subrow':''}">
       <td class="prog-cat-cell">${(!indent&&r.category)?`<span class="cat-badge">${esc(r.category)}</span>`:''}</td>
-      <td class="prog-name-cell">${displayName}${licBadge}${newBadge}</td>
+      <td class="prog-name-cell">${highlight(r.name,q)}${licBadge}${newBadge}</td>
       <td class="prog-count-cell">${r.count} / ${totalMachines} เครื่อง <span style="color:var(--tx3);font-weight:400;">(${pct}%)</span></td>
       <td><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${barPct}%"></div></div></td>
       <td><span class="prog-machines-toggle" onclick="toggleMachines('${esc(machineKey)}','${rid}')">${isOpen?'ซ่อนเครื่อง ▲':'ดูรายชื่อเครื่อง ▼'}</span></td>
     </tr>
     <tr class="prog-machines-row ${isOpen?'open':''}" id="row_${rid}">
-      <td colspan="5"><div class="prog-machines-inner">
-        ${r.machines.sort((a,b)=>a.localeCompare(b,'th')).map(m=>`<span class="prog-machine-chip">${esc(m)}</span>`).join('')}
-      </div></td>
+      <td colspan="5"><div class="prog-machines-inner">${r.machines.sort((a,b)=>a.localeCompare(b,'th')).map(m=>`<span class="prog-machine-chip">${esc(m)}</span>`).join('')}</div></td>
     </tr>`;
   }
-
-  let html=`<table class="prog-summary-table">
-    <thead><tr>
-      <th onclick="sortProgBy('category')">หมวด${arrow('category')}</th>
-      <th onclick="sortProgBy('name')">ชื่อโปรแกรม${arrow('name')}</th>
-      <th onclick="sortProgBy('count')">จำนวนเครื่องที่ติดตั้ง${arrow('count')}</th>
-      <th>สัดส่วน</th><th></th>
-    </tr></thead><tbody>`;
-
+  let html=`<table class="prog-summary-table"><thead><tr>
+    <th onclick="sortProgBy('category')">หมวด${arrow('category')}</th>
+    <th onclick="sortProgBy('name')">ชื่อโปรแกรม${arrow('name')}</th>
+    <th onclick="sortProgBy('count')">จำนวนเครื่องที่ติดตั้ง${arrow('count')}</th>
+    <th>สัดส่วน</th><th></th>
+  </tr></thead><tbody>`;
   entries.forEach((e,idx)=>{
     if(e.kind==='item'){ html+=renderItemRow(e.row,`pm_i_${idx}`,false); }
     else{
-      const g=e.group;
-      const pct=Math.round(g.count/totalMachines*100);
-      const barPct=Math.round(g.count/maxCount*100);
+      const g=e.group,pct=Math.round(g.count/totalMachines*100),barPct=Math.round(g.count/maxCount*100);
       const collapsed=_collapsedOsGroups.has(g.name);
       const newBadge=g.hasNew?`<span class="lic-badge lic-badge-new">🆕 ใหม่</span>`:'';
       html+=`<tr class="prog-group-row">
         <td class="prog-cat-cell"><span class="cat-badge">OS</span></td>
-        <td class="prog-name-cell">
-          <span class="prog-group-toggle" onclick="toggleOsGroup('${esc(g.name)}')">${collapsed?'▶':'▼'}</span>
-          ${esc(g.name)} <span style="color:var(--tx3);font-weight:400;font-size:10px;">(รวมทุกประเภทไลเซนส์)</span>${newBadge}
-        </td>
+        <td class="prog-name-cell"><span class="prog-group-toggle" onclick="toggleOsGroup('${esc(g.name)}')">${collapsed?'▶':'▼'}</span> ${esc(g.name)} <span style="color:var(--tx3);font-weight:400;font-size:10px;">(รวมทุกประเภทไลเซนส์)</span>${newBadge}</td>
         <td class="prog-count-cell">${g.count} / ${totalMachines} เครื่อง <span style="color:var(--tx3);font-weight:400;">(${pct}%)</span></td>
         <td><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${barPct}%"></div></div></td>
         <td></td>
@@ -1150,37 +1002,30 @@ function renderSummaryView(){
   html+='</tbody></table>';
   wrap.innerHTML=html;
 }
-
-function sortProgBy(key){
-  if(_progSort.key===key) _progSort.dir=_progSort.dir==='desc'?'asc':'desc';
-  else{ _progSort.key=key; _progSort.dir=key==='count'?'desc':'asc'; }
-  renderSummaryView();
-}
+function sortProgBy(key){ if(_progSort.key===key) _progSort.dir=_progSort.dir==='desc'?'asc':'desc'; else{ _progSort.key=key; _progSort.dir=key==='count'?'desc':'asc'; } renderSummaryView(); }
 function toggleMachines(progKey,rid){ if(_openMachineRows.has(progKey)) _openMachineRows.delete(progKey); else _openMachineRows.add(progKey); renderSummaryView(); }
-
 function openAddProgram(cid,ck){ const el=document.getElementById(`addprog_${cid}`); if(el) el.classList.toggle('open'); }
 async function submitAddProgram(ck,cid){
-  const catEl=document.getElementById(`addprog_cat_${cid}`);
-  const nameEl=document.getElementById(`addprog_name_${cid}`);
-  const verEl=document.getElementById(`addprog_ver_${cid}`);
-  const remEl=document.getElementById(`addprog_rem_${cid}`);
+  const catEl=document.getElementById(`addprog_cat_${cid}`),nameEl=document.getElementById(`addprog_name_${cid}`),verEl=document.getElementById(`addprog_ver_${cid}`),remEl=document.getElementById(`addprog_rem_${cid}`);
   const name=(nameEl?.value||'').trim();
   if(!name){ showNotif('กรุณากรอกชื่อโปรแกรม','error'); return; }
-  const comp=swData[ck]; if(!comp) return;
-  comp.programs.push({ category:(catEl?.value||'').trim().toUpperCase(), name, version:(verEl?.value||'').trim(), remark:(remEl?.value||'').trim(), isNew:true });
+  const comp=swData[ck]; if(!comp)return;
+  comp.programs.push({category:(catEl?.value||'').trim().toUpperCase(),name,version:(verEl?.value||'').trim(),remark:(remEl?.value||'').trim(),isNew:true});
   if(catEl)catEl.value=''; if(nameEl)nameEl.value=''; if(verEl)verEl.value=''; if(remEl)remEl.value='';
   const wrap=document.getElementById(`addprog_${cid}`); if(wrap) wrap.classList.remove('open');
   saveStorage(); renderCheckView(); showNotif('เพิ่มโปรแกรมแล้ว');
 }
 
+/* ══════════════════════════════════════════
+   EXPORT / CLEAR
+   ══════════════════════════════════════════ */
 function findOsProgram(comp){ return comp.programs.find(p=>String(p.category||'').toUpperCase()==='OS'); }
 function exportLicenseExcel(){
   if(!Object.keys(swData).length){ showNotif('ไม่มีข้อมูลให้ Export','error'); return; }
   const sortedCks=Object.keys(swData).sort((a,b)=>a.localeCompare(b,'th'));
   const aoa=[[],['No','Name','User','Description','OS','VLK','OEM','OEI','VLK Up Win11','OEM Up Win11','OEI Up Win11','FPP','FPP Up Win11']];
   sortedCks.forEach((ck,idx)=>{
-    const comp=swData[ck];
-    const osProg=findOsProgram(comp);
+    const comp=swData[ck],osProg=findOsProgram(comp);
     const osText=osProg?`${osProg.name}${osProg.version?' '+osProg.version:''}`.trim():'';
     const lic=osProg?detectLicenseType('OS',osProg.name,osProg.version,osProg.remark):'';
     const isUpgrade=osProg?/UPGRADE/i.test(osProg.name+' '+osProg.version+' '+osProg.remark):false;
@@ -1191,20 +1036,277 @@ function exportLicenseExcel(){
     else if(lic==='FPP'){ if(isUpgrade) fppUp=1; else fpp=1; }
     aoa.push([idx+1,comp.computerName,comp.employee||'',comp.position||'',osText,vlk,oem,oei,vlkUp,oemUp,oeiUp,fpp,fppUp]);
   });
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols']=[{wch:6},{wch:18},{wch:24},{wch:18},{wch:44},{wch:7},{wch:7},{wch:7},{wch:13},{wch:13},{wch:13},{wch:7},{wch:13}];
   XLSX.utils.book_append_sheet(wb,ws,'License');
   const dateStr=new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb,`รายการเครื่องคอมพิวเตอร์_License_Windows_${dateStr}.xlsx`);
   showNotif('Export ไฟล์ License แล้ว');
 }
-
 async function confirmClearAll(){
   if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย')) return;
   swData={}; swState={}; _ckIndex={}; _ckIndexRev={}; _openMachineRows=new Set(); _selectedPrefixes=null; _collapsedOsGroups=new Set();
   try{ await _sessionRef().delete(); }catch(e){}
   renderAll(); showNotif('ลบข้อมูลทั้งหมดแล้ว');
+}
+
+/* ══════════════════════════════════════════════════════════
+   🗂️  LICENSE INVENTORY  VIEW
+   ══════════════════════════════════════════════════════════ */
+
+/** count how many computers use a given licInvItem (by keyword match) */
+function countUsage(item){
+  if(!item.matchKeywords||!item.matchKeywords.length) return 0;
+  const kws=item.matchKeywords.map(k=>k.toLowerCase());
+  let count=0;
+  Object.keys(swData).forEach(ck=>{
+    const progs=swData[ck].programs;
+    const hit=progs.some(p=>{
+      const hay=`${p.category||''} ${p.name||''} ${p.version||''} ${p.remark||''}`.toLowerCase();
+      return kws.some(kw=>hay.includes(kw));
+    });
+    if(hit) count++;
+  });
+  return count;
+}
+
+function getLicStatus(used,total){
+  if(total===0) return 'zero';
+  const ratio=used/total;
+  if(used>total) return 'over';
+  if(ratio>=0.9) return 'near';
+  return 'ok';
+}
+function getLicPillClass(st){ return {ok:'lic-pill-ok',near:'lic-pill-near',over:'lic-pill-over',zero:'lic-pill-zero'}[st]; }
+function getLicTubeClass(st){ return {ok:'lic-tube-fill-ok',near:'lic-tube-fill-near',over:'lic-tube-fill-over',zero:'lic-tube-fill-zero'}[st]; }
+function getLicCardClass(st){ return {ok:'status-ok',near:'status-near',over:'status-over',zero:'status-zero'}[st]; }
+function getLicPillText(used,total,st){
+  if(st==='zero') return '— ยังไม่กำหนด';
+  const rem=total-used;
+  if(st==='over')  return `🔴 เกินสิทธิ์ ${Math.abs(rem)} รายการ`;
+  if(st==='near')  return `🟡 เหลือน้อย ${rem} รายการ`;
+  return `🟢 คงเหลือ ${rem} รายการ`;
+}
+
+function renderLicInvView(){
+  /* ensure defaults are loaded if licInvItems is still empty */
+  if(!licInvItems||!licInvItems.length){
+    licInvItems=JSON.parse(JSON.stringify(DEFAULT_LIC_ITEMS));
+  }
+
+  const wrap=document.getElementById('licInvContent');
+  if(!wrap) return;
+
+  const hasSwData=Object.keys(swData).length>0;
+
+  /* overview counts */
+  let totalOver=0,totalNear=0,totalOk=0,totalItems=licInvItems.length;
+  licInvItems.forEach(item=>{
+    const used=countUsage(item),st=getLicStatus(used,item.total);
+    if(st==='over') totalOver++;
+    else if(st==='near') totalNear++;
+    else if(st==='ok') totalOk++;
+  });
+
+  /* filter */
+  const q=_licFilter.toLowerCase();
+  let filtered=licInvItems.filter(item=> !q || item.name.toLowerCase().includes(q));
+
+  /* ── build overview strip ── */
+  let html=`
+<div class="lic-filter-row">
+  <input class="search-box" type="text" placeholder="🔎 ค้นหาซอฟต์แวร์..."
+    value="${esc(_licFilter)}" oninput="_licFilter=this.value;renderLicInvView()"/>
+  <button class="btn btn-sm btn-primary" onclick="openAddLicCard()">➕ เพิ่มซอฟต์แวร์</button>
+  ${!hasSwData?`<span style="font-size:11px;color:var(--tx3);">💡 Import ข้อมูลเครื่องเพื่อให้นับการใช้งานอัตโนมัติ</span>`:''}
+</div>
+
+<div class="lic-overview">
+  <div class="lic-overview-card">
+    <div class="lic-ov-num" style="color:var(--tx2)">${totalItems}</div>
+    <div class="lic-ov-lbl">ซอฟต์แวร์ในคลัง</div>
+  </div>
+  <div class="lic-overview-card">
+    <div class="lic-ov-num lic-ov-ok">${totalOk}</div>
+    <div class="lic-ov-lbl">🟢 ปกติ</div>
+  </div>
+  <div class="lic-overview-card">
+    <div class="lic-ov-num lic-ov-near">${totalNear}</div>
+    <div class="lic-ov-lbl">🟡 เหลือน้อย</div>
+  </div>
+  <div class="lic-overview-card">
+    <div class="lic-ov-num lic-ov-over">${totalOver}</div>
+    <div class="lic-ov-lbl">🔴 เกินสิทธิ์</div>
+  </div>
+</div>
+
+<div class="lic-inv-grid">`;
+
+  filtered.forEach((item,idx)=>{
+    const realIdx=licInvItems.indexOf(item);
+    const used=countUsage(item);
+    const remaining=item.total-used;
+    const st=getLicStatus(used,item.total);
+    const pct=item.total>0?Math.min(Math.round(used/item.total*100),100):0;
+    const pillText=getLicPillText(used,item.total,st);
+    const tubeCls=getLicTubeClass(st);
+    const cardCls=getLicCardClass(st);
+    const pctDark=pct<15; /* text color on tube */
+
+    html+=`
+<div class="lic-inv-card ${cardCls}" id="liccard_${realIdx}">
+  <!-- head -->
+  <div class="lic-inv-head">
+    <div class="lic-inv-icon">${esc(item.icon||'📦')}</div>
+    <div class="lic-inv-info">
+      <div class="lic-inv-name" id="licname_${realIdx}">${esc(item.name)}</div>
+      <div class="lic-inv-sub">keywords: ${item.matchKeywords?.map(k=>`<code>${esc(k)}</code>`).join(', ')||'—'}</div>
+    </div>
+    <span class="lic-status-pill ${getLicPillClass(st)}">${pillText}</span>
+  </div>
+
+  <!-- progress tube -->
+  <div class="lic-tube-wrap">
+    <div class="lic-tube-track">
+      <div class="lic-tube-fill ${tubeCls}" style="width:${pct}%">
+        ${pct>=10?`<span class="lic-tube-pct ${pctDark?'lic-tube-pct-dark':''}">${pct}%</span>`:''}
+      </div>
+    </div>
+  </div>
+
+  <!-- stats -->
+  <div class="lic-stats-row">
+    <div class="lic-stat">
+      <div class="lic-stat-num">${item.total}</div>
+      <div class="lic-stat-lbl">สิทธิ์ทั้งหมด</div>
+    </div>
+    <div class="lic-stat">
+      <div class="lic-stat-num ${st==='over'?'clr-over':''}">${used}</div>
+      <div class="lic-stat-lbl">ใช้งานแล้ว</div>
+    </div>
+    <div class="lic-stat">
+      <div class="lic-stat-num ${remaining<0?'clr-over':remaining<=(item.total*0.1)?'clr-am':'clr-ok'}">${remaining}</div>
+      <div class="lic-stat-lbl">คงเหลือ</div>
+    </div>
+  </div>
+
+  <!-- footer: qty controls -->
+  <div class="lic-inv-foot">
+    <span class="lic-qty-lbl">สิทธิ์ทั้งหมด:</span>
+    <div class="lic-qty-ctrl">
+      <button class="lic-qty-btn" onclick="changeLicTotal(${realIdx},-1)">−</button>
+      <input class="lic-qty-input" type="number" min="0" value="${item.total}"
+        onchange="setLicTotal(${realIdx},this.value)" onblur="setLicTotal(${realIdx},this.value)"/>
+      <button class="lic-qty-btn" onclick="changeLicTotal(${realIdx},+1)">+</button>
+    </div>
+    <button class="btn-lic-edit" onclick="editLicCard(${realIdx})">✏️ แก้ไข</button>
+    <button class="btn-lic-del" onclick="deleteLicCard(${realIdx})">🗑️ ลบ</button>
+  </div>
+</div>`;
+  });
+
+  /* add-new card */
+  html+=`
+<div class="lic-add-card" id="addLicCard" style="display:none">
+  <div class="lic-add-card-title">➕ เพิ่มซอฟต์แวร์ใหม่</div>
+  <div class="lic-add-row">
+    <input type="text" id="newLicIcon"     placeholder="ไอคอน เช่น 🪟 📄 🛡️" style="max-width:100px;"/>
+    <input type="text" id="newLicName"     placeholder="ชื่อซอฟต์แวร์ *"/>
+    <input type="number" id="newLicTotal"  placeholder="จำนวนสิทธิ์" min="0" style="width:120px;"/>
+  </div>
+  <div class="lic-add-row">
+    <input type="text" id="newLicKeywords" placeholder="คีย์เวิร์ดค้นหา (คั่นด้วย ,) เช่น windows 10,win10" style="flex:1"/>
+    <button class="btn-lic-add" onclick="submitAddLicCard()">💾 บันทึก</button>
+    <button class="btn btn-sm" onclick="closeAddLicCard()">ยกเลิก</button>
+  </div>
+</div>
+
+</div>`; /* end .lic-inv-grid */
+
+  wrap.innerHTML=html;
+}
+
+/* ── License inventory actions ── */
+function openAddLicCard(){
+  const el=document.getElementById('addLicCard');
+  if(el){ el.style.display='flex'; el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+function closeAddLicCard(){
+  const el=document.getElementById('addLicCard'); if(el) el.style.display='none';
+  ['newLicIcon','newLicName','newLicTotal','newLicKeywords'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+}
+function submitAddLicCard(){
+  const icon=(document.getElementById('newLicIcon')?.value||'').trim()||'📦';
+  const name=(document.getElementById('newLicName')?.value||'').trim();
+  const total=parseInt(document.getElementById('newLicTotal')?.value||'0',10)||0;
+  const kwRaw=(document.getElementById('newLicKeywords')?.value||'').trim();
+  const matchKeywords=kwRaw?kwRaw.split(',').map(k=>k.trim()).filter(Boolean):[];
+  if(!name){ showNotif('กรุณากรอกชื่อซอฟต์แวร์','error'); return; }
+  licInvItems.push({ id:'lic_'+Date.now(), name, icon, total, matchKeywords });
+  closeAddLicCard();
+  saveStorage(); renderLicInvView();
+  showNotif(`เพิ่ม "${name}" แล้ว`);
+}
+
+function changeLicTotal(idx,delta){
+  if(!licInvItems[idx]) return;
+  licInvItems[idx].total=Math.max(0,(licInvItems[idx].total||0)+delta);
+  saveStorage(); renderLicInvView();
+}
+function setLicTotal(idx,val){
+  if(!licInvItems[idx]) return;
+  const n=parseInt(val,10); if(isNaN(n)||n<0) return;
+  licInvItems[idx].total=n;
+  saveStorage(); renderLicInvView();
+}
+function deleteLicCard(idx){
+  if(!licInvItems[idx]) return;
+  if(!confirm(`ลบ "${licInvItems[idx].name}" ออกจากคลังสิทธิ์?`)) return;
+  licInvItems.splice(idx,1);
+  saveStorage(); renderLicInvView();
+  showNotif('ลบรายการแล้ว');
+}
+
+/* inline edit card */
+function editLicCard(idx){
+  const item=licInvItems[idx]; if(!item) return;
+  const card=document.getElementById(`liccard_${idx}`); if(!card) return;
+
+  /* replace head with inputs */
+  const head=card.querySelector('.lic-inv-head');
+  const foot=card.querySelector('.lic-inv-foot');
+
+  head.innerHTML=`
+    <div class="lic-inv-icon">
+      <input type="text" style="width:52px;padding:4px 6px;border:1.5px solid var(--bdrm);border-radius:6px;font-size:18px;text-align:center;background:var(--surf);color:var(--tx1);" id="edit_icon_${idx}" value="${esc(item.icon||'')}"/>
+    </div>
+    <div class="lic-inv-info" style="flex:1;min-width:0;">
+      <input class="lic-inv-name-input" id="edit_name_${idx}" value="${esc(item.name)}" placeholder="ชื่อซอฟต์แวร์"/>
+      <input type="text" style="width:100%;margin-top:5px;padding:4px 8px;border:1.5px solid var(--bdrm);border-radius:6px;font-size:11px;background:var(--surf);color:var(--tx1);" id="edit_kw_${idx}" value="${esc((item.matchKeywords||[]).join(', '))}" placeholder="keywords คั่นด้วยเครื่องหมาย ,"/>
+    </div>`;
+
+  foot.innerHTML=`
+    <span class="lic-qty-lbl">สิทธิ์ทั้งหมด:</span>
+    <div class="lic-qty-ctrl">
+      <button class="lic-qty-btn" onclick="changeLicTotal(${idx},-1);editLicCard(${idx})">−</button>
+      <input class="lic-qty-input" type="number" min="0" value="${item.total}" id="edit_total_${idx}"/>
+      <button class="lic-qty-btn" onclick="changeLicTotal(${idx},+1);editLicCard(${idx})">+</button>
+    </div>
+    <button class="btn-lic-edit saving-mode" onclick="saveEditLicCard(${idx})">✅ บันทึก</button>
+    <button class="btn btn-sm" onclick="renderLicInvView()">ยกเลิก</button>
+    <button class="btn-lic-del" onclick="deleteLicCard(${idx})">🗑️ ลบ</button>`;
+}
+
+function saveEditLicCard(idx){
+  const item=licInvItems[idx]; if(!item) return;
+  const icon=(document.getElementById(`edit_icon_${idx}`)?.value||'').trim()||'📦';
+  const name=(document.getElementById(`edit_name_${idx}`)?.value||'').trim();
+  const kwRaw=(document.getElementById(`edit_kw_${idx}`)?.value||'').trim();
+  const total=parseInt(document.getElementById(`edit_total_${idx}`)?.value||'0',10)||0;
+  if(!name){ showNotif('กรุณากรอกชื่อซอฟต์แวร์','error'); return; }
+  licInvItems[idx]={ ...item, icon, name, total, matchKeywords: kwRaw?kwRaw.split(',').map(k=>k.trim()).filter(Boolean):[] };
+  saveStorage(); renderLicInvView();
+  showNotif('บันทึกแล้ว');
 }
 </script>
 </body>
