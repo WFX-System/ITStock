@@ -1262,12 +1262,40 @@ async function confirmClearAll(){
 function countUsage(item){
   if(!item.matchKeywords||!item.matchKeywords.length) return 0;
   const kws=item.matchKeywords.map(k=>k.toLowerCase());
+
   let count=0;
   Object.keys(swData).forEach(ck=>{
     const progs=swData[ck].programs;
     const hit=progs.some(p=>{
-      const hay=`${p.category||''} ${p.name||''} ${p.version||''} ${p.remark||''}`.toLowerCase();
-      return kws.some(kw=>hay.includes(kw));
+      const pName=(p.name||'').toLowerCase();
+      const pVer=(p.version||'').toLowerCase();
+      const pRem=(p.remark||'').toLowerCase();
+      const pCat=(p.category||'').toLowerCase();
+      const hay=`${pCat} ${pName} ${pVer} ${pRem}`;
+
+      return kws.some(kw=>{
+        // ── win: keyword (จาก keyword picker ใหม่) ──
+        if(kw.startsWith('win:')){
+          const inner=kw.slice(4); // ตัด "win:" ออก
+          const [ver, licId='']=inner.split('|');
+
+          // ต้องเป็น Windows ก่อน
+          if(!pName.includes(ver)) return false;
+
+          // ถ้าเลือก "any" หรือไม่มี licId = นับทุกประเภท
+          if(!licId||licId==='any') return true;
+
+          // ตรวจ license type จาก remark/name/version
+          const detectedLic=detectLicenseType(
+            p.category, p.name, p.version, p.remark
+          ).toLowerCase();
+
+          return detectedLic===licId;
+        }
+
+        // ── keyword ธรรมดา (เดิม) ──
+        return hay.includes(kw);
+      });
     });
     if(hit) count++;
   });
