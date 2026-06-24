@@ -184,6 +184,32 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .prefix-opt input{width:15px;height:15px;cursor:pointer;accent-color:var(--g);flex-shrink:0;}
 .prefix-opt-label{font-size:12px;font-weight:600;flex:1;}
 .prefix-opt-count{font-size:10px;color:var(--tx3);font-family:var(--mono);}
+
+/* ── Merge Dialog ────────────────────────────────── */
+.merge-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;
+  display:flex;align-items:center;justify-content:center;padding:16px;}
+.merge-dialog{background:var(--surf);border:1.5px solid var(--bdrm);border-radius:var(--radlg);
+  width:100%;max-width:580px;max-height:85vh;display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.merge-dialog-head{padding:16px 18px 12px;border-bottom:1px solid var(--bdr);}
+.merge-dialog-head h3{margin:0 0 4px;font-size:15px;}
+.merge-dialog-head p{margin:0;font-size:12px;color:var(--tx3);line-height:1.7;}
+.merge-dialog-body{flex:1;overflow-y:auto;padding:6px 18px;}
+.merge-item{display:flex;align-items:center;gap:10px;padding:8px 4px;
+  border-bottom:1px solid var(--bdr);font-size:12px;}
+.merge-item:last-child{border-bottom:none;}
+.merge-ck-name{flex:1;font-weight:600;font-family:var(--mono);font-size:11.5px;word-break:break-all;}
+.merge-item-sel{display:flex;gap:6px;flex-shrink:0;}
+.merge-btn{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);transition:all .15s;white-space:nowrap;}
+.merge-btn.overwrite{border-color:#F59E0B;color:#92400E;}
+.merge-btn.overwrite.sel{background:#F59E0B;border-color:#F59E0B;color:#fff;}
+.merge-btn.skip.sel{background:#6B7280;border-color:#6B7280;color:#fff;}
+.merge-dialog-foot{padding:12px 18px;border-top:1px solid var(--bdr);
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.merge-bulk-link{font-size:11px;color:var(--g);font-weight:700;cursor:pointer;user-select:none;}
+.merge-bulk-link:hover{text-decoration:underline;}
+.merge-stat{font-size:11px;color:var(--tx3);flex:1;}
 </style>
 </head>
 <body>
@@ -370,27 +396,19 @@ function highlight(s,q){
   return esc(s).replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`);
 }
 
-// ── License-type helper ────────────────────────────────────────────────────
-// ตรวจ Remark ก่อนเสมอ เพราะ Remark มีความสำคัญสูงสุด
-// เช่น Version = "PRO OEM 64-bit" แต่ Remark = "6Q724(OEI)" → ได้ผลลัพธ์ OEI
-// ถ้า Remark ไม่มีคำใดเลย ค่อยดูจากชื่อโปรแกรม + Version รวมกัน
+// ── License-type helper ──────────────────────────
 function detectLicenseType(category, name, version, remark) {
   if (category !== 'OS') return '';
-
-  // ตรวจ Remark ก่อน — ถ้าระบุชัดเจนให้ใช้เลย (priority สูงสุด)
   const rem = String(remark || '').toUpperCase();
   if (/\bOEI\b/.test(rem)) return 'OEI';
   if (/\bOEM\b/.test(rem)) return 'OEM';
   if (/\bFPP\b/.test(rem)) return 'FPP';
-
-  // ถ้า Remark ไม่มี ค่อยดูจากชื่อโปรแกรม + Version
   const hay = (String(name || '') + ' ' + String(version || '')).toUpperCase();
   if (/\bOEM\b/.test(hay)) return 'OEM';
   if (/\bOEI\b/.test(hay)) return 'OEI';
   if (/\bFPP\b/.test(hay)) return 'FPP';
-  return 'VL'; // Volume License (PRO ธรรมดา)
+  return 'VL';
 }
-
 function licenseBadgeLabel(lic){
   if(lic==='OEM') return 'OEM';
   if(lic==='OEI') return 'OEI';
@@ -399,14 +417,11 @@ function licenseBadgeLabel(lic){
   return '';
 }
 
-// ── Machine-prefix helper ─────────────────────────
 function getMachinePrefix(ck){
   const m=String(ck||'').match(/^([^\d]*)/);
   const p=(m?m[1]:'').trim();
   return p || String(ck||'');
 }
-
-// ── OS version grouping helper ────────────────────
 function getOsGroupName(name){
   let n=String(name||'').replace(/\(.*?\)/g,'').trim();
   n=n.replace(/^Microsoft\s+/i,'').trim();
@@ -414,10 +429,8 @@ function getOsGroupName(name){
   return n || String(name||'');
 }
 
-// ── Selected machine-prefix filter ───────────────
 let _selectedPrefixes=null;
 
-// ── View switching ────────────────────────────────
 function switchView(v){
   currentView=v;
   document.getElementById('tabCheck').classList.toggle('active', v==='check');
@@ -433,6 +446,8 @@ function handleDrop(e){
   e.preventDefault(); document.getElementById('importZone').classList.remove('drag-over');
   const f=e.dataTransfer.files[0]; if(f) readExcelFile(f);
 }
+
+// ── readExcelFile: merge mode ─────────────────────
 function readExcelFile(file){
   const reader=new FileReader();
   reader.onload=(ev)=>{
@@ -448,16 +463,113 @@ function readExcelFile(file){
       const parsed=parseWorkbook(wb);
       const n=Object.keys(parsed).length;
       if(n===0){ showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error'); return; }
-      swData=parsed;
-      const valid=new Set(Object.keys(swData));
-      Object.keys(swState).forEach(k=>{ if(!valid.has(k)) delete swState[k]; });
-      _ckIndex={}; _ckIndexRev={};
-      _selectedPrefixes=null;
-      saveStorage(); renderAll();
-      showNotif(`Import สำเร็จ พบ ${n} เครื่อง`);
+
+      // แบ่งเครื่องใหม่ vs ซ้ำ
+      const newCks=[], dupCks=[];
+      Object.keys(parsed).forEach(ck=>{
+        if(swData[ck]) dupCks.push(ck);
+        else newCks.push(ck);
+      });
+
+      // ไม่มีซ้ำ → merge ทันที
+      if(!dupCks.length){
+        _mergeImport(parsed, {}, newCks);
+        showNotif(`Import สำเร็จ เพิ่ม ${newCks.length} เครื่อง`);
+        return;
+      }
+
+      // มีซ้ำ → แสดง dialog ถาม
+      showMergeDialog(parsed, newCks, dupCks);
     }catch(err){ showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error'); }
   };
   reader.readAsArrayBuffer(file);
+}
+
+function _mergeImport(parsed, decisions, newCks){
+  newCks.forEach(ck=>{ swData[ck]=parsed[ck]; });
+  Object.keys(decisions).forEach(ck=>{
+    if(decisions[ck]==='overwrite'){
+      swData[ck]=parsed[ck];
+      delete swState[ck]; // reset ผลเช็คเดิม
+    }
+    // 'skip' → คงของเดิมไว้
+  });
+  _ckIndex={}; _ckIndexRev={};
+  _selectedPrefixes=null;
+  saveStorage(); renderAll();
+}
+
+// ── Merge dialog ──────────────────────────────────
+function showMergeDialog(parsed, newCks, dupCks){
+  const decisions={};
+  dupCks.forEach(ck=>{ decisions[ck]='skip'; }); // default: ข้าม
+
+  const overlay=document.createElement('div');
+  overlay.className='merge-overlay';
+
+  function buildHtml(){
+    const overCnt=dupCks.filter(ck=>decisions[ck]==='overwrite').length;
+    const skipCnt=dupCks.filter(ck=>decisions[ck]==='skip').length;
+    return `
+<div class="merge-dialog">
+  <div class="merge-dialog-head">
+    <h3>⚠️ พบชื่อเครื่องซ้ำ ${dupCks.length} เครื่อง</h3>
+    <p>
+      เครื่องใหม่ที่ไม่ซ้ำ <strong>${newCks.length} เครื่อง</strong> จะถูกเพิ่มอัตโนมัติ<br>
+      กรุณาเลือกการจัดการสำหรับเครื่องที่ชื่อซ้ำ:<br>
+      <span style="color:#92400E;font-weight:700;">🔄 วางทับ</span> = แทนที่ข้อมูล (ผลเช็คเดิมจะถูกลบ) &nbsp;|&nbsp;
+      <span style="color:var(--tx2);font-weight:700;">⏭️ ข้าม</span> = คงข้อมูลเดิมไว้
+    </p>
+  </div>
+  <div class="merge-dialog-body">
+    ${dupCks.map(ck=>`
+    <div class="merge-item">
+      <span class="merge-ck-name">🖥️ ${esc(ck)}</span>
+      <div class="merge-item-sel">
+        <button class="merge-btn overwrite ${decisions[ck]==='overwrite'?'sel':''}"
+          onclick="_mergeDlgDecide('${esc(ck)}','overwrite')">🔄 วางทับ</button>
+        <button class="merge-btn skip ${decisions[ck]==='skip'?'sel':''}"
+          onclick="_mergeDlgDecide('${esc(ck)}','skip')">⏭️ ข้าม</button>
+      </div>
+    </div>`).join('')}
+  </div>
+  <div class="merge-dialog-foot">
+    <span class="merge-bulk-link" onclick="_mergeDlgAll('overwrite')">วางทับทั้งหมด</span>
+    <span class="merge-bulk-link" onclick="_mergeDlgAll('skip')">ข้ามทั้งหมด</span>
+    <span class="merge-stat">วางทับ ${overCnt} · ข้าม ${skipCnt}</span>
+    <button class="btn btn-sm" onclick="_mergeDlgCancel()">ยกเลิก</button>
+    <button class="btn btn-sm btn-primary" onclick="_mergeDlgConfirm()">✅ ยืนยัน Import</button>
+  </div>
+</div>`;
+  }
+
+  function rerender(){ overlay.innerHTML=buildHtml(); }
+
+  window._mergeDlgDecide=(ck,val)=>{ decisions[ck]=val; rerender(); };
+  window._mergeDlgAll=(val)=>{ dupCks.forEach(ck=>{ decisions[ck]=val; }); rerender(); };
+  window._mergeDlgCancel=()=>{ document.body.removeChild(overlay); _cleanMergeGlobals(); };
+  window._mergeDlgConfirm=()=>{
+    const overCnt=dupCks.filter(ck=>decisions[ck]==='overwrite').length;
+    const skipCnt=dupCks.filter(ck=>decisions[ck]==='skip').length;
+    document.body.removeChild(overlay);
+    _cleanMergeGlobals();
+    _mergeImport(parsed, decisions, newCks);
+    const parts=[];
+    if(newCks.length) parts.push(`เพิ่มใหม่ ${newCks.length}`);
+    if(overCnt) parts.push(`วางทับ ${overCnt}`);
+    if(skipCnt) parts.push(`ข้าม ${skipCnt}`);
+    showNotif(`Import สำเร็จ · ${parts.join(' · ')} เครื่อง`);
+  };
+
+  overlay.innerHTML=buildHtml();
+  document.body.appendChild(overlay);
+}
+
+function _cleanMergeGlobals(){
+  delete window._mergeDlgDecide;
+  delete window._mergeDlgAll;
+  delete window._mergeDlgCancel;
+  delete window._mergeDlgConfirm;
 }
 
 function rowsFromWorkbook(wb){
@@ -477,7 +589,6 @@ function findLabelValue(row,label,re){
 function parseWorkbook(wb){
   const result={};
   const rows=rowsFromWorkbook(wb);
-
   let currentComp=null, ck=null, inItems=false;
   for(let i=0;i<rows.length;i++){
     const row=(rows[i]||[]).map(c=>String(c).trim());
@@ -517,33 +628,21 @@ function parseWorkbook(wb){
 function downloadTemplate(){
   const wb=XLSX.utils.book_new();
   const d=[
-    ['HO'],
-    ['ข้อมูลพนักงานที่รับผิดชอบ',''],
+    ['HO'],['ข้อมูลพนักงานที่รับผิดชอบ',''],
     ['Computer name:','ACC001-RYG','IP Address','192.168.101.100'],
     ['ชื่อ-สกุล','สมชาย ตัวอย่าง','ตำแหน่ง','พนักงาน IT'],
-    ['','','สถานะการใช้งาน INTERNET','OPEN'],
-    ['ข้อมูลซอฟต์แวร์'],
+    ['','','สถานะการใช้งาน INTERNET','OPEN'],['ข้อมูลซอฟต์แวร์'],
     ['Program','Version','Remark'],
     ['[OS] Windows 10','PRO OEM 64-bit','6Q724(OEI)'],
-    ['[OFFICE] LibreOffice','',''],
-    ['[ZIP] 7-Zip','',''],
-    ['[VIRUS] Kaspersky V2565','',''],
-    ['[ETC] Google Chrome','',''],
-    ['[ETC] AnyDesk','',''],
-    [''],
-    ['HO'],
-    ['ข้อมูลพนักงานที่รับผิดชอบ',''],
+    ['[OFFICE] LibreOffice','',''],['[ZIP] 7-Zip','',''],
+    ['[VIRUS] Kaspersky V2565','',''],['[ETC] Google Chrome','',''],['[ETC] AnyDesk','',''],
+    [''],['HO'],['ข้อมูลพนักงานที่รับผิดชอบ',''],
     ['Computer name:','MMD001-RYG','IP Address','192.168.101.101'],
     ['ชื่อ-สกุล','สมหญิง ตัวอย่าง','ตำแหน่ง','ผู้จัดการ'],
-    ['','','สถานะการใช้งาน INTERNET','CLOSE'],
-    ['ข้อมูลซอฟต์แวร์'],
+    ['','','สถานะการใช้งาน INTERNET','CLOSE'],['ข้อมูลซอฟต์แวร์'],
     ['Program','Version','Remark'],
-    ['[OS] Windows 11','PRO',''],
-    ['[OFFICE] Office 2021','',''],
-    ['[ZIP] 7-Zip','',''],
-    ['[VIRUS] Kaspersky V2565','',''],
-    ['[ETC] Adobe Reader','',''],
-    [''],
+    ['[OS] Windows 11','PRO',''],['[OFFICE] Office 2021','',''],['[ZIP] 7-Zip','',''],
+    ['[VIRUS] Kaspersky V2565','',''],['[ETC] Adobe Reader','',''],[''],
   ];
   const ws=XLSX.utils.aoa_to_sheet(d);
   ws['!cols']=[{wch:24},{wch:24},{wch:22},{wch:26}];
@@ -556,23 +655,19 @@ function downloadTemplate(){
 function calcStats(){
   let computers=0, progInstalls=0, checked=0, ok=0, issue=0;
   Object.keys(swData).forEach(ck=>{
-    computers++;
-    progInstalls+=swData[ck].programs.length;
+    computers++; progInstalls+=swData[ck].programs.length;
     const st=swState[ck]||{};
-    if(st.checked){
-      checked++;
-      if(st.status==='issue') issue++; else if(st.status==='ok') ok++;
-    }
+    if(st.checked){ checked++; if(st.status==='issue') issue++; else if(st.status==='ok') ok++; }
   });
   return{computers,progInstalls,checked,ok,issue};
 }
 function updateSummary(){
   const s=calcStats(), el=id=>document.getElementById(id);
-  if(el('sumComp'))         el('sumComp').textContent=s.computers;
-  if(el('sumProgInstall'))  el('sumProgInstall').textContent=s.progInstalls;
-  if(el('sumChecked'))      el('sumChecked').textContent=s.checked;
-  if(el('sumOk'))           el('sumOk').textContent=s.ok;
-  if(el('sumIssue'))        el('sumIssue').textContent=s.issue;
+  if(el('sumComp'))        el('sumComp').textContent=s.computers;
+  if(el('sumProgInstall')) el('sumProgInstall').textContent=s.progInstalls;
+  if(el('sumChecked'))     el('sumChecked').textContent=s.checked;
+  if(el('sumOk'))          el('sumOk').textContent=s.ok;
+  if(el('sumIssue'))       el('sumIssue').textContent=s.issue;
   if(el('pageSubtitle'))
     el('pageSubtitle').textContent=`${s.computers} เครื่อง · เช็คแล้ว ${s.checked}/${s.computers} เครื่อง · พบปัญหา ${s.issue} เครื่อง`;
 }
@@ -774,62 +869,34 @@ async function saveProgFlags(ck,cid){
   if(!comp) return;
   const saveBtn=document.getElementById(`saveflags_${cid}`);
   if(saveBtn){ saveBtn.disabled=true; saveBtn.innerHTML='⏳ กำลังบันทึก...'; }
-
   const flagged=[];
-  comp.programs.forEach((p,i)=>{
-    const cb=document.getElementById(`flag_${cid}_${i}`);
-    if(cb&&cb.checked) flagged.push(i);
-  });
-
+  comp.programs.forEach((p,i)=>{ const cb=document.getElementById(`flag_${cid}_${i}`); if(cb&&cb.checked) flagged.push(i); });
   if(!swState[ck]) swState[ck]={};
   swState[ck].issuePrograms=flagged;
   if(flagged.length>0){
-    swState[ck].checked=true;
-    swState[ck].status='issue';
+    swState[ck].checked=true; swState[ck].status='issue';
     if(!swState[ck].checkedAt){
       swState[ck].checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
       swState[ck].checkedBy=currentUser?.displayName||currentUser?.email||'';
     }
-  } else if(swState[ck].checked && swState[ck].status==='issue' && !swState[ck].note){
-    delete swState[ck];
-  }
-
+  } else if(swState[ck].checked && swState[ck].status==='issue' && !swState[ck].note){ delete swState[ck]; }
   await new Promise(r=>{ saveStorage(); setTimeout(r,700); });
-
   showNotif('บันทึกรายการที่มีปัญหาแล้ว');
   renderCheckView();
 }
 
-// ── Set status (ok / issue) ───────────────────────
 function setStatus(ck,cid,status){
   const st=swState[ck]||{};
   const flagged=(st.issuePrograms||[]).length>0;
-  if(flagged && status==='ok'){
-    showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ กรุณายกเลิกการติ๊กก่อน','error');
-    return;
-  }
+  if(flagged && status==='ok'){ showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ กรุณายกเลิกการติ๊กก่อน','error'); return; }
   const turningOff = st.checked && st.status===status;
-  if(turningOff && flagged){
-    showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ ไม่สามารถยกเลิกสถานะนี้ได้','error');
-    return;
-  }
+  if(turningOff && flagged){ showNotif('ยังมีรายการโปรแกรมที่ติ๊กว่า "มีปัญหา" อยู่ ไม่สามารถยกเลิกสถานะนี้ได้','error'); return; }
   if(!confirm(turningOff?'ยกเลิกผลการเช็ค?':`ยืนยันว่า "${status==='ok'?'ตรงทุกโปรแกรม':'มีปัญหา'}"?`)) return;
-
-  if(turningOff){
-    delete swState[ck];
-  } else {
-    swState[ck]={
-      ...st,
-      checked:true,
-      status,
-      note: status==='issue' ? (st.note||'') : '',
-      issuePrograms: status==='issue' ? (st.issuePrograms||[]) : [],
-      checkedAt:new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}),
-      checkedBy:currentUser?.displayName||currentUser?.email||'',
-    };
-  }
-  saveStorage();
-  renderCheckView();
+  if(turningOff){ delete swState[ck]; }
+  else{ swState[ck]={ ...st, checked:true, status, note: status==='issue'?(st.note||''):'', issuePrograms: status==='issue'?(st.issuePrograms||[]):[],
+    checkedAt:new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    checkedBy:currentUser?.displayName||currentUser?.email||'', }; }
+  saveStorage(); renderCheckView();
 }
 
 function markNoteDirty(cid){
@@ -844,42 +911,28 @@ async function saveNote(ck,cid){
   const btn=document.getElementById(`savenote_${cid}`);
   if(!ta) return;
   const val=ta.value.trim();
-
   if(btn){ btn.classList.remove('dirty'); btn.classList.add('saving'); btn.innerHTML='⏳ กำลังบันทึก...'; btn.disabled=true; }
-
   if(!swState[ck]) swState[ck]={checked:true,status:'issue'};
   swState[ck].note=val;
   ta.classList.remove('dirty');
-
   await new Promise(r=>{ saveStorage(); setTimeout(r,700); });
-
   if(btn){ btn.classList.remove('saving'); btn.classList.add('saved'); btn.innerHTML='✅ บันทึกแล้ว'; btn.disabled=false; }
-
   const dispEl=document.getElementById(`notedisplay_${cid}`);
   if(dispEl) dispEl.innerHTML = val ? `<div class="issue-note-display">${esc(val).replace(/\n/g,'<br>')}</div>` : '';
   updateSummary();
-
-  setTimeout(()=>{
-    const b=document.getElementById(`savenote_${cid}`);
-    if(b){ b.classList.remove('saved'); b.innerHTML='💾 บันทึกรายละเอียด'; }
-  },800);
+  setTimeout(()=>{ const b=document.getElementById(`savenote_${cid}`); if(b){ b.classList.remove('saved'); b.innerHTML='💾 บันทึกรายละเอียด'; } },800);
 }
 
-// ── Comp collapse ─────────────────────────────────
 function toggleComp(cid){
   const body=document.getElementById('body'+cid), tog=document.getElementById('tog'+cid);
   if(!body) return;
   const ex=body.classList.toggle('expanded');
   if(tog) tog.textContent=ex?'▲':'▼';
 }
-function expandAll(){
-  Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.add('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▲'; });
-}
-function collapseAll(){
-  Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.remove('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▼'; });
-}
+function expandAll(){ Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.add('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▲'; }); }
+function collapseAll(){ Object.keys(_ckIndexRev).forEach(n=>{ document.getElementById('body'+n)?.classList.remove('expanded'); const t=document.getElementById('tog'+n); if(t)t.textContent='▼'; }); }
 
-// ── Render: SUMMARY view ─────────────────────────
+// ── Summary view ──────────────────────────────────
 function buildProgramSummary(allowedCks){
   const map={};
   Object.keys(swData).forEach(ck=>{
@@ -890,139 +943,86 @@ function buildProgramSummary(allowedCks){
       const lic=detectLicenseType(p.category,p.name,p.version,p.remark);
       const key=`${p.category}||${p.name}||${lic}`;
       if(!map[key]) map[key]={category:p.category,name:p.name,lic,count:0,machines:[],hasNew:false};
-      map[key].count++;
-      map[key].machines.push(ck);
+      map[key].count++; map[key].machines.push(ck);
       if(p.isNew) map[key].hasNew=true;
     });
   });
   return Object.values(map);
 }
 
-// ── Machine-prefix dropdown ───────────────────────
 function getAllPrefixes(){
   const set=new Set();
   Object.keys(swData).forEach(ck=>set.add(getMachinePrefix(ck)));
   return [...set].sort((a,b)=>a.localeCompare(b,'th'));
 }
 function ensurePrefixSelectionInit(){
-  if(_selectedPrefixes===null){
-    _selectedPrefixes=new Set(getAllPrefixes());
-  }
+  if(_selectedPrefixes===null){ _selectedPrefixes=new Set(getAllPrefixes()); }
 }
 function renderPrefixDropdown(){
   const all=getAllPrefixes();
   const listEl=document.getElementById('prefixDropdownList');
   const btnEl=document.getElementById('prefixFilterBtn');
   if(!listEl||!btnEl) return;
-
   const countByPrefix={};
-  Object.keys(swData).forEach(ck=>{
-    const p=getMachinePrefix(ck);
-    countByPrefix[p]=(countByPrefix[p]||0)+1;
-  });
-
+  Object.keys(swData).forEach(ck=>{ const p=getMachinePrefix(ck); countByPrefix[p]=(countByPrefix[p]||0)+1; });
   listEl.innerHTML = all.map(p=>`
     <label class="prefix-opt">
       <input type="checkbox" ${_selectedPrefixes.has(p)?'checked':''} onchange="togglePrefixSelect('${esc(p)}')"/>
       <span class="prefix-opt-label">${esc(p)}</span>
       <span class="prefix-opt-count">${countByPrefix[p]||0} เครื่อง</span>
     </label>`).join('');
-
-  const totalAll=all.length;
   const selCount=_selectedPrefixes.size;
-  btnEl.textContent = selCount===totalAll
-    ? '🖥️ กลุ่มเครื่อง: ทั้งหมด'
-    : selCount===0
-      ? '🖥️ กลุ่มเครื่อง: (ไม่ได้เลือก)'
-      : `🖥️ กลุ่มเครื่อง: ${selCount}/${totalAll} กลุ่ม`;
+  btnEl.textContent = selCount===all.length ? '🖥️ กลุ่มเครื่อง: ทั้งหมด'
+    : selCount===0 ? '🖥️ กลุ่มเครื่อง: (ไม่ได้เลือก)'
+    : `🖥️ กลุ่มเครื่อง: ${selCount}/${all.length} กลุ่ม`;
 }
-function togglePrefixDropdown(ev){
-  ev.stopPropagation();
-  document.getElementById('prefixDropdown').classList.toggle('open');
-}
+function togglePrefixDropdown(ev){ ev.stopPropagation(); document.getElementById('prefixDropdown').classList.toggle('open'); }
 document.addEventListener('click',(ev)=>{
   const wrap=document.getElementById('prefixFilterWrap');
   const dd=document.getElementById('prefixDropdown');
   if(dd&&dd.classList.contains('open')&&wrap&&!wrap.contains(ev.target)) dd.classList.remove('open');
 });
-function togglePrefixSelect(p){
-  if(_selectedPrefixes.has(p)) _selectedPrefixes.delete(p);
-  else _selectedPrefixes.add(p);
-  renderSummaryView();
-}
-function selectAllPrefixes(on){
-  const all=getAllPrefixes();
-  _selectedPrefixes = on ? new Set(all) : new Set();
-  renderSummaryView();
-}
-
-function toggleOsGroup(groupName){
-  if(_collapsedOsGroups.has(groupName)) _collapsedOsGroups.delete(groupName);
-  else _collapsedOsGroups.add(groupName);
-  renderSummaryView();
-}
+function togglePrefixSelect(p){ if(_selectedPrefixes.has(p)) _selectedPrefixes.delete(p); else _selectedPrefixes.add(p); renderSummaryView(); }
+function selectAllPrefixes(on){ _selectedPrefixes = on ? new Set(getAllPrefixes()) : new Set(); renderSummaryView(); }
+function toggleOsGroup(groupName){ if(_collapsedOsGroups.has(groupName)) _collapsedOsGroups.delete(groupName); else _collapsedOsGroups.add(groupName); renderSummaryView(); }
 
 function renderSummaryView(){
   const hasData=Object.keys(swData).length>0;
   document.getElementById('summaryToolbarRow').style.display=hasData?'flex':'none';
   const wrap=document.getElementById('summaryContent');
   if(!hasData){ wrap.innerHTML=''; return; }
-
-  ensurePrefixSelectionInit();
-  renderPrefixDropdown();
-
+  ensurePrefixSelectionInit(); renderPrefixDropdown();
   const allowedCks=new Set(Object.keys(swData).filter(ck=>_selectedPrefixes.has(getMachinePrefix(ck))));
   const totalMachines=allowedCks.size;
   let rows=buildProgramSummary(allowedCks);
-
   const catSel=document.getElementById('progCatSel');
   const cats=[...new Set(rows.map(r=>r.category).filter(Boolean))].sort();
   const prevCat=catSel.value;
   catSel.innerHTML='<option value="">ทุกหมวด</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
   catSel.value=cats.includes(prevCat)?prevCat:'';
-
   const q=(document.getElementById('progSearchInput')?.value||'').trim().toLowerCase();
   const catFilter=catSel.value;
-
   if(q) rows=rows.filter(r=>`${r.category} ${r.name}`.toLowerCase().includes(q));
   if(catFilter) rows=rows.filter(r=>r.category===catFilter);
-
-  if(!totalMachines){
-    wrap.innerHTML=`<div class="empty-pg"><div class="icon">🖥️</div><p>ไม่ได้เลือกกลุ่มเครื่องใดเลย<br>กรุณาเลือกกลุ่มเครื่องอย่างน้อย 1 กลุ่ม</p></div>`;
-    return;
-  }
-  if(!rows.length){
-    wrap.innerHTML=`<div class="empty-pg"><div class="icon">🔍</div><p>ไม่พบโปรแกรมที่ตรงกับเงื่อนไข</p></div>`;
-    return;
-  }
+  if(!totalMachines){ wrap.innerHTML=`<div class="empty-pg"><div class="icon">🖥️</div><p>ไม่ได้เลือกกลุ่มเครื่องใดเลย</p></div>`; return; }
+  if(!rows.length){ wrap.innerHTML=`<div class="empty-pg"><div class="icon">🔍</div><p>ไม่พบโปรแกรมที่ตรงกับเงื่อนไข</p></div>`; return; }
 
   const osRowsRaw=rows.filter(r=>r.category==='OS');
   const otherRows=rows.filter(r=>r.category!=='OS');
   const osGroupsMap={};
-  osRowsRaw.forEach(r=>{
-    const g=getOsGroupName(r.name);
-    if(!osGroupsMap[g]) osGroupsMap[g]={category:'OS',name:g,count:0,hasNew:false,children:[]};
-    osGroupsMap[g].count+=r.count;
-    if(r.hasNew) osGroupsMap[g].hasNew=true;
-    osGroupsMap[g].children.push(r);
-  });
+  osRowsRaw.forEach(r=>{ const g=getOsGroupName(r.name); if(!osGroupsMap[g]) osGroupsMap[g]={category:'OS',name:g,count:0,hasNew:false,children:[]}; osGroupsMap[g].count+=r.count; if(r.hasNew) osGroupsMap[g].hasNew=true; osGroupsMap[g].children.push(r); });
   const osGroups=Object.values(osGroupsMap);
   osGroups.forEach(g=>g.children.sort((a,b)=>b.count-a.count));
 
-  let entries=[
-    ...otherRows.map(r=>({kind:'item',row:r})),
-    ...osGroups.map(g=>({kind:'group',group:g})),
-  ];
-
+  let entries=[...otherRows.map(r=>({kind:'item',row:r})),...osGroups.map(g=>({kind:'group',group:g}))];
   entries.sort((a,b)=>{
-    const av = a.kind==='group' ? a.group : a.row;
-    const bv = b.kind==='group' ? b.group : b.row;
+    const av=a.kind==='group'?a.group:a.row, bv=b.kind==='group'?b.group:b.row;
     let aval,bval;
     if(_progSort.key==='name'){ aval=av.name; bval=bv.name; }
     else if(_progSort.key==='category'){ aval=av.category; bval=bv.category; }
-    else { aval=av.count; bval=bv.count; }
-    let cmp = typeof aval==='string' ? aval.localeCompare(bval,'th') : aval-bval;
-    return _progSort.dir==='desc' ? -cmp : cmp;
+    else{ aval=av.count; bval=bv.count; }
+    let cmp=typeof aval==='string'?aval.localeCompare(bval,'th'):aval-bval;
+    return _progSort.dir==='desc'?-cmp:cmp;
   });
 
   const maxCount=Math.max(...entries.map(e=>(e.kind==='group'?e.group.count:e.row.count)),1);
@@ -1035,8 +1035,8 @@ function renderSummaryView(){
     const isOpen=_openMachineRows.has(machineKey);
     const displayName=highlight(r.name,q);
     const licLabel=licenseBadgeLabel(r.lic);
-    const licBadge=licLabel ? `<span class="lic-badge lic-badge-${esc(r.lic)}">${esc(licLabel)}</span>` : '';
-    const newBadge = r.hasNew ? `<span class="lic-badge lic-badge-new">🆕 ใหม่</span>` : '';
+    const licBadge=licLabel?`<span class="lic-badge lic-badge-${esc(r.lic)}">${esc(licLabel)}</span>`:'';
+    const newBadge=r.hasNew?`<span class="lic-badge lic-badge-new">🆕 ใหม่</span>`:'';
     return `
     <tr class="${r.hasNew?'row-new-prog':''} ${indent?'prog-subrow':''}">
       <td class="prog-cat-cell">${(!indent&&r.category)?`<span class="cat-badge">${esc(r.category)}</span>`:''}</td>
@@ -1046,36 +1046,29 @@ function renderSummaryView(){
       <td><span class="prog-machines-toggle" onclick="toggleMachines('${esc(machineKey)}','${rid}')">${isOpen?'ซ่อนเครื่อง ▲':'ดูรายชื่อเครื่อง ▼'}</span></td>
     </tr>
     <tr class="prog-machines-row ${isOpen?'open':''}" id="row_${rid}">
-      <td colspan="5">
-        <div class="prog-machines-inner">
-          ${r.machines.sort((a,b)=>a.localeCompare(b,'th')).map(m=>`<span class="prog-machine-chip">${esc(m)}</span>`).join('')}
-        </div>
-      </td>
+      <td colspan="5"><div class="prog-machines-inner">
+        ${r.machines.sort((a,b)=>a.localeCompare(b,'th')).map(m=>`<span class="prog-machine-chip">${esc(m)}</span>`).join('')}
+      </div></td>
     </tr>`;
   }
 
-  let html=`
-  <table class="prog-summary-table">
+  let html=`<table class="prog-summary-table">
     <thead><tr>
       <th onclick="sortProgBy('category')">หมวด${arrow('category')}</th>
       <th onclick="sortProgBy('name')">ชื่อโปรแกรม${arrow('name')}</th>
       <th onclick="sortProgBy('count')">จำนวนเครื่องที่ติดตั้ง${arrow('count')}</th>
-      <th>สัดส่วน</th>
-      <th></th>
-    </tr></thead>
-    <tbody>`;
+      <th>สัดส่วน</th><th></th>
+    </tr></thead><tbody>`;
 
   entries.forEach((e,idx)=>{
-    if(e.kind==='item'){
-      html+=renderItemRow(e.row,`pm_i_${idx}`,false);
-    } else {
+    if(e.kind==='item'){ html+=renderItemRow(e.row,`pm_i_${idx}`,false); }
+    else{
       const g=e.group;
       const pct=Math.round(g.count/totalMachines*100);
       const barPct=Math.round(g.count/maxCount*100);
       const collapsed=_collapsedOsGroups.has(g.name);
-      const newBadge = g.hasNew ? `<span class="lic-badge lic-badge-new">🆕 ใหม่</span>` : '';
-      html+=`
-      <tr class="prog-group-row">
+      const newBadge=g.hasNew?`<span class="lic-badge lic-badge-new">🆕 ใหม่</span>`:'';
+      html+=`<tr class="prog-group-row">
         <td class="prog-cat-cell"><span class="cat-badge">OS</span></td>
         <td class="prog-name-cell">
           <span class="prog-group-toggle" onclick="toggleOsGroup('${esc(g.name)}')">${collapsed?'▶':'▼'}</span>
@@ -1085,33 +1078,21 @@ function renderSummaryView(){
         <td><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${barPct}%"></div></div></td>
         <td></td>
       </tr>`;
-      if(!collapsed){
-        g.children.forEach((cr,ci)=>{ html+=renderItemRow(cr,`pm_c_${idx}_${ci}`,true); });
-      }
+      if(!collapsed){ g.children.forEach((cr,ci)=>{ html+=renderItemRow(cr,`pm_c_${idx}_${ci}`,true); }); }
     }
   });
-
   html+='</tbody></table>';
   wrap.innerHTML=html;
 }
 
 function sortProgBy(key){
   if(_progSort.key===key) _progSort.dir=_progSort.dir==='desc'?'asc':'desc';
-  else { _progSort.key=key; _progSort.dir = key==='count' ? 'desc' : 'asc'; }
+  else{ _progSort.key=key; _progSort.dir=key==='count'?'desc':'asc'; }
   renderSummaryView();
 }
+function toggleMachines(progKey,rid){ if(_openMachineRows.has(progKey)) _openMachineRows.delete(progKey); else _openMachineRows.add(progKey); renderSummaryView(); }
 
-function toggleMachines(progKey,rid){
-  if(_openMachineRows.has(progKey)) _openMachineRows.delete(progKey);
-  else _openMachineRows.add(progKey);
-  renderSummaryView();
-}
-
-// ── Add program manually ──────────────────────────
-function openAddProgram(cid,ck){
-  const el=document.getElementById(`addprog_${cid}`);
-  if(el) el.classList.toggle('open');
-}
+function openAddProgram(cid,ck){ const el=document.getElementById(`addprog_${cid}`); if(el) el.classList.toggle('open'); }
 async function submitAddProgram(ck,cid){
   const catEl=document.getElementById(`addprog_cat_${cid}`);
   const nameEl=document.getElementById(`addprog_name_${cid}`);
@@ -1119,59 +1100,31 @@ async function submitAddProgram(ck,cid){
   const remEl=document.getElementById(`addprog_rem_${cid}`);
   const name=(nameEl?.value||'').trim();
   if(!name){ showNotif('กรุณากรอกชื่อโปรแกรม','error'); return; }
-  const comp=swData[ck];
-  if(!comp) return;
-  comp.programs.push({
-    category:(catEl?.value||'').trim().toUpperCase(),
-    name,
-    version:(verEl?.value||'').trim(),
-    remark:(remEl?.value||'').trim(),
-    isNew:true,
-  });
+  const comp=swData[ck]; if(!comp) return;
+  comp.programs.push({ category:(catEl?.value||'').trim().toUpperCase(), name, version:(verEl?.value||'').trim(), remark:(remEl?.value||'').trim(), isNew:true });
   if(catEl)catEl.value=''; if(nameEl)nameEl.value=''; if(verEl)verEl.value=''; if(remEl)remEl.value='';
-  const wrap=document.getElementById(`addprog_${cid}`);
-  if(wrap) wrap.classList.remove('open');
-  saveStorage();
-  renderCheckView();
-  showNotif('เพิ่มโปรแกรมแล้ว');
+  const wrap=document.getElementById(`addprog_${cid}`); if(wrap) wrap.classList.remove('open');
+  saveStorage(); renderCheckView(); showNotif('เพิ่มโปรแกรมแล้ว');
 }
 
-// ── Export License Excel ──────────────────────────
-function findOsProgram(comp){
-  return comp.programs.find(p=>String(p.category||'').toUpperCase()==='OS');
-}
+function findOsProgram(comp){ return comp.programs.find(p=>String(p.category||'').toUpperCase()==='OS'); }
 function exportLicenseExcel(){
   if(!Object.keys(swData).length){ showNotif('ไม่มีข้อมูลให้ Export','error'); return; }
-
   const sortedCks=Object.keys(swData).sort((a,b)=>a.localeCompare(b,'th'));
-  const aoa=[
-    [],
-    ['No','Name','User','Description','OS','VLK','OEM','OEI','VLK Up Win11','OEM Up Win11','OEI Up Win11','FPP','FPP Up Win11'],
-  ];
-
+  const aoa=[[],['No','Name','User','Description','OS','VLK','OEM','OEI','VLK Up Win11','OEM Up Win11','OEI Up Win11','FPP','FPP Up Win11']];
   sortedCks.forEach((ck,idx)=>{
     const comp=swData[ck];
     const osProg=findOsProgram(comp);
-    const osText=osProg ? `${osProg.name}${osProg.version?' '+osProg.version:''}`.trim() : '';
-    const lic=osProg ? detectLicenseType('OS',osProg.name,osProg.version,osProg.remark) : '';
-    const isUpgrade = osProg ? /UPGRADE/i.test(osProg.name+' '+osProg.version+' '+osProg.remark) : false;
-
-    let vlk='', oem='', oei='', vlkUp='', oemUp='', oeiUp='', fpp='', fppUp='';
+    const osText=osProg?`${osProg.name}${osProg.version?' '+osProg.version:''}`.trim():'';
+    const lic=osProg?detectLicenseType('OS',osProg.name,osProg.version,osProg.remark):'';
+    const isUpgrade=osProg?/UPGRADE/i.test(osProg.name+' '+osProg.version+' '+osProg.remark):false;
+    let vlk='',oem='',oei='',vlkUp='',oemUp='',oeiUp='',fpp='',fppUp='';
     if(lic==='OEM'){ if(isUpgrade) oemUp=1; else oem=1; }
     else if(lic==='OEI'){ if(isUpgrade) oeiUp=1; else oei=1; }
     else if(lic==='VL'){ if(isUpgrade) vlkUp=1; else vlk=1; }
     else if(lic==='FPP'){ if(isUpgrade) fppUp=1; else fpp=1; }
-
-    aoa.push([
-      idx+1,
-      comp.computerName,
-      comp.employee||'',
-      comp.position||'',
-      osText,
-      vlk, oem, oei, vlkUp, oemUp, oeiUp, fpp, fppUp,
-    ]);
+    aoa.push([idx+1,comp.computerName,comp.employee||'',comp.position||'',osText,vlk,oem,oei,vlkUp,oemUp,oeiUp,fpp,fppUp]);
   });
-
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols']=[{wch:6},{wch:18},{wch:24},{wch:18},{wch:44},{wch:7},{wch:7},{wch:7},{wch:13},{wch:13},{wch:13},{wch:7},{wch:13}];
@@ -1181,7 +1134,6 @@ function exportLicenseExcel(){
   showNotif('Export ไฟล์ License แล้ว');
 }
 
-// ── Clear all ─────────────────────────────────────
 async function confirmClearAll(){
   if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย')) return;
   swData={}; swState={}; _ckIndex={}; _ckIndexRev={}; _openMachineRows=new Set(); _selectedPrefixes=null; _collapsedOsGroups=new Set();
