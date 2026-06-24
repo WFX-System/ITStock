@@ -64,6 +64,7 @@
 .lic-badge-OEM{background:#D1FAE5;border-color:#6EE7B7;color:#065F46;}
 .lic-badge-FPP{background:#DBEAFE;border-color:#BFDBFE;color:#1E40AF;}
 .lic-badge-VL{background:#FFEDD5;border-color:#FDBA74;color:#9A3412;}
+.lic-badge-OEI{background:#EDE9FE;border-color:#C4B5FD;color:#5B21B6;}
 
 .prog-flag-cell{width:34px;text-align:center;}
 .prog-flag-check{width:17px;height:17px;cursor:pointer;accent-color:var(--r);}
@@ -160,6 +161,14 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .prog-machines-inner{padding:10px 14px;background:var(--bg);display:flex;flex-wrap:wrap;gap:6px;}
 .prog-machine-chip{font-family:var(--mono);font-size:10px;background:var(--surf);border:1px solid var(--bdr);
   border-radius:4px;padding:2px 7px;}
+
+/* OS version grouping (รวมทุกประเภทไลเซนส์ของ Windows รุ่นเดียวกัน) */
+.prog-group-row{background:#F1F5F9;}
+.prog-group-row:hover{background:#E8EEF4!important;}
+.prog-group-row td{font-weight:700;}
+.prog-group-toggle{display:inline-block;width:14px;cursor:pointer;user-select:none;color:var(--tx3);}
+.prog-subrow td{padding-left:30px;}
+.prog-subrow .prog-name-cell{font-weight:500;font-size:11.5px;color:var(--tx2);}
 
 /* Machine-prefix multi-select dropdown */
 .prefix-filter-wrap{position:relative;display:inline-block;}
@@ -303,6 +312,7 @@ let swData={}, swState={};
 let currentView='check';
 let _progSort={key:'count',dir:'desc'};
 let _openMachineRows=new Set();
+let _collapsedOsGroups=new Set();
 
 initShell('checksoftware', async(user,role,firestore)=>{
   currentUser=user; currentRole=role; db=firestore;
@@ -360,22 +370,25 @@ function highlight(s,q){
   return esc(s).replace(new RegExp(e,'gi'),m=>`<mark>${m}</mark>`);
 }
 
-// ── License-type helper (OEM / FPP / PRO ธรรมดา) ────
+// ── License-type helper (OEM / OEI / FPP / PRO ธรรมดา) ────
 // ใช้สำหรับแยกประเภทของ OS ในหน้าสรุปโปรแกรม โดยดูจาก "ชื่อโปรแกรม + เวอร์ชัน" รวมกัน
-// (บางครั้งคำว่า OEM/FPP หลุดไปอยู่ในชื่อโปรแกรม เช่น "...UPGRADE FROM Windows 10 OEM"
+// (บางครั้งคำว่า OEM/OEI/FPP หลุดไปอยู่ในชื่อโปรแกรม เช่น "...UPGRADE FROM Windows 10 OEM"
 //  ไม่ได้อยู่ในคอลัมน์ Version เสมอไป จึงต้องค้นหาจากทั้งสองช่องรวมกัน)
-// - มีคำว่า OEM  -> ประเภท OEM
-// - มีคำว่า FPP  -> ประเภท FPP
-// - ไม่มีทั้งคู่ และเป็นหมวด OS -> ถือเป็น PRO ธรรมดา (Volume License)
+// - มีคำว่า OEM  -> ประเภท OEM (System Builder)
+// - มีคำว่า OEI  -> ประเภท OEI (Original Equipment Integrator)
+// - มีคำว่า FPP  -> ประเภท FPP (Full Packaged Product)
+// - ไม่มีทั้งหมด และเป็นหมวด OS -> ถือเป็น PRO ธรรมดา (Volume License)
 function detectLicenseType(category,name,version){
   if(category!=='OS') return '';
   const hay=(String(name||'')+' '+String(version||'')).toUpperCase();
   if(/\bOEM\b/.test(hay)) return 'OEM';
+  if(/\bOEI\b/.test(hay)) return 'OEI';
   if(/\bFPP\b/.test(hay)) return 'FPP';
   return 'VL'; // Volume License (PRO ธรรมดา)
 }
 function licenseBadgeLabel(lic){
   if(lic==='OEM') return 'OEM';
+  if(lic==='OEI') return 'OEI';
   if(lic==='FPP') return 'FPP';
   if(lic==='VL')  return 'Volume License';
   return '';
@@ -389,6 +402,17 @@ function getMachinePrefix(ck){
   const m=String(ck||'').match(/^([^\d]*)/);
   const p=(m?m[1]:'').trim();
   return p || String(ck||'');
+}
+
+// ── OS version grouping helper ─────────────────────
+// ใช้สำหรับจัดกลุ่ม OS ตามชื่อ Windows รุ่นเดียวกัน โดยไม่สนใจประเภทไลเซนส์/ข้อความอัปเกรด
+// เช่น "Microsoft Windows 11 (UPGRADE FROM Windows 10 OEM)" -> "Windows 11"
+//      "Windows 10" -> "Windows 10"
+function getOsGroupName(name){
+  let n=String(name||'').replace(/\(.*?\)/g,'').trim();   // ตัดข้อความในวงเล็บ (เช่น UPGRADE FROM ...)
+  n=n.replace(/^Microsoft\s+/i,'').trim();                // ตัดคำว่า Microsoft นำหน้า
+  n=n.replace(/\s{2,}/g,' ');
+  return n || String(name||'');
 }
 
 // ── Selected machine-prefix filter (สำหรับหน้าสรุปโปรแกรม) ─
@@ -871,7 +895,7 @@ function collapseAll(){
 }
 
 // ── Render: SUMMARY view (แต่ละโปรแกรมใช้กี่เครื่อง) ─
-// OS จะถูกแยกย่อยตามประเภทไลเซนส์ (OEM / FPP / PRO ธรรมดา) เป็นคนละแถวกัน
+// OS จะถูกแยกย่อยตามประเภทไลเซนส์ (OEM / OEI / FPP / PRO ธรรมดา) เป็นคนละแถวกัน
 // แสดงด้วยชื่อโปรแกรมเดิม + badge สีบอกประเภท (ไม่มีข้อความต่อท้ายชื่อ)
 // รองรับการกรองเฉพาะ "กลุ่มเครื่อง" (prefix ของชื่อเครื่อง) ที่เลือกไว้
 function buildProgramSummary(allowedCks){
@@ -951,6 +975,12 @@ function selectAllPrefixes(on){
   renderSummaryView();
 }
 
+function toggleOsGroup(groupName){
+  if(_collapsedOsGroups.has(groupName)) _collapsedOsGroups.delete(groupName);
+  else _collapsedOsGroups.add(groupName);
+  renderSummaryView();
+}
+
 function renderSummaryView(){
   const hasData=Object.keys(swData).length>0;
   document.getElementById('summaryToolbarRow').style.display=hasData?'flex':'none';
@@ -977,15 +1007,6 @@ function renderSummaryView(){
   if(q) rows=rows.filter(r=>`${r.category} ${r.name}`.toLowerCase().includes(q));
   if(catFilter) rows=rows.filter(r=>r.category===catFilter);
 
-  rows.sort((a,b)=>{
-    let av,bv;
-    if(_progSort.key==='name'){ av=a.name; bv=b.name; }
-    else if(_progSort.key==='category'){ av=a.category; bv=b.category; }
-    else { av=a.count; bv=b.count; }
-    let cmp = typeof av==='string' ? av.localeCompare(bv,'th') : av-bv;
-    return _progSort.dir==='desc' ? -cmp : cmp;
-  });
-
   if(!totalMachines){
     wrap.innerHTML=`<div class="empty-pg"><div class="icon">🖥️</div><p>ไม่ได้เลือกกลุ่มเครื่องใดเลย<br>กรุณาเลือกกลุ่มเครื่องอย่างน้อย 1 กลุ่ม</p></div>`;
     return;
@@ -995,33 +1016,52 @@ function renderSummaryView(){
     return;
   }
 
-  const maxCount=Math.max(...rows.map(r=>r.count),1);
+  // ── จัดกลุ่ม OS ตามชื่อรุ่น Windows (รวมทุกประเภทไลเซนส์เข้าด้วยกันเป็นยอดรวม) ──
+  // หมวดอื่น ๆ ที่ไม่ใช่ OS ยังคงแสดงเป็นแถวเดี่ยวตามปกติ
+  const osRowsRaw=rows.filter(r=>r.category==='OS');
+  const otherRows=rows.filter(r=>r.category!=='OS');
+  const osGroupsMap={};
+  osRowsRaw.forEach(r=>{
+    const g=getOsGroupName(r.name);
+    if(!osGroupsMap[g]) osGroupsMap[g]={category:'OS',name:g,count:0,hasNew:false,children:[]};
+    osGroupsMap[g].count+=r.count;
+    if(r.hasNew) osGroupsMap[g].hasNew=true;
+    osGroupsMap[g].children.push(r);
+  });
+  const osGroups=Object.values(osGroupsMap);
+  osGroups.forEach(g=>g.children.sort((a,b)=>b.count-a.count));
+
+  let entries=[
+    ...otherRows.map(r=>({kind:'item',row:r})),
+    ...osGroups.map(g=>({kind:'group',group:g})),
+  ];
+
+  entries.sort((a,b)=>{
+    const av = a.kind==='group' ? a.group : a.row;
+    const bv = b.kind==='group' ? b.group : b.row;
+    let aval,bval;
+    if(_progSort.key==='name'){ aval=av.name; bval=bv.name; }
+    else if(_progSort.key==='category'){ aval=av.category; bval=bv.category; }
+    else { aval=av.count; bval=bv.count; }
+    let cmp = typeof aval==='string' ? aval.localeCompare(bval,'th') : aval-bval;
+    return _progSort.dir==='desc' ? -cmp : cmp;
+  });
+
+  const maxCount=Math.max(...entries.map(e=>(e.kind==='group'?e.group.count:e.row.count)),1);
   const arrow=(key)=>_progSort.key===key?(_progSort.dir==='desc'?' ▾':' ▴'):'';
 
-  let html=`
-  <table class="prog-summary-table">
-    <thead><tr>
-      <th onclick="sortProgBy('category')">หมวด${arrow('category')}</th>
-      <th onclick="sortProgBy('name')">ชื่อโปรแกรม${arrow('name')}</th>
-      <th onclick="sortProgBy('count')">จำนวนเครื่องที่ติดตั้ง${arrow('count')}</th>
-      <th>สัดส่วน</th>
-      <th></th>
-    </tr></thead>
-    <tbody>`;
-
-  rows.forEach((r,idx)=>{
+  function renderItemRow(r,rid,indent){
     const pct=Math.round(r.count/totalMachines*100);
     const barPct=Math.round(r.count/maxCount*100);
-    const rid=`pm_${idx}`;
     const machineKey=r.category+'||'+r.name+'||'+r.lic;
     const isOpen=_openMachineRows.has(machineKey);
     const displayName=highlight(r.name,q);
     const licLabel=licenseBadgeLabel(r.lic);
     const licBadge=licLabel ? `<span class="lic-badge lic-badge-${esc(r.lic)}">${esc(licLabel)}</span>` : '';
     const newBadge = r.hasNew ? `<span class="lic-badge lic-badge-new">🆕 ใหม่</span>` : '';
-    html+=`
-    <tr class="${r.hasNew?'row-new-prog':''}">
-      <td class="prog-cat-cell">${r.category?`<span class="cat-badge">${esc(r.category)}</span>`:''}</td>
+    return `
+    <tr class="${r.hasNew?'row-new-prog':''} ${indent?'prog-subrow':''}">
+      <td class="prog-cat-cell">${(!indent&&r.category)?`<span class="cat-badge">${esc(r.category)}</span>`:''}</td>
       <td class="prog-name-cell">${displayName}${licBadge}${newBadge}</td>
       <td class="prog-count-cell">${r.count} / ${totalMachines} เครื่อง <span style="color:var(--tx3);font-weight:400;">(${pct}%)</span></td>
       <td><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${barPct}%"></div></div></td>
@@ -1034,6 +1074,43 @@ function renderSummaryView(){
         </div>
       </td>
     </tr>`;
+  }
+
+  let html=`
+  <table class="prog-summary-table">
+    <thead><tr>
+      <th onclick="sortProgBy('category')">หมวด${arrow('category')}</th>
+      <th onclick="sortProgBy('name')">ชื่อโปรแกรม${arrow('name')}</th>
+      <th onclick="sortProgBy('count')">จำนวนเครื่องที่ติดตั้ง${arrow('count')}</th>
+      <th>สัดส่วน</th>
+      <th></th>
+    </tr></thead>
+    <tbody>`;
+
+  entries.forEach((e,idx)=>{
+    if(e.kind==='item'){
+      html+=renderItemRow(e.row,`pm_i_${idx}`,false);
+    } else {
+      const g=e.group;
+      const pct=Math.round(g.count/totalMachines*100);
+      const barPct=Math.round(g.count/maxCount*100);
+      const collapsed=_collapsedOsGroups.has(g.name);
+      const newBadge = g.hasNew ? `<span class="lic-badge lic-badge-new">🆕 ใหม่</span>` : '';
+      html+=`
+      <tr class="prog-group-row">
+        <td class="prog-cat-cell"><span class="cat-badge">OS</span></td>
+        <td class="prog-name-cell">
+          <span class="prog-group-toggle" onclick="toggleOsGroup('${esc(g.name)}')">${collapsed?'▶':'▼'}</span>
+          ${esc(g.name)} <span style="color:var(--tx3);font-weight:400;font-size:10px;">(รวมทุกประเภทไลเซนส์)</span>${newBadge}
+        </td>
+        <td class="prog-count-cell">${g.count} / ${totalMachines} เครื่อง <span style="color:var(--tx3);font-weight:400;">(${pct}%)</span></td>
+        <td><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${barPct}%"></div></div></td>
+        <td></td>
+      </tr>`;
+      if(!collapsed){
+        g.children.forEach((cr,ci)=>{ html+=renderItemRow(cr,`pm_c_${idx}_${ci}`,true); });
+      }
+    }
   });
 
   html+='</tbody></table>';
@@ -1082,12 +1159,12 @@ async function submitAddProgram(ck,cid){
 }
 
 // ── Export License Excel (รูปแบบตามไฟล์ "รายการเครื่องคอมพิวเตอร์ License Windows") ─
-// คอลัมน์: No | Name | User | Description | OS | VLK | OEM | VLK Up Win11 | OEM Up Win11
+// คอลัมน์: No | Name | User | Description | OS | VLK | OEM | OEI | VLK Up Win11 | OEM Up Win11 | OEI Up Win11
 // - Name        = ชื่อเครื่อง (Computer name)
 // - User        = ชื่อ-สกุล ผู้ใช้งาน
 // - Description = ตำแหน่ง/แผนก (ใช้ field ตำแหน่งที่มีอยู่)
 // - OS          = ชื่อ+เวอร์ชันของโปรแกรมที่อยู่ในหมวด OS
-// - VLK/OEM/VLK Up Win11/OEM Up Win11 = ใส่ 'ü' ตามประเภทไลเซนส์ที่ตรวจพบจากชื่อโปรแกรม
+// - VLK/OEM/OEI/FPP/...Up Win11 = ใส่ 'ü' ตามประเภทไลเซนส์ที่ตรวจพบจากชื่อโปรแกรม
 //   ถ้าชื่อโปรแกรมมีคำว่า "UPGRADE" (เช่น อัปเกรดจาก Windows 10 มาเป็น Windows 11)
 //   จะถือเป็นคอลัมน์ "...Up Win11" ตามประเภทไลเซนส์เดิม ไม่ใช่คอลัมน์ปกติ
 function findOsProgram(comp){
@@ -1099,7 +1176,7 @@ function exportLicenseExcel(){
   const sortedCks=Object.keys(swData).sort((a,b)=>a.localeCompare(b,'th'));
   const aoa=[
     [], // แถวแรกเว้นว่างตามไฟล์ต้นฉบับ
-    ['No','Name','User','Description','OS','VLK','OEM','VLK Up Win11','OEM Up Win11','FPP','FPP Up Win11'],
+    ['No','Name','User','Description','OS','VLK','OEM','OEI','VLK Up Win11','OEM Up Win11','OEI Up Win11','FPP','FPP Up Win11'],
   ];
 
   sortedCks.forEach((ck,idx)=>{
@@ -1109,8 +1186,9 @@ function exportLicenseExcel(){
     const lic=osProg ? detectLicenseType('OS',osProg.name,osProg.version) : '';
     const isUpgrade = osProg ? /UPGRADE/i.test(osProg.name+' '+osProg.version) : false;
 
-    let vlk='', oem='', vlkUp='', oemUp='', fpp='', fppUp='';
+    let vlk='', oem='', oei='', vlkUp='', oemUp='', oeiUp='', fpp='', fppUp='';
     if(lic==='OEM'){ if(isUpgrade) oemUp=1; else oem=1; }
+    else if(lic==='OEI'){ if(isUpgrade) oeiUp=1; else oei=1; }
     else if(lic==='VL'){ if(isUpgrade) vlkUp=1; else vlk=1; }
     else if(lic==='FPP'){ if(isUpgrade) fppUp=1; else fpp=1; }
 
@@ -1120,13 +1198,13 @@ function exportLicenseExcel(){
       comp.employee||'',
       comp.position||'',
       osText,
-      vlk, oem, vlkUp, oemUp, fpp, fppUp,
+      vlk, oem, oei, vlkUp, oemUp, oeiUp, fpp, fppUp,
     ]);
   });
 
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols']=[{wch:6},{wch:18},{wch:24},{wch:18},{wch:44},{wch:7},{wch:7},{wch:13},{wch:13},{wch:7},{wch:13}];
+  ws['!cols']=[{wch:6},{wch:18},{wch:24},{wch:18},{wch:44},{wch:7},{wch:7},{wch:7},{wch:13},{wch:13},{wch:13},{wch:7},{wch:13}];
   XLSX.utils.book_append_sheet(wb,ws,'License');
   const dateStr=new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb,`รายการเครื่องคอมพิวเตอร์_License_Windows_${dateStr}.xlsx`);
@@ -1136,7 +1214,7 @@ function exportLicenseExcel(){
 // ── Clear all ─────────────────────────────────────
 async function confirmClearAll(){
   if(!confirm('ลบข้อมูลทั้งหมด?\nผลการเช็คทั้งหมดจะหายไปด้วย')) return;
-  swData={}; swState={}; _ckIndex={}; _ckIndexRev={}; _openMachineRows=new Set(); _selectedPrefixes=null;
+  swData={}; swState={}; _ckIndex={}; _ckIndexRev={}; _openMachineRows=new Set(); _selectedPrefixes=null; _collapsedOsGroups=new Set();
   try{ await _sessionRef().delete(); }catch(e){}
   renderAll(); showNotif('ลบข้อมูลทั้งหมดแล้ว');
 }
