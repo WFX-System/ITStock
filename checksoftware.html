@@ -185,6 +185,71 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
 .prefix-opt-label{font-size:12px;font-weight:600;flex:1;}
 .prefix-opt-count{font-size:10px;color:var(--tx3);font-family:var(--mono);}
 
+/* ── License Inventory ───────────────────────────── */
+.lic-inv-grid{display:grid;gap:12px;margin-top:4px;}
+.lic-inv-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radlg);
+  overflow:hidden;transition:box-shadow .15s;}
+.lic-inv-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.07);}
+.lic-inv-card.over-quota{border-color:#FCA5A5;}
+.lic-inv-card.near-quota{border-color:#FCD34D;}
+.lic-inv-card.ok-quota{border-color:#6EE7B7;}
+
+.lic-inv-head{display:flex;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap;}
+.lic-inv-name{font-size:13px;font-weight:700;flex:1;min-width:0;}
+.lic-inv-name-input{font-size:13px;font-weight:700;flex:1;min-width:120px;
+  padding:3px 7px;border:1.5px solid var(--g);border-radius:6px;
+  background:var(--surf);color:var(--tx1);font-family:inherit;}
+.lic-inv-name-input:focus{outline:none;box-shadow:0 0 0 2px var(--gll);}
+
+.lic-inv-counts{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;}
+.lic-inv-stat{display:flex;flex-direction:column;align-items:center;min-width:52px;}
+.lic-inv-stat-num{font-size:18px;font-weight:700;font-family:var(--mono);line-height:1.1;}
+.lic-inv-stat-lbl{font-size:9px;color:var(--tx3);font-weight:600;text-transform:uppercase;}
+.lic-inv-divider{width:1px;height:32px;background:var(--bdr);}
+
+.lic-bar-wrap{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin:0 14px 10px;}
+.lic-bar-fill{height:100%;border-radius:6px;transition:width .4s;}
+.lic-bar-ok{background:var(--g);}
+.lic-bar-near{background:#F59E0B;}
+.lic-bar-over{background:var(--r);}
+
+.lic-inv-foot{display:flex;align-items:center;gap:8px;padding:8px 14px;
+  border-top:1px solid var(--bdr);background:var(--bg);flex-wrap:wrap;}
+.lic-qty-ctrl{display:flex;align-items:center;gap:0;}
+.lic-qty-btn{width:28px;height:28px;border:1.5px solid var(--bdrm);background:var(--surf);
+  cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0;}
+.lic-qty-btn:first-child{border-radius:6px 0 0 6px;}
+.lic-qty-btn:last-child{border-radius:0 6px 6px 0;}
+.lic-qty-btn:hover{background:var(--gll);border-color:var(--g);color:var(--g);}
+.lic-qty-input{width:52px;height:28px;border:1.5px solid var(--bdrm);border-left:none;border-right:none;
+  text-align:center;font-size:13px;font-weight:700;font-family:var(--mono);
+  background:var(--surf);color:var(--tx1);}
+.lic-qty-input:focus{outline:none;border-color:var(--g);z-index:1;position:relative;}
+.lic-match-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.lic-match-ok{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7;}
+.lic-match-over{background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;}
+.lic-match-near{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;}
+.lic-match-zero{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB;}
+.btn-lic-del{padding:4px 9px;border-radius:6px;font-size:11px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx3);
+  transition:all .15s;white-space:nowrap;margin-left:auto;}
+.btn-lic-del:hover{background:#FEE2E2;border-color:var(--r);color:var(--r);}
+.btn-lic-del.editing{background:var(--g);border-color:var(--g);color:#fff;}
+.btn-lic-del.editing:hover{filter:brightness(1.08);}
+
+.lic-add-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  padding:10px 14px;background:var(--surf);border:1.5px dashed var(--bdrm);
+  border-radius:var(--radlg);margin-top:4px;}
+.lic-add-row input[type=text]{flex:1;min-width:160px;padding:7px 10px;
+  border:1.5px solid var(--bdrm);border-radius:var(--radsm);font-size:12px;
+  font-family:inherit;background:var(--surf);color:var(--tx1);}
+.lic-add-row input[type=text]:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 2px var(--gll);}
+.lic-inv-summary{display:flex;gap:10px;flex-wrap:wrap;padding:10px 14px;
+  background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);margin-bottom:12px;}
+.lic-inv-summary-item{font-size:11px;color:var(--tx3);}
+.lic-inv-summary-item b{color:var(--tx1);}
+
 /* ── Merge Dialog ────────────────────────────────── */
 .merge-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;
   display:flex;align-items:center;justify-content:center;padding:16px;}
@@ -256,6 +321,7 @@ mark{background:#FFF176;border-radius:2px;padding:0 1px;}
     <div class="page-tabs" id="pageTabs" style="display:none">
       <div class="page-tab active" id="tabCheck" onclick="switchView('check')">🖥️ เช็คเครื่อง</div>
       <div class="page-tab" id="tabSummary" onclick="switchView('summary')">📊 สรุปโปรแกรม</div>
+      <div class="page-tab" id="tabLicInv" onclick="switchView('licinv')">🗂️ คลังสิทธิ์</div>
     </div>
 
     <!-- ───────── VIEW: CHECK ───────── -->
