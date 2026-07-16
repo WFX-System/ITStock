@@ -40,6 +40,10 @@
 .asset-row td{padding:8px 10px;vertical-align:top;font-size:12px;}
 .code-badge{font-family:var(--mono);font-size:10px;background:var(--bg);border:1px solid var(--bdr);
   border-radius:4px;padding:2px 6px;display:inline-block;white-space:nowrap;}
+.badge-new{font-size:9px;font-weight:800;letter-spacing:.03em;color:#fff;background:#2563EB;
+  border-radius:20px;padding:1px 7px;display:inline-block;margin-left:6px;vertical-align:middle;
+  animation:badgeNewPulse 1.6s ease-in-out infinite;}
+@keyframes badgeNewPulse{0%,100%{opacity:1;}50%{opacity:.6;}}
 .sn-text{font-family:var(--mono);font-size:11px;color:var(--tx2);}
 
 /* issue summary pill — แสดงข้อมูลที่บันทึกแล้วโดยไม่ต้องกาง panel */
@@ -287,68 +291,75 @@ function readExcelFile(file){
       const n=Object.keys(parsed).length;
       if(n===0){ showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error'); return; }
 
-      // ── preview: หาเครื่องใหม่ / เครื่องเดิมที่มีประเภทอุปกรณ์ซ้ำ (จะถูกทับเฉพาะประเภทนั้น) ──
-      const newComputers=[];      // ck ที่ยังไม่มีในระบบ
-      const conflictInfo=[];      // {ck, types:[...]} เครื่องเดิมที่มีบางประเภทซ้ำ
-      Object.keys(parsed).forEach(ck=>{
-        const existing=checkData[ck];
-        if(!existing){ newComputers.push(ck); return; }
-        const existingTypes=new Set(existing.items.map(it=>it.type));
-        const overlapTypes=[...new Set(parsed[ck].items.map(it=>it.type))].filter(t=>existingTypes.has(t));
-        if(overlapTypes.length) conflictInfo.push({ck,types:overlapTypes});
-      });
+      const sigOf=it=>[it.type,it.brand,it.assetCode,it.model,it.sn,it.regNo].join('||');
 
-      if(conflictInfo.length>0){
-        const preview=conflictInfo.slice(0,8)
-          .map(c=>`• ${c.ck}: ${c.types.join(', ')}`).join('\n');
-        const more=conflictInfo.length>8?`\n...และอีก ${conflictInfo.length-8} เครื่อง`:'';
-        const msg=`⚠️ พบประเภทอุปกรณ์ซ้ำในเครื่องเดิม ${conflictInfo.length} เครื่อง:\n${preview}${more}\n\nระบบจะใช้ข้อมูลชุดใหม่ทับเฉพาะประเภทที่ซ้ำ (สถานะเช็ค/ปัญหาของรายการนั้นจะถูกล้าง ส่วนประเภทอื่นในเครื่องเดียวกันจะไม่ถูกแตะต้อง)\n\nต้องการดำเนินการต่อหรือไม่?`;
-        if(!confirm(msg)) return;
-      }
-
-      // ── merge: จับคู่ด้วย "ประเภท" (item.type) ภายในเครื่องเดียวกัน ──
-      let overwrittenItemCount=0, updatedComputerCount=0;
+      // ── dry-run: หาเครื่องใหม่ และรายการที่เปลี่ยนแปลงในเครื่องเดิม (ยังไม่แก้ข้อมูลจริง) ──
+      const newComputerNames=[];
+      const updatedComputers=[]; // {ck, addedItems:[{type,assetCode}], addedCount}
       Object.keys(parsed).forEach(ck=>{
         const newComp=parsed[ck];
         const existing=checkData[ck];
-        if(!existing){ checkData[ck]=newComp; return; } // เครื่องใหม่ → เพิ่มทั้งชุด
+        if(!existing){ newComputerNames.push(ck); return; }
+        const existingSigs=new Set(existing.items.map(sigOf));
+        const addedItems=newComp.items.filter(it=>!existingSigs.has(sigOf(it)));
+        if(addedItems.length) updatedComputers.push({ck,addedItems,addedCount:addedItems.length});
+      });
 
-        // จับคู่ประเภทแรกที่เจอของแต่ละ type ในรายการเดิม
-        const typeIndex={};
-        existing.items.forEach((it,idx)=>{ if(typeIndex[it.type]===undefined) typeIndex[it.type]=idx; });
+      const totalAddedItems=updatedComputers.reduce((s,c)=>s+c.addedCount,0);
+      if(newComputerNames.length===0 && updatedComputers.length===0){
+        showNotif('Import สำเร็จ ไม่มีข้อมูลใหม่หรือการเปลี่ยนแปลง'); return;
+      }
 
-        let touched=false;
+      // ── popup ยืนยันก่อนบันทึกจริง ──
+      const lines=[];
+      if(newComputerNames.length){
+        lines.push(`🆕 เครื่องใหม่ (${newComputerNames.length}):`);
+        lines.push(...newComputerNames.slice(0,8).map(ck=>`  • ${ck}`));
+        if(newComputerNames.length>8) lines.push(`  ...และอีก ${newComputerNames.length-8} เครื่อง`);
+      }
+      if(updatedComputers.length){
+        if(lines.length) lines.push('');
+        lines.push(`✏️ เครื่องเดิมที่มีการเปลี่ยนแปลง (${updatedComputers.length}):`);
+        updatedComputers.slice(0,8).forEach(c=>{
+          const detail=c.addedItems.slice(0,3).map(it=>`${it.type}${it.assetCode?`(${it.assetCode})`:''}`).join(', ');
+          const extra=c.addedItems.length>3?` +${c.addedItems.length-3}`:'';
+          lines.push(`  • ${c.ck}: +${c.addedCount} รายการ [${detail}${extra}]`);
+        });
+        if(updatedComputers.length>8) lines.push(`  ...และอีก ${updatedComputers.length-8} เครื่อง`);
+      }
+      const msg=`ยืนยัน Import ข้อมูล?\n\n${lines.join('\n')}\n\nรายการที่เปลี่ยนแปลงจะถูกเพิ่มเข้าไปในเครื่องเดิม (ไม่ทับ ไม่ล้างสถานะเช็คที่มีอยู่)`;
+      if(!confirm(msg)) return;
+
+      // ── apply จริง ──
+      Object.keys(parsed).forEach(ck=>{
+        const newComp=parsed[ck];
+        const existing=checkData[ck];
+        if(!existing){
+          newComp.items.forEach(it=>{ it.isNew=true; });   // เครื่องใหม่ทั้งชุด → ทุกรายการติด badge NEW
+          checkData[ck]=newComp;
+          return;
+        }
+        const existingSigs=new Set(existing.items.map(sigOf));
         newComp.items.forEach(newItem=>{
-          if(typeIndex[newItem.type]!==undefined){
-            const idx=typeIndex[newItem.type];
-            existing.items[idx]=newItem;          // ทับข้อมูลเฉพาะประเภทนี้
-            delete checkState[stateKey(ck,idx)];   // ล้างสถานะเช็คของรายการที่ถูกทับ
-            overwrittenItemCount++; touched=true;
-          } else {
-            existing.items.push(newItem);          // ประเภทใหม่ → เพิ่มต่อท้าย ไม่กระทบรายการเดิม
-            typeIndex[newItem.type]=existing.items.length-1;
-            touched=true;
+          const sig=sigOf(newItem);
+          if(!existingSigs.has(sig)){
+            newItem.isNew=true;                             // รายการที่เพิ่งถูกเพิ่มเข้าเครื่องเดิม → ติด badge NEW
+            existing.items.push(newItem);
+            existingSigs.add(sig);
           }
         });
-        // อัปเดตข้อมูลเมตาของเครื่อง (IP/ผู้ใช้/แผนก) เป็นค่าล่าสุด
         if(newComp.ip) existing.ip=newComp.ip;
         if(newComp.employee) existing.employee=newComp.employee;
         if(newComp.dept) existing.dept=newComp.dept;
-        if(touched) updatedComputerCount++;
       });
-
-      // ตัด checkState ที่ไม่ตรงกับ item ปัจจุบันทิ้ง กันข้อมูลค้าง
-      const valid=new Set();
-      Object.keys(checkData).forEach(ck=>checkData[ck].items.forEach((_,i)=>valid.add(stateKey(ck,i))));
-      Object.keys(checkState).forEach(k=>{ if(!valid.has(k)) delete checkState[k]; });
 
       _ckIndex={}; _ckIndexRev={};
       saveStorage(); renderAll();
 
       const parts=[];
-      if(newComputers.length>0) parts.push(`เพิ่มเครื่องใหม่ ${newComputers.length} เครื่อง`);
-      if(overwrittenItemCount>0) parts.push(`ทับรายการที่ซ้ำ ${overwrittenItemCount} รายการ ใน ${updatedComputerCount} เครื่อง`);
-      showNotif(parts.length ? `Import สำเร็จ: ${parts.join(' · ')}` : `Import สำเร็จ พบ ${n} เครื่อง`);
+      if(newComputerNames.length>0) parts.push(`เพิ่มเครื่องใหม่ ${newComputerNames.length} เครื่อง`);
+      if(totalAddedItems>0) parts.push(`เพิ่มรายการใหม่ ${totalAddedItems} รายการ ใน ${updatedComputers.length} เครื่องเดิม`);
+      showNotif(`Import สำเร็จ: ${parts.join(' · ')}`);
     }catch(err){ showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error'); }
   };
   reader.readAsBinaryString(file);
@@ -538,7 +549,7 @@ function renderAll(){
       <tr class="asset-row ${rowCls}" id="arow_${cid}_${i}">
         <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
         <td>
-          <div style="font-size:12px;font-weight:700;">${highlight(item.type,q)}</div>
+          <div style="font-size:12px;font-weight:700;">${highlight(item.type,q)}${item.isNew?`<span class="badge-new" id="newbadge_${cid}_${i}">NEW</span>`:''}</div>
           <div style="font-size:11px;color:var(--tx3);">${highlight(item.brand,q)}</div>
         </td>
         <td>
@@ -759,6 +770,12 @@ function toggleChecked(sk,cid,i){
   if(st.checked){
     st.checkedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
     st.checkedBy=currentUser?.displayName||currentUser?.email||'';
+    // เช็คแล้ว = รับทราบแล้วว่าเป็นรายการใหม่ → เอา badge NEW ออก
+    const ck=sk.split('||')[0], idx=parseInt(sk.split('||')[1],10);
+    if(checkData[ck]?.items?.[idx]?.isNew){
+      delete checkData[ck].items[idx].isNew;
+      document.getElementById(`newbadge_${cid}_${i}`)?.remove();
+    }
   } else { delete st.checkedAt; delete st.checkedBy; }
   saveStorage(); _updateRow(sk,cid,i); _updateCompHeader(sk.split('||')[0]); updateSummary();
 }
