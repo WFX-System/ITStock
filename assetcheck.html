@@ -287,26 +287,55 @@ function readExcelFile(file){
       const n=Object.keys(parsed).length;
       if(n===0){ showNotif('ไม่พบข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์','error'); return; }
 
-      // ── ตรวจว่ามีเครื่องชื่อซ้ำกับที่มีอยู่แล้วหรือไม่ ──
-      const existingCks=Object.keys(checkData);
-      const newCks=Object.keys(parsed);
-      const duplicates=newCks.filter(ck=>existingCks.includes(ck));
-      const addedCount=newCks.filter(ck=>!existingCks.includes(ck)).length;
+      // ── preview: หาเครื่องใหม่ / เครื่องเดิมที่มีประเภทอุปกรณ์ซ้ำ (จะถูกทับเฉพาะประเภทนั้น) ──
+      const newComputers=[];      // ck ที่ยังไม่มีในระบบ
+      const conflictInfo=[];      // {ck, types:[...]} เครื่องเดิมที่มีบางประเภทซ้ำ
+      Object.keys(parsed).forEach(ck=>{
+        const existing=checkData[ck];
+        if(!existing){ newComputers.push(ck); return; }
+        const existingTypes=new Set(existing.items.map(it=>it.type));
+        const overlapTypes=[...new Set(parsed[ck].items.map(it=>it.type))].filter(t=>existingTypes.has(t));
+        if(overlapTypes.length) conflictInfo.push({ck,types:overlapTypes});
+      });
 
-      if(duplicates.length>0){
-        const list=duplicates.slice(0,10).join(', ')+(duplicates.length>10?` และอีก ${duplicates.length-10} เครื่อง`:'');
-        const msg=`⚠️ พบเครื่องซ้ำ ${duplicates.length} เครื่อง:\n${list}\n\nระบบจะใช้ข้อมูลชุดใหม่ทับของเดิม (สถานะเช็ค/ปัญหาของเครื่องเหล่านี้จะถูกล้าง)\n\nต้องการดำเนินการต่อหรือไม่?`;
+      if(conflictInfo.length>0){
+        const preview=conflictInfo.slice(0,8)
+          .map(c=>`• ${c.ck}: ${c.types.join(', ')}`).join('\n');
+        const more=conflictInfo.length>8?`\n...และอีก ${conflictInfo.length-8} เครื่อง`:'';
+        const msg=`⚠️ พบประเภทอุปกรณ์ซ้ำในเครื่องเดิม ${conflictInfo.length} เครื่อง:\n${preview}${more}\n\nระบบจะใช้ข้อมูลชุดใหม่ทับเฉพาะประเภทที่ซ้ำ (สถานะเช็ค/ปัญหาของรายการนั้นจะถูกล้าง ส่วนประเภทอื่นในเครื่องเดียวกันจะไม่ถูกแตะต้อง)\n\nต้องการดำเนินการต่อหรือไม่?`;
         if(!confirm(msg)) return;
       }
 
-      // ล้าง checkState ของเครื่องที่จะถูกทับ (เพราะรายการอุปกรณ์ชุดใหม่แทนที่ของเดิม)
-      duplicates.forEach(ck=>{
-        const oldCount=checkData[ck]?.items?.length||0;
-        for(let i=0;i<oldCount;i++){ delete checkState[stateKey(ck,i)]; }
-      });
+      // ── merge: จับคู่ด้วย "ประเภท" (item.type) ภายในเครื่องเดียวกัน ──
+      let overwrittenItemCount=0, updatedComputerCount=0;
+      Object.keys(parsed).forEach(ck=>{
+        const newComp=parsed[ck];
+        const existing=checkData[ck];
+        if(!existing){ checkData[ck]=newComp; return; } // เครื่องใหม่ → เพิ่มทั้งชุด
 
-      // merge: เครื่องใหม่ถูกเพิ่ม / เครื่องซ้ำถูกทับ ส่วนเครื่องเดิมที่ไม่อยู่ในไฟล์นี้ยังคงอยู่
-      Object.keys(parsed).forEach(ck=>{ checkData[ck]=parsed[ck]; });
+        // จับคู่ประเภทแรกที่เจอของแต่ละ type ในรายการเดิม
+        const typeIndex={};
+        existing.items.forEach((it,idx)=>{ if(typeIndex[it.type]===undefined) typeIndex[it.type]=idx; });
+
+        let touched=false;
+        newComp.items.forEach(newItem=>{
+          if(typeIndex[newItem.type]!==undefined){
+            const idx=typeIndex[newItem.type];
+            existing.items[idx]=newItem;          // ทับข้อมูลเฉพาะประเภทนี้
+            delete checkState[stateKey(ck,idx)];   // ล้างสถานะเช็คของรายการที่ถูกทับ
+            overwrittenItemCount++; touched=true;
+          } else {
+            existing.items.push(newItem);          // ประเภทใหม่ → เพิ่มต่อท้าย ไม่กระทบรายการเดิม
+            typeIndex[newItem.type]=existing.items.length-1;
+            touched=true;
+          }
+        });
+        // อัปเดตข้อมูลเมตาของเครื่อง (IP/ผู้ใช้/แผนก) เป็นค่าล่าสุด
+        if(newComp.ip) existing.ip=newComp.ip;
+        if(newComp.employee) existing.employee=newComp.employee;
+        if(newComp.dept) existing.dept=newComp.dept;
+        if(touched) updatedComputerCount++;
+      });
 
       // ตัด checkState ที่ไม่ตรงกับ item ปัจจุบันทิ้ง กันข้อมูลค้าง
       const valid=new Set();
@@ -317,8 +346,8 @@ function readExcelFile(file){
       saveStorage(); renderAll();
 
       const parts=[];
-      if(addedCount>0) parts.push(`เพิ่มใหม่ ${addedCount} เครื่อง`);
-      if(duplicates.length>0) parts.push(`ทับข้อมูลเดิม ${duplicates.length} เครื่อง`);
+      if(newComputers.length>0) parts.push(`เพิ่มเครื่องใหม่ ${newComputers.length} เครื่อง`);
+      if(overwrittenItemCount>0) parts.push(`ทับรายการที่ซ้ำ ${overwrittenItemCount} รายการ ใน ${updatedComputerCount} เครื่อง`);
       showNotif(parts.length ? `Import สำเร็จ: ${parts.join(' · ')}` : `Import สำเร็จ พบ ${n} เครื่อง`);
     }catch(err){ showNotif('อ่านไฟล์ไม่สำเร็จ: '+err.message,'error'); }
   };
