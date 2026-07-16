@@ -89,6 +89,11 @@
   transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;}
 .btn-del-item:hover{background:#FEE2E2;border-color:var(--r);color:var(--r);}
 
+/* ── แถบแดง: รายการประเภทซ้ำ (ตัวก่อนหน้าที่ถูกแทนที่ด้วยตัวใหม่) ── */
+.asset-row.row-duplicate{border-left:4px solid #DC2626;background:#FFF1F1!important;}
+.badge-dup{font-size:9px;font-weight:800;letter-spacing:.03em;color:#fff;background:#DC2626;
+  border-radius:20px;padding:1px 7px;display:inline-block;margin-left:6px;vertical-align:middle;}
+
 /* issue panel — ซ่อนเสมอ เปิดเมื่อกดปุ่มเท่านั้น */
 .issue-panel-row{display:none;}
 .issue-panel-row.open{display:table-row;}
@@ -495,6 +500,16 @@ function renderAll(){
     if(!filtered.length) return;
     visCount++;
 
+    // ── หา index ของรายการที่ "ประเภท" ซ้ำกันภายในเครื่องเดียวกัน ──
+    // ตัวที่มาก่อน (index น้อยกว่า) ในกลุ่มประเภทเดียวกัน = ตัวเก่า → ติดแถบแดง
+    // ตัวสุดท้ายของกลุ่ม = ตัวล่าสุด → ไม่ติดแถบแดง (ขึ้น NEW ตามปกติถ้าเป็นรายการใหม่)
+    const typeGroups={};
+    comp.items.forEach((it,idx)=>{ (typeGroups[it.type]=typeGroups[it.type]||[]).push(idx); });
+    const dupIdxSet=new Set();
+    Object.values(typeGroups).forEach(idxs=>{
+      if(idxs.length>1) idxs.slice(0,-1).forEach(idx=>dupIdxSet.add(idx));
+    });
+
     const totalItems=comp.items.length;
     const doneN =comp.items.filter((_,i)=>(checkState[stateKey(ck,i)]||{}).checked).length;
     const issueN=comp.items.filter((_,i)=>{ const st=checkState[stateKey(ck,i)]||{}; return !!(st.assetCodeActual||st.modelActual||st.snActual); }).length;
@@ -546,7 +561,8 @@ function renderAll(){
       const sk=stateKey(ck,i);
       const st=checkState[sk]||{};
       const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
-      const rowCls=st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'');
+      const isDup=dupIdxSet.has(i);
+      const rowCls=(st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':''))+(isDup?' row-duplicate':'');
 
       // pill summary สำหรับแสดงข้อมูลปัญหาที่บันทึกแล้ว (ไม่ต้องกางแผง)
       let pillsHtml='';
@@ -559,10 +575,10 @@ function renderAll(){
       }
 
       html+=`
-      <tr class="asset-row ${rowCls}" id="arow_${cid}_${i}">
+      <tr class="asset-row ${rowCls}" data-dup="${isDup?'1':'0'}" id="arow_${cid}_${i}">
         <td style="color:var(--tx3);font-size:11px;">${i+1}</td>
         <td>
-          <div style="font-size:12px;font-weight:700;">${highlight(item.type,q)}${item.isNew?`<span class="badge-new" id="newbadge_${cid}_${i}">NEW</span>`:''}</div>
+          <div style="font-size:12px;font-weight:700;">${highlight(item.type,q)}${item.isNew?`<span class="badge-new" id="newbadge_${cid}_${i}">NEW</span>`:''}${isDup?`<span class="badge-dup" title="มีรายการประเภทเดียวกันที่ใหม่กว่า">🔁 ซ้ำ</span>`:''}</div>
           <div style="font-size:11px;color:var(--tx3);">${highlight(item.brand,q)}</div>
         </td>
         <td>
@@ -745,7 +761,8 @@ function _updateRow(sk, cid, i){
   const hasIssue=!!(st.assetCodeActual||st.modelActual||st.snActual);
   const row=document.getElementById(`arow_${cid}_${i}`); if(!row) return;
 
-  row.className=`asset-row ${st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'')}`;
+  const isDup=row.dataset.dup==='1';
+  row.className=`asset-row ${st.checked?(hasIssue?'row-issue':'row-ok'):(hasIssue?'row-issue':'')}${isDup?' row-duplicate':''}`;
 
   const bc=row.querySelector('.btn-chk');
   if(bc){ bc.classList.toggle('active',!!st.checked); bc.textContent=st.checked?'✅ เช็คแล้ว':'☐ เช็คแล้ว'; }
