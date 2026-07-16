@@ -77,6 +77,18 @@
 .btn-reg:hover{background:var(--aml);border-color:var(--am);color:var(--am);}
 .btn-reg.active{background:var(--am);border-color:var(--am);color:#fff;}
 
+/* ── ปุ่มลบเครื่อง (header) ── */
+.btn-del-comp{width:28px;height:28px;border-radius:var(--radsm);font-size:13px;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx3);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.btn-del-comp:hover{background:#FEE2E2;border-color:var(--r);color:var(--r);}
+
+/* ── ปุ่มลบรายการ (แถวอุปกรณ์) ── */
+.btn-del-item{padding:4px 8px;border-radius:var(--radsm);font-size:10px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx3);
+  transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;}
+.btn-del-item:hover{background:#FEE2E2;border-color:var(--r);color:var(--r);}
+
 /* issue panel — ซ่อนเสมอ เปิดเมื่อกดปุ่มเท่านั้น */
 .issue-panel-row{display:none;}
 .issue-panel-row.open{display:table-row;}
@@ -515,6 +527,7 @@ function renderAll(){
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
       <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
       <span class="prog-lbl">${doneN}/${totalItems}</span>
+      <button class="btn-del-comp" onclick="event.stopPropagation();deleteComputer('${esc(ck)}')" title="ลบเครื่องนี้">🗑️</button>
       <span id="tog${cid}" style="font-size:12px;color:var(--tx3);">▼</span>
     </div>
   </div>
@@ -575,6 +588,10 @@ function renderAll(){
               <button class="btn-reg ${st.updatedInRegistry?'active':''}"
                 onclick="toggleReg('${esc(sk)}',${cid},${i})">
                 ${st.updatedInRegistry?'📋 แก้แล้ว':'📋 แก้ในทะเบียน'}
+              </button>
+              <button class="btn-del-item"
+                onclick="deleteItem('${esc(ck)}',${i})" title="ลบรายการนี้">
+                🗑️ ลบ
               </button>
             </div>
             <div class="dates-wrap">
@@ -791,6 +808,56 @@ function toggleReg(sk,cid,i){
     st.updatedAt=new Date().toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   else delete st.updatedAt;
   saveStorage(); _updateRow(sk,cid,i); updateSummary();
+}
+
+// ── Delete a single item (เช่น Monitor, Computer Set, UPS) ──
+// รักษาความสัมพันธ์ของ checkState เมื่อลบรายการกลางลิสต์ โดย re-index
+// key ของรายการที่อยู่หลังตำแหน่งที่ลบให้เลื่อนลงมา 1 ตำแหน่ง
+function deleteItem(ck, i){
+  const comp=checkData[ck];
+  if(!comp || !comp.items[i]) return;
+  const item=comp.items[i];
+  const label=`${item.type}${item.assetCode?` (${item.assetCode})`:''}`;
+  if(!confirm(`ลบรายการ "${label}" ออกจากเครื่อง "${ck}"?\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) return;
+
+  const total=comp.items.length;
+  // เลื่อน checkState ของรายการถัดไปมาแทนที่ตำแหน่งที่ถูกลบ ทีละตัว
+  for(let idx=i; idx<total-1; idx++){
+    const nextKey=stateKey(ck, idx+1);
+    const curKey =stateKey(ck, idx);
+    if(checkState[nextKey]!==undefined) checkState[curKey]=checkState[nextKey];
+    else delete checkState[curKey];
+  }
+  // ลบ key สุดท้ายที่เหลือค้างอยู่ (ซ้ำกับตัวที่เพิ่งย้ายไปแล้ว)
+  delete checkState[stateKey(ck, total-1)];
+
+  comp.items.splice(i,1);
+
+  // ถ้าลบจนไม่เหลือรายการในเครื่องนี้แล้ว → ลบเครื่องออกไปเลย
+  if(comp.items.length===0){
+    delete checkData[ck];
+    Object.keys(checkState).forEach(k=>{ if(k.startsWith(ck+'||')) delete checkState[k]; });
+  }
+
+  _ckIndex={}; _ckIndexRev={};
+  saveStorage();
+  renderAll();
+  showNotif(`ลบรายการ "${label}" แล้ว`);
+}
+
+// ── Delete a whole computer ───────────────────────
+function deleteComputer(ck){
+  const comp=checkData[ck];
+  if(!comp) return;
+  if(!confirm(`ลบเครื่อง "${ck}" ทั้งหมด (${comp.items.length} รายการ)?\nผลการเช็คและข้อมูลทั้งหมดของเครื่องนี้จะหายไปด้วย และไม่สามารถย้อนกลับได้`)) return;
+
+  delete checkData[ck];
+  Object.keys(checkState).forEach(k=>{ if(k.startsWith(ck+'||')) delete checkState[k]; });
+
+  _ckIndex={}; _ckIndexRev={};
+  saveStorage();
+  renderAll();
+  showNotif(`ลบเครื่อง "${ck}" แล้ว`);
 }
 
 // ── Clear all ─────────────────────────────────────
