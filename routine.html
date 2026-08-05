@@ -183,11 +183,11 @@
   </div>
 </div>
 
-<!-- Person Required Modal (pops up when dragging/moving into a step that requires a recipient) -->
+<!-- Person/Owner Required Modal (pops up when dragging/moving into a step that requires a recipient or a doer) -->
 <div class="rtm-wrap" id="rtPersonReqModal">
   <div class="rtm-box" style="max-width:380px;">
-    <div class="rtm-title">🔒 ต้องระบุผู้รับก่อนย้าย</div>
-    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;">ขั้นตอน "<strong id="rtPersonReqStepName"></strong>" บังคับให้ระบุ/เปลี่ยนผู้รับก่อนย้ายเข้า กรุณาเลือกผู้รับ</div>
+    <div class="rtm-title" id="rtPersonReqTitle">🔒 ต้องระบุผู้รับก่อนย้าย</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;" id="rtPersonReqDesc"></div>
     <div class="rt-picker-panel" id="rtPersonReqList"></div>
     <div class="rtm-actions">
       <button class="rt-btn" onclick="rtClosePersonReqModal()">ยกเลิก</button>
@@ -200,7 +200,7 @@
 <div class="rtm-wrap" id="rtStepsModal">
   <div class="rtm-box">
     <div class="rtm-title">🔀 จัดการขั้นตอน</div>
-    <div style="font-size:11px;color:var(--tx3);margin-bottom:10px;">ตั้งค่าแต่ละขั้นตอนได้ว่าต้องบังคับระบุผู้รับ และ/หรือ บังคับแนบรูปก่อนย้ายเข้าขั้นตอนนั้น</div>
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:10px;">ตั้งค่าแต่ละขั้นตอนได้ว่าต้องบังคับระบุผู้รับ / ผู้ดำเนินการ และ/หรือ บังคับแนบรูปก่อนย้ายเข้าขั้นตอนนั้น</div>
     <div class="rt-manage-list" id="rtStepsList"></div>
     <div class="rt-manage-add">
       <input type="text" id="rtStepAddName" placeholder="ชื่อขั้นตอนใหม่ เช่น รออนุมัติ" onkeydown="if(event.key==='Enter')rtAddStep()"/>
@@ -283,11 +283,11 @@ const CLOUDINARY_UPLOAD_PRESET = 'routine';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const DEFAULT_STEPS=[
-  {id:'step_receive',  name:'รับเรื่อง',            color:'#6366f1', requirePerson:false, requirePhoto:false},
-  {id:'step_progress', name:'กำลังดำเนินการ',       color:'#F59E0B', requirePerson:false, requirePhoto:false},
-  {id:'step_wait',     name:'รอเอกสาร/รออนุมัติ',    color:'#EF4444', requirePerson:false, requirePhoto:false},
-  {id:'step_forward',  name:'ส่งต่อ/ส่งเอกสาร',      color:'#0EA5E9', requirePerson:true,  requirePhoto:false},
-  {id:'step_done',     name:'เสร็จสิ้น',             color:'#10B981', requirePerson:false, requirePhoto:false},
+  {id:'step_receive',  name:'รับเรื่อง',            color:'#6366f1', requirePerson:false, requireOwner:false, requirePhoto:false},
+  {id:'step_progress', name:'กำลังดำเนินการ',       color:'#F59E0B', requirePerson:false, requireOwner:false, requirePhoto:false},
+  {id:'step_wait',     name:'รอเอกสาร/รออนุมัติ',    color:'#EF4444', requirePerson:false, requireOwner:false, requirePhoto:false},
+  {id:'step_forward',  name:'ส่งต่อ/ส่งเอกสาร',      color:'#0EA5E9', requirePerson:true,  requireOwner:false, requirePhoto:false},
+  {id:'step_done',     name:'เสร็จสิ้น',             color:'#10B981', requirePerson:false, requireOwner:false, requirePhoto:false},
 ];
 let rtSteps=[...DEFAULT_STEPS];
 let rtPeople=[];
@@ -422,6 +422,7 @@ function rtRenderBoard(){
       : `<div class="rt-col-empty">ไม่มีงานในขั้นตอนนี้</div>`;
     const flagsBadge=[
       step.requirePerson?'🔒 ต้องมีผู้รับ':'',
+      step.requireOwner?'🧑‍💻 ต้องมีผู้ดำเนินการ':'',
       step.requirePhoto?'📷 ต้องแนบรูป':''
     ].filter(Boolean).join(' · ');
     return `
@@ -470,7 +471,7 @@ function rtCardHtml(t){
     ? `<span class="rt-chip" style="background:${lighten(step.color)};color:${step.color};">${esc(step.name)}</span>`
     : `<span class="rt-chip empty">ไม่ระบุขั้นตอน</span>`;
 
-  const stepPickerBtns=rtSteps.map(s=>`<button type="button" class="rt-pick-btn ${t.stepId===s.id?'active':''}" ${t.stepId===s.id?`style="background:${s.color};"`:''} onclick="rtSetStep('${t.id}','${s.id}')">${esc(s.name)}${s.requirePerson?' 🔒':''}${s.requirePhoto?' 📷':''}</button>`).join('');
+  const stepPickerBtns=rtSteps.map(s=>`<button type="button" class="rt-pick-btn ${t.stepId===s.id?'active':''}" ${t.stepId===s.id?`style="background:${s.color};"`:''} onclick="rtSetStep('${t.id}','${s.id}')">${esc(s.name)}${s.requirePerson?' 🔒':''}${s.requireOwner?' 🧑‍💻':''}${s.requirePhoto?' 📷':''}</button>`).join('');
 
   return `
   <div class="rt-card ${t.archived?'is-done':''}" id="rtCard_${t.id}" draggable="true"
@@ -487,7 +488,7 @@ function rtCardHtml(t){
 
     <div class="rt-assign">
       <div class="rt-assign-line" onclick="rtTogglePicker('owner','${t.id}')">
-        <span class="rt-assign-lbl">🧑‍💻 ผู้ดำเนินการ:</span>
+        <span class="rt-assign-lbl">🧑‍💻 มอบหมาย:</span>
         ${ownerChip}
         <span class="rt-assign-edit">เปลี่ยน ▾</span>
       </div>
@@ -598,7 +599,15 @@ async function rtSetStep(id,stepId,opts){
   if(toStep && toStep.requirePerson && !opts.personConfirmed){
     _rtOpenStepPicker.delete(id);
     rtRenderBoard();
-    rtOpenPersonReqModal(id,stepId);
+    rtOpenPersonReqModal(id,stepId,'person',opts);
+    return;
+  }
+
+  // Rule: this step requires a doer (ผู้ดำเนินการ) — same popup-confirm behavior as above.
+  if(toStep && toStep.requireOwner && !opts.ownerConfirmed){
+    _rtOpenStepPicker.delete(id);
+    rtRenderBoard();
+    rtOpenPersonReqModal(id,stepId,'owner',opts);
     return;
   }
 
@@ -606,7 +615,7 @@ async function rtSetStep(id,stepId,opts){
   if(toStep && toStep.requirePhoto && !opts.photoUrl){
     _rtOpenStepPicker.delete(id);
     rtRenderBoard();
-    rtOpenPhotoModal(id,stepId);
+    rtOpenPhotoModal(id,stepId,opts);
     return;
   }
 
@@ -643,13 +652,20 @@ async function rtToggleDone(id){
 }
 
 // ══════════════════════════════════════════
-// PERSON REQUIRED MODAL (pops up on drag/move into a step requiring a recipient)
+// PERSON/OWNER REQUIRED MODAL (pops up on drag/move into a step requiring one)
 // ══════════════════════════════════════════
-function rtOpenPersonReqModal(taskId,stepId){
+const RT_REQ_LABELS={
+  person:{title:'🔒 ต้องระบุผู้รับก่อนย้าย', word:'ผู้รับ', empty:'ยังไม่มีรายชื่อ — เพิ่มที่ "จัดการรายชื่อ" ก่อน'},
+  owner: {title:'🧑‍💻 ต้องระบุผู้ดำเนินการก่อนย้าย', word:'ผู้ดำเนินการ', empty:'ยังไม่มีรายชื่อ — เพิ่มที่ "จัดการรายชื่อ" ก่อน'}
+};
+function rtOpenPersonReqModal(taskId,stepId,kind,carryOpts){
   const t=rtTasks.find(x=>x.id===taskId); if(!t) return;
   const toStep=getStep(stepId);
-  _rtPendingPersonReq={taskId,stepId,selectedPersonId:t.personId||''};
-  document.getElementById('rtPersonReqStepName').textContent=toStep?toStep.name:'-';
+  const currentId = kind==='owner' ? (t.ownerId||'') : (t.personId||'');
+  _rtPendingPersonReq={taskId,stepId,kind,selectedPersonId:currentId,carryOpts:carryOpts||{}};
+  const labels=RT_REQ_LABELS[kind];
+  document.getElementById('rtPersonReqTitle').textContent=labels.title;
+  document.getElementById('rtPersonReqDesc').innerHTML=`ขั้นตอน "<strong>${esc(toStep?toStep.name:'-')}</strong>" บังคับให้ระบุ/เปลี่ยน${labels.word}ก่อนย้ายเข้า กรุณาเลือก${labels.word}`;
   rtRenderPersonReqList();
   document.getElementById('rtPersonReqModal').classList.add('open');
 }
@@ -658,7 +674,7 @@ function rtRenderPersonReqList(){
   const sel=_rtPendingPersonReq.selectedPersonId;
   const listEl=document.getElementById('rtPersonReqList');
   if(!rtPeople.length){
-    listEl.innerHTML=`<div class="rt-empty-hint">ยังไม่มีรายชื่อ — เพิ่มที่ "จัดการรายชื่อ" ก่อน</div>`;
+    listEl.innerHTML=`<div class="rt-empty-hint">${RT_REQ_LABELS[_rtPendingPersonReq.kind].empty}</div>`;
     return;
   }
   listEl.innerHTML=rtPeople.map(p=>
@@ -676,18 +692,25 @@ function rtClosePersonReqModal(){
 }
 async function rtConfirmPersonReq(){
   if(!_rtPendingPersonReq) return;
-  const {taskId,stepId,selectedPersonId}=_rtPendingPersonReq;
-  if(!selectedPersonId){ rtToast('กรุณาเลือกผู้รับก่อน'); return; }
+  const {taskId,stepId,kind,selectedPersonId,carryOpts}=_rtPendingPersonReq;
+  if(!selectedPersonId){ rtToast('กรุณาเลือกก่อน'); return; }
   rtClosePersonReqModal();
-  await rtSetPerson(taskId,selectedPersonId);
-  await rtSetStep(taskId,stepId,{personConfirmed:true});
+  const newOpts={...carryOpts};
+  if(kind==='owner'){
+    await rtSetOwner(taskId,selectedPersonId);
+    newOpts.ownerConfirmed=true;
+  } else {
+    await rtSetPerson(taskId,selectedPersonId);
+    newOpts.personConfirmed=true;
+  }
+  await rtSetStep(taskId,stepId,newOpts);
 }
 
 // ══════════════════════════════════════════
 // PHOTO ATTACH MODAL (compressed client-side, uploads to imgbb)
 // ══════════════════════════════════════════
-function rtOpenPhotoModal(taskId,stepId){
-  _rtPendingPhoto={taskId,stepId,file:null};
+function rtOpenPhotoModal(taskId,stepId,carryOpts){
+  _rtPendingPhoto={taskId,stepId,file:null,carryOpts:carryOpts||{}};
   const inputEl=document.getElementById('rtPhotoInput');
   inputEl.value='';
   document.getElementById('rtPhotoPreviewWrap').style.display='none';
@@ -763,7 +786,7 @@ function rtCloudinaryUpload(blob,fileName,onProgress){
 }
 async function rtUploadPhotoAndMove(){
   if(!_rtPendingPhoto || !_rtPendingPhoto.file){ rtToast('กรุณาเลือกรูปก่อน'); return; }
-  const {taskId,stepId,file}=_rtPendingPhoto;
+  const {taskId,stepId,file,carryOpts}=_rtPendingPhoto;
   const statusEl=document.getElementById('rtPhotoUploadStatus');
   const btn=document.getElementById('rtPhotoUploadBtn');
   btn.disabled=true; statusEl.textContent='⏳ กำลังบีบอัดรูป...';
@@ -775,7 +798,7 @@ async function rtUploadPhotoAndMove(){
     }); // direct image URL hosted on Cloudinary CDN
 
     rtClosePhotoModal();
-    await rtSetStep(taskId,stepId,{photoUrl:url});
+    await rtSetStep(taskId,stepId,{...carryOpts,photoUrl:url});
     rtToast('✅ แนบรูปและย้ายขั้นตอนแล้ว');
   }catch(e){
     statusEl.textContent='⚠️ อัปโหลดไม่สำเร็จ: '+e.message;
@@ -910,6 +933,9 @@ function rtRenderStepsManager(){
           <input type="checkbox" ${s.requirePerson?'checked':''} onchange="rtStepFlagChange(${i},'requirePerson',this.checked)"/> 🔒 บังคับระบุผู้รับก่อนย้ายเข้า
         </label>
         <label class="rt-manage-flag">
+          <input type="checkbox" ${s.requireOwner?'checked':''} onchange="rtStepFlagChange(${i},'requireOwner',this.checked)"/> 🧑‍💻 บังคับระบุผู้ดำเนินการก่อนย้ายเข้า
+        </label>
+        <label class="rt-manage-flag">
           <input type="checkbox" ${s.requirePhoto?'checked':''} onchange="rtStepFlagChange(${i},'requirePhoto',this.checked)"/> 📷 บังคับแนบรูปก่อนย้ายเข้า
         </label>
       </div>
@@ -935,7 +961,7 @@ function rtDeleteStep(i){
 function rtAddStep(){
   const nameEl=document.getElementById('rtStepAddName'), colorEl=document.getElementById('rtStepAddColor');
   const name=nameEl.value.trim(); if(!name){ rtToast('กรุณากรอกชื่อขั้นตอน'); return; }
-  rtSteps.push({id:'step_'+Date.now(),name,color:colorEl.value,requirePerson:false,requirePhoto:false});
+  rtSteps.push({id:'step_'+Date.now(),name,color:colorEl.value,requirePerson:false,requireOwner:false,requirePhoto:false});
   nameEl.value='';
   rtSaveSteps(); rtRenderStepsManager();
 }
