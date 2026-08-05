@@ -247,6 +247,7 @@ let rtSteps=[...DEFAULT_STEPS];
 let rtPeople=[];
 let rtTasks=[];
 let _rtOpenPersonPicker=new Set();
+let _rtOpenOwnerPicker=new Set();
 let _rtOpenStepPicker=new Set();
 let _rtDragTaskId=null;
 let _rtPendingDelId=null;
@@ -334,7 +335,8 @@ function rtFilteredTasks(){
     if(t.archived && !showDone) return false;
     if(!q) return true;
     const person=getPerson(t.personId);
-    const hay=`${t.title||''} ${t.detail||''} ${person?person.name:''}`.toLowerCase();
+    const owner=getPerson(t.ownerId);
+    const hay=`${t.title||''} ${t.detail||''} ${person?person.name:''} ${owner?owner.name:''}`.toLowerCase();
     return hay.includes(q);
   });
 }
@@ -378,7 +380,9 @@ function rtRenderBoard(){
 function rtCardHtml(t){
   const step=getStep(t.stepId);
   const person=getPerson(t.personId);
+  const owner=getPerson(t.ownerId);
   const personOpen=_rtOpenPersonPicker.has(t.id);
+  const ownerOpen=_rtOpenOwnerPicker.has(t.id);
   const stepOpen=_rtOpenStepPicker.has(t.id);
 
   const personChip=person
@@ -388,6 +392,15 @@ function rtCardHtml(t){
   const personPickerBtns=[
     `<button type="button" class="rt-pick-btn ${!t.personId?'active':''}" ${!t.personId?`style="background:#6B7280;"`:''} onclick="rtSetPerson('${t.id}','')">ไม่ระบุ</button>`,
     ...rtPeople.map(p=>`<button type="button" class="rt-pick-btn ${t.personId===p.id?'active':''}" ${t.personId===p.id?`style="background:${p.color};"`:''} onclick="rtSetPerson('${t.id}','${p.id}')">${esc(p.name)}</button>`)
+  ].join('');
+
+  const ownerChip=owner
+    ? `<span class="rt-chip" style="background:${lighten(owner.color)};color:${owner.color};">${esc(owner.name)}</span>`
+    : `<span class="rt-chip empty">ยังไม่ระบุ</span>`;
+
+  const ownerPickerBtns=[
+    `<button type="button" class="rt-pick-btn ${!t.ownerId?'active':''}" ${!t.ownerId?`style="background:#6B7280;"`:''} onclick="rtSetOwner('${t.id}','')">ไม่ระบุ</button>`,
+    ...rtPeople.map(p=>`<button type="button" class="rt-pick-btn ${t.ownerId===p.id?'active':''}" ${t.ownerId===p.id?`style="background:${p.color};"`:''} onclick="rtSetOwner('${t.id}','${p.id}')">${esc(p.name)}</button>`)
   ].join('');
 
   const stepChip=step
@@ -406,6 +419,15 @@ function rtCardHtml(t){
     </div>
     <textarea class="rt-card-detail" placeholder="รายละเอียด..."
       oninput="rtFieldLocal('${t.id}','detail',this.value)" onblur="rtSaveField('${t.id}','detail')">${esc(t.detail||'')}</textarea>
+
+    <div class="rt-assign">
+      <div class="rt-assign-line" onclick="rtTogglePicker('owner','${t.id}')">
+        <span class="rt-assign-lbl">🧑‍💻</span>
+        ${ownerChip}
+        <span class="rt-assign-edit">เปลี่ยน ▾</span>
+      </div>
+      ${ownerOpen?`<div class="rt-picker-panel">${ownerPickerBtns}</div>`:''}
+    </div>
 
     <div class="rt-assign">
       <div class="rt-assign-line" onclick="rtTogglePicker('person','${t.id}')">
@@ -436,7 +458,7 @@ function rtCardHtml(t){
 }
 
 function rtTogglePicker(kind,taskId){
-  const set = kind==='person' ? _rtOpenPersonPicker : _rtOpenStepPicker;
+  const set = kind==='person' ? _rtOpenPersonPicker : (kind==='owner' ? _rtOpenOwnerPicker : _rtOpenStepPicker);
   if(set.has(taskId)) set.delete(taskId); else set.add(taskId);
   rtRenderBoard();
 }
@@ -470,6 +492,20 @@ async function rtSetPerson(id,personId){
       personId: personId||'',
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'person',text:histText,by:rtUserName()})
+    });
+  }catch(e){ rtToast('⚠️ '+e.message); }
+}
+
+async function rtSetOwner(id,ownerId){
+  const t=rtTasks.find(x=>x.id===id); if(!t) return;
+  const owner=getPerson(ownerId);
+  const histText=owner?`มอบหมายผู้ดำเนินการ: ${owner.name}`:'ยกเลิกผู้ดำเนินการ';
+  _rtOpenOwnerPicker.delete(id);
+  try{
+    await db.collection(RT_TASKS_COL).doc(id).update({
+      ownerId: ownerId||'',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'owner',text:histText,by:rtUserName()})
     });
   }catch(e){ rtToast('⚠️ '+e.message); }
 }
@@ -519,7 +555,7 @@ async function rtSubmitNewTask(){
   if(!rtSteps.length){ rtToast('กรุณาเพิ่มขั้นตอนก่อน'); return; }
   try{
     await db.collection(RT_TASKS_COL).add({
-      title, detail, stepId:rtSteps[0].id, personId:'', archived:false,
+      title, detail, stepId:rtSteps[0].id, personId:'', ownerId:'', archived:false,
       order: Date.now(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -554,7 +590,7 @@ async function rtConfirmDelete(){
 // ══════════════════════════════════════════
 // HISTORY MODAL
 // ══════════════════════════════════════════
-const RT_HIST_ICON={create:'✨',step:'🔀',person:'👤',done:'✅',reopen:'↩️'};
+const RT_HIST_ICON={create:'✨',step:'🔀',person:'👤',owner:'🧑‍💻',done:'✅',reopen:'↩️'};
 function rtOpenHistory(id){
   const t=rtTasks.find(x=>x.id===id); if(!t) return;
   document.getElementById('rtHistTaskTitle').textContent=t.title||'(ไม่มีชื่อ)';
@@ -667,7 +703,7 @@ function rtPersonNameChange(i,val){
 function rtPersonColorChange(i,val){ rtPeople[i].color=val; rtSavePeople(); rtRenderPeopleManager(); }
 function rtDeletePerson(i){
   const p=rtPeople[i]; if(!p) return;
-  const used=rtTasks.filter(t=>t.personId===p.id).length;
+  const used=rtTasks.filter(t=>t.personId===p.id || t.ownerId===p.id).length;
   if(used>0 && !confirm(`"${p.name}" ถูกมอบหมายอยู่ ${used} งาน ลบทิ้ง?`)) return;
   rtPeople.splice(i,1); rtSavePeople(); rtRenderPeopleManager();
 }
