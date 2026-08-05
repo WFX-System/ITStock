@@ -128,7 +128,7 @@
     <div class="rt-head">
       <div class="rt-head-logo">🗂️</div>
       <div>
-        <div class="rt-head-title">Routine — คีย์งานค้าง</div>
+        <div class="rt-head-title">Routine — Routine</div>
         <div class="rt-head-sub" id="rtSubtitle">ติดตามสถานะงาน ขั้นตอน และผู้รับเอกสาร</div>
       </div>
     </div>
@@ -139,7 +139,7 @@
         <input type="checkbox" id="rtShowDone" onchange="rtRenderBoard()"/>
         แสดงงานที่เสร็จแล้ว
       </label>
-      <button class="rt-btn rt-btn-primary" onclick="rtOpenNewTask()">➕ เพิ่มงานค้าง</button>
+      <button class="rt-btn rt-btn-primary" onclick="rtOpenNewTask()">➕ เพิ่มRoutine</button>
       <button class="rt-btn" onclick="rtOpenStepsManager()">🔀 จัดการขั้นตอน</button>
       <button class="rt-btn" onclick="rtOpenPeopleManager()">👤 จัดการรายชื่อ</button>
     </div>
@@ -155,7 +155,7 @@
 <!-- New Task Modal -->
 <div class="rtm-wrap" id="rtNewTaskModal">
   <div class="rtm-box">
-    <div class="rtm-title">➕ เพิ่มงานค้าง</div>
+    <div class="rtm-title">➕ เพิ่มRoutine</div>
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">ชื่องาน *</div>
       <input class="rt-search" style="max-width:none;width:100%;" id="rtNewTitle" placeholder="เช่น ตัดจำหน่ายเครื่อง ACC001-RYG" onkeydown="if(event.key==='Enter')rtSubmitNewTask()"/>
@@ -345,7 +345,7 @@ function rtRenderBoard(){
   const board=document.getElementById('rtBoard');
   const filtered=rtFilteredTasks();
   const total=rtTasks.filter(t=>!t.archived).length;
-  document.getElementById('rtSubtitle').textContent=`งานค้างทั้งหมด ${total} รายการ · ${rtSteps.length} ขั้นตอน · ${rtPeople.length} รายชื่อ`;
+  document.getElementById('rtSubtitle').textContent=`Routineทั้งหมด ${total} รายการ · ${rtSteps.length} ขั้นตอน · ${rtPeople.length} รายชื่อ`;
 
   if(!rtSteps.length){
     board.innerHTML=`<div class="rt-empty-hint">ยังไม่มีขั้นตอน — กดปุ่ม "จัดการขั้นตอน" เพื่อเริ่มสร้าง</div>`;
@@ -563,7 +563,7 @@ async function rtSubmitNewTask(){
       history: [{ts:Date.now(),type:'create',text:'สร้างงาน',by:rtUserName()}]
     });
     rtCloseNewTask();
-    rtToast('✅ เพิ่มงานค้างแล้ว');
+    rtToast('✅ เพิ่มRoutineแล้ว');
   }catch(e){ rtToast('⚠️ เพิ่มงานไม่สำเร็จ: '+e.message); }
 }
 
