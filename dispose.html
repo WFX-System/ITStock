@@ -3,49 +3,38 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ตัดทรัพย์สิน</title>
+<title>ตัดทรัพย์สิน — RYG Stock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="shared.js"></script>
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --g:#1D9E75;--gd:#148A60;--gl:#A7F3D0;--gll:#ECFDF5;
-  --r:#EF4444;--am:#F59E0B;
-  --bg:#F8FAFC;--surf:#FFFFFF;
-  --tx:#111827;--tx2:#374151;--tx3:#9CA3AF;
-  --bdr:#E5E7EB;--bdrm:#D1D5DB;
-  --font:'Sarabun',sans-serif;--mono:'IBM Plex Mono',monospace;
-  --radius:12px;
-}
-body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh;}
-.editor{max-width:700px;margin:0 auto;padding:12px 14px 40px;}
+*{box-sizing:border-box;}
+.editor{max-width:700px;margin:0 auto;}
 
-.editor-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 14px;background:var(--surf);border-radius:var(--radius);border:1px solid var(--bdr);}
+.editor-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 14px;background:var(--surf);border-radius:var(--radlg);border:1px solid var(--bdr);}
 .editor-logo{width:36px;height:36px;background:var(--g);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0;}
 .editor-title{font-size:15px;font-weight:700;}
 .editor-sub{font-size:11px;color:var(--tx3);margin-top:1px;}
-.auth-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;margin-left:auto;flex-shrink:0;}
-.auth-badge.ok{background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;}
-.auth-badge.pending{background:#FFF7ED;color:#D97706;border:1px solid #FED7AA;}
-.auth-badge.err{background:#FEF2F2;color:#EF4444;border:1px solid #FECACA;}
 
-.load-banner{display:none;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;}
+.load-banner{display:none;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);padding:12px 16px;margin-bottom:12px;}
 .load-banner.open{display:flex;}
 .load-spinner{width:18px;height:18px;border:2.5px solid var(--bdr);border-top-color:var(--g);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .load-banner-text{font-size:13px;color:var(--tx2);}
 .load-banner-sub{font-size:11px;color:var(--tx3);margin-top:2px;}
 
-.sec-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
+.sec-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);padding:14px 16px;margin-bottom:12px;}
 .sec-title{font-size:12px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
 .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .field-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
-.field-input{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:var(--bg);transition:.15s;outline:none;}
+.field-input{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--tx1);background:var(--bg);transition:.15s;outline:none;}
 .field-input:focus{border-color:var(--g);background:#fff;box-shadow:0 0 0 3px var(--gll);}
 
 .cat-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
@@ -53,7 +42,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .cat-tag .cat-edit-btn,.cat-tag .cat-del-btn{background:none;border:none;cursor:pointer;padding:0 2px;font-size:12px;color:inherit;opacity:.7;line-height:1;}
 .cat-tag .cat-edit-btn:hover,.cat-tag .cat-del-btn:hover{opacity:1;}
 .cat-add-row{display:flex;gap:6px;align-items:center;}
-.cat-add-input{flex:1;border:1.5px dashed var(--bdrm);border-radius:8px;padding:6px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:transparent;outline:none;}
+.cat-add-input{flex:1;border:1.5px dashed var(--bdrm);border-radius:8px;padding:6px 10px;font-size:13px;font-family:var(--font);color:var(--tx1);background:transparent;outline:none;}
 .cat-add-input:focus{border-color:var(--g);}
 .cat-color-pick{width:34px;height:34px;border:1.5px solid var(--bdrm);border-radius:8px;cursor:pointer;padding:3px;background:none;}
 .btn-sm{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;font-family:var(--font);transition:.15s;}
@@ -66,9 +55,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .filter-btn{padding:5px 13px;border-radius:16px;border:1.5px solid var(--bdrm);background:none;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--tx2);transition:.15s;}
 .filter-btn.active{color:#fff;border-color:transparent;}
 .filter-btn:not(.active):hover{border-color:var(--g);color:var(--g);}
-.filter-info{font-size:11px;color:var(--tx3);margin-bottom:10px;padding:6px 12px;background:#F1F5F9;border-radius:8px;display:flex;align-items:center;justify-content:space-between;}
+.filter-info{font-size:11px;color:var(--tx3);margin-bottom:10px;padding:6px 12px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:space-between;}
 
-.item-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radius);padding:14px;margin-bottom:10px;transition:.15s;border-left:4px solid transparent;}
+.item-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radlg);padding:14px;margin-bottom:10px;transition:.15s;border-left:4px solid transparent;}
 .item-card:hover{border-color:var(--bdrm);}
 .item-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff;}
 .item-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
@@ -76,7 +65,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .item-del{background:none;border:1px solid #FECACA;color:#EF4444;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--font);}
 .item-del:hover{background:#FEF2F2;}
 .item-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
-.cat-select{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--tx);background:#fff;outline:none;cursor:pointer;}
+.cat-select{width:100%;border:1.5px solid var(--bdrm);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--tx1);background:#fff;outline:none;cursor:pointer;}
 .cat-select:focus{border-color:var(--g);}
 .cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
 .fs-saved-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;}
@@ -88,34 +77,34 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 
 .img-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;}
 .img-grid.cols-2{grid-template-columns:1fr 1fr;}
-.img-grid-cell{position:relative;border-radius:9px;border:1.5px solid var(--bdrm);background:#F1F5F9;overflow:hidden;aspect-ratio:4/3;}
+.img-grid-cell{position:relative;border-radius:9px;border:1.5px solid var(--bdrm);background:var(--bg);overflow:hidden;aspect-ratio:4/3;}
 .img-grid-cell.span-2{grid-column:1/-1;}
 .img-grid-cell.uploading img{opacity:.45;}
 .img-grid-cell img{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px;transition:opacity .2s;}
 .img-thumb-del{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;line-height:1;}
 .upload-status{font-size:11px;color:var(--tx3);margin-top:4px;min-height:14px;}
 
-.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;transition:all .15s;font-family:var(--font);}
-.btn:hover{border-color:var(--g);color:var(--g);}
-.btn-primary{background:var(--g);color:#fff;border-color:var(--g);}
-.btn-primary:hover{background:var(--gd);border-color:var(--gd);color:#fff;}
-.btn-word{background:#2B579A;color:#fff;border-color:#2B579A;}
-.btn-word:hover{background:#1E3F74;border-color:#1E3F74;color:#fff;}
-.btn-ghost{background:transparent;border-color:var(--bdrm);color:var(--tx3);}
-.btn-ghost:hover{border-color:var(--bdrm);color:var(--tx2);background:var(--bg);}
-.btn-fire{background:#FF6F00;color:#fff;border-color:#FF6F00;}
-.btn-fire:hover{background:#E65100;border-color:#E65100;color:#fff;}
-.btn-fire:disabled{background:#FFC947;border-color:#FFC947;cursor:not-allowed;}
-.btn-load{background:#0EA5E9;color:#fff;border-color:#0EA5E9;}
-.btn-load:hover{background:#0284C7;border-color:#0284C7;color:#fff;}
-.btn-load:disabled{background:#7DD3FC;border-color:#7DD3FC;cursor:not-allowed;}
+.disp-btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;transition:all .15s;font-family:var(--font);}
+.disp-btn:hover{border-color:var(--g);color:var(--g);}
+.disp-btn-primary{background:var(--g);color:#fff;border-color:var(--g);}
+.disp-btn-primary:hover{background:var(--gd);border-color:var(--gd);color:#fff;}
+.disp-btn-word{background:#2B579A;color:#fff;border-color:#2B579A;}
+.disp-btn-word:hover{background:#1E3F74;border-color:#1E3F74;color:#fff;}
+.disp-btn-ghost{background:transparent;border-color:var(--bdrm);color:var(--tx3);}
+.disp-btn-ghost:hover{border-color:var(--bdrm);color:var(--tx2);background:var(--bg);}
+.disp-btn-fire{background:#FF6F00;color:#fff;border-color:#FF6F00;}
+.disp-btn-fire:hover{background:#E65100;border-color:#E65100;color:#fff;}
+.disp-btn-fire:disabled{background:#FFC947;border-color:#FFC947;cursor:not-allowed;}
+.disp-btn-load{background:#0EA5E9;color:#fff;border-color:#0EA5E9;}
+.disp-btn-load:hover{background:#0284C7;border-color:#0284C7;color:#fff;}
+.disp-btn-load:disabled{background:#7DD3FC;border-color:#7DD3FC;cursor:not-allowed;}
 .action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .add-item-btn{width:100%;padding:10px;border:2px dashed var(--bdrm);border-radius:10px;background:none;font-size:13px;font-weight:700;color:var(--tx3);cursor:pointer;font-family:var(--font);transition:.15s;}
 .add-item-btn:hover{border-color:var(--g);color:var(--g);background:var(--gll);}
 
-.fs-statusbar{display:none;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;font-size:13px;}
+.fs-statusbar{display:none;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);padding:12px 16px;margin-bottom:12px;font-size:13px;}
 .fs-statusbar.open{display:block;}
-.fs-log{font-family:var(--font-mono,monospace);font-size:11px;color:var(--tx3);margin-top:8px;max-height:120px;overflow-y:auto;background:#F8FAFC;border-radius:6px;padding:8px;}
+.fs-log{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:8px;max-height:120px;overflow-y:auto;background:var(--bg);border-radius:6px;padding:8px;}
 .fs-log-line{margin-bottom:3px;}
 .fs-log-line.ok{color:#059669;}
 .fs-log-line.err{color:#EF4444;}
@@ -124,7 +113,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 
 #printArea{display:none;}
 @media print{
-  .editor{display:none!important;}
+  #mainApp{display:none!important;}
   #printArea{display:block!important;}
   body{background:#fff;}
   @page{size:A4;margin:14mm 16mm;}
@@ -157,7 +146,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .pi-cat-heading{font-size:13pt;font-weight:700;margin:14px 0 8px;padding:5px 10px;border-radius:6px;}
 .doc-footer{margin-top:16px;padding-top:8px;border-top:1px solid #ccc;font-size:10pt;color:#777;display:flex;justify-content:space-between;}
 
-.preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;overflow-y:auto;padding:20px 10px;}
+.preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;overflow-y:auto;padding:20px 10px;}
 .preview-overlay.open{display:block;}
 .preview-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;border-radius:12px 12px 0 0;border-bottom:1px solid #E5E7EB;position:sticky;top:0;z-index:10;max-width:794px;margin:0 auto;}
 .preview-toolbar-title{font-size:13px;font-weight:700;}
@@ -166,7 +155,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .a4-page:first-child .doc-header{display:block;}
 .a4-page:not(:first-child) .doc-header{display:none;}
 
-.docx-progress{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
+.docx-progress{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;}
 .docx-progress.open{display:flex;}
 .docx-progress-box{background:#fff;border-radius:16px;padding:28px 32px;text-align:center;min-width:240px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
 .docx-progress-icon{font-size:36px;margin-bottom:10px;}
@@ -175,19 +164,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .progress-bar-wrap{height:6px;background:var(--bdr);border-radius:3px;margin-top:14px;overflow:hidden;}
 .progress-bar-fill{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
 
-.modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
-.modal-wrap.open{display:flex;}
-.modal-box{background:var(--surf);border-radius:14px;padding:22px 24px;min-width:300px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);}
-.modal-title{font-size:14px;font-weight:700;margin-bottom:14px;}
-.modal-row{margin-bottom:10px;}
-.modal-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;}
-.modal-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
+.disp-modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;}
+.disp-modal-wrap.open{display:flex;}
+.disp-modal-box{background:var(--surf);border-radius:14px;padding:22px 24px;min-width:300px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.disp-modal-title{font-size:14px;font-weight:700;margin-bottom:14px;}
+.disp-modal-row{margin-bottom:10px;}
+.disp-modal-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;}
+.disp-modal-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
 .load-confirm-box{max-width:420px;}
-.load-confirm-info{background:#F0FDF4;border:1px solid #A7F3D0;border-radius:8px;padding:10px 14px;font-size:12px;color:#065F46;margin-bottom:12px;}
-.load-confirm-info b{color:#047857;}
+.load-confirm-info{background:var(--gll);border:1px solid var(--gl);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--gd);margin-bottom:12px;}
+.load-confirm-info b{color:var(--gd);}
 
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
-.toast.show{opacity:1;}
+.disp-toast{position:fixed;bottom:calc(var(--bn-h) + 16px);left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
+.disp-toast.show{opacity:1;}
 
 @media(max-width:860px){
   .a4-page{width:100%;min-height:unset;padding:28px 20px;}
@@ -197,113 +186,139 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 @media(max-width:520px){
   .meta-grid,.item-fields{grid-template-columns:1fr;}
   .action-bar{flex-direction:column;}
-  .action-bar .btn{width:100%;justify-content:center;}
+  .action-bar .disp-btn{width:100%;justify-content:center;}
 }
 </style>
 </head>
 <body>
 
-<div class="editor">
-  <div class="editor-header">
-    <div class="editor-logo">📦</div>
-    <div>
-      <div class="editor-title">สร้างเอกสารตัดทรัพย์สิน</div>
-      <div class="editor-sub">รูปขนาดเท่ากัน · Preview A4 จำลอง · 2 รายการ/หน้า · Firestore · Export Word</div>
-    </div>
-    <span class="auth-badge pending" id="authBadge">⏳ กำลังเชื่อมต่อ...</span>
-  </div>
-
-  <div class="load-banner" id="loadBanner">
-    <div class="load-spinner"></div>
-    <div>
-      <div class="load-banner-text" id="loadBannerText">กำลังโหลดข้อมูลจาก Firestore...</div>
-      <div class="load-banner-sub" id="loadBannerSub">โปรดรอสักครู่</div>
-    </div>
-  </div>
-
-  <!-- Category Manager -->
-  <div class="sec-card">
-    <div class="sec-title">🏷️ จัดการประเภทอุปกรณ์</div>
-    <div class="cat-list" id="catList"></div>
-    <div class="cat-add-row">
-      <input class="cat-add-input" id="catAddName" placeholder="ชื่อประเภทใหม่ เช่น เครื่องพิมพ์" onkeydown="if(event.key==='Enter')addCategory()"/>
-      <input type="color" class="cat-color-pick" id="catAddColor" value="#1D9E75" title="เลือกสี"/>
-      <button class="btn-sm btn-sm-green" onclick="addCategory()">+ เพิ่ม</button>
-    </div>
-  </div>
-
-  <!-- Doc Meta -->
-  <div class="sec-card">
-    <div class="sec-title">📄 ข้อมูลเอกสาร</div>
-    <div class="meta-grid">
-      <div>
-        <div class="field-label">ชื่อเอกสาร / หัวข้อ</div>
-        <input class="field-input" id="docTitle" placeholder="รายการตัดทรัพย์สิน ประจำปี 2568" value="รายการตัดทรัพย์สิน"/>
-      </div>
-      <div>
-        <div class="field-label">เลขที่เอกสาร</div>
-        <input class="field-input" id="docRef" placeholder="เช่น FNITD-25-000147"/>
-      </div>
-      <div>
-        <div class="field-label">แผนก / หน่วยงาน</div>
-        <input class="field-input" id="docDept" placeholder="เช่น IT Department"/>
-      </div>
-      <div>
-        <div class="field-label">วันที่</div>
-        <input class="field-input" type="date" id="docDate"/>
-      </div>
-    </div>
-  </div>
-
-  <!-- Filter bar -->
-  <div>
-    <div class="filter-bar" id="filterBar"></div>
-    <div class="filter-info" id="filterInfo" style="display:none">
-      <span id="filterInfoText"></span>
-      <span id="filterInfoClear" style="cursor:pointer;color:var(--g);font-weight:700;" onclick="setFilter('__all__')">✕ ล้างตัวกรอง</span>
-    </div>
-  </div>
-
-  <!-- Items -->
-  <div>
-    <div id="itemsContainer"></div>
-    <button class="add-item-btn" onclick="addItem()">+ เพิ่มรายการ</button>
-  </div>
-
-  <!-- Firestore status bar -->
-  <div class="fs-statusbar" id="fsStatusBar">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <span id="fsStatusTitle" style="font-weight:700;font-size:13px;">🔥 กำลังบันทึกลง Firestore...</span>
-      <span id="fsStatusCount" style="font-size:12px;color:var(--tx3);"></span>
-    </div>
-    <div class="fs-progress-wrap"><div class="fs-progress-fill" id="fsProgressFill" style="width:0%"></div></div>
-    <div class="fs-log" id="fsLog"></div>
-  </div>
-
-  <!-- Action bar -->
-  <div class="action-bar" style="margin-top:14px;">
-    <button class="btn btn-primary" onclick="openPreview()">👁 ดูตัวอย่าง A4</button>
-    <button class="btn" onclick="doPrint()">🖨️ พิมพ์</button>
-    <button class="btn btn-word" onclick="exportDocx()">📄 Export Word</button>
-    <button class="btn btn-fire" id="btnSaveFirestore" onclick="saveAllToFirestore()">🔥 บันทึกลง Firestore</button>
-    <button class="btn btn-load" id="btnLoadFirestore" onclick="openLoadConfirm()">☁️ โหลดจาก Firestore</button>
-    <button class="btn btn-ghost" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
-  </div>
-  <div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px 0 24px;">
-    ประเภทอุปกรณ์บันทึกอัตโนมัติ · รูปขนาดเท่ากัน (4:3) · Preview A4 · 2 รายการต่อหน้า · Word export
-  </div>
+<div id="loadingScreen">
+  <div style="width:52px;height:52px;background:#1D9E75;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">♻️</div>
+  <div style="font-size:15px;font-weight:700;">RYG Stock System</div>
+  <div class="spinner"></div>
 </div>
 
-<div id="printArea"></div>
+<div id="mainApp">
+  <div class="topbar">
+    <div class="topbar-logo">📦</div>
+    <span class="topbar-title">RYG Stock</span>
+    <div class="user-mini">
+      <img id="uAvatar" class="user-ava" src="" onerror="this.style.display='none'" alt=""/>
+      <span id="uFallback" class="user-ava"></span>
+      <span id="uName" class="user-name-top"></span>
+      <span id="uRole" class="badge-role badge-admin"></span>
+      <button class="btn-topout" onclick="doLogout()">ออก</button>
+    </div>
+  </div>
+  <div class="nav-tabs" id="navTabs"></div>
+
+  <div class="content">
+    <div class="editor">
+      <div class="editor-header">
+        <div class="editor-logo">♻️</div>
+        <div>
+          <div class="editor-title">สร้างเอกสารตัดทรัพย์สิน</div>
+          <div class="editor-sub">รูปขนาดเท่ากัน · Preview A4 จำลอง · 2 รายการ/หน้า · Firestore · Export Word</div>
+        </div>
+      </div>
+
+      <div class="load-banner" id="loadBanner">
+        <div class="load-spinner"></div>
+        <div>
+          <div class="load-banner-text" id="loadBannerText">กำลังโหลดข้อมูลจาก Firestore...</div>
+          <div class="load-banner-sub" id="loadBannerSub">โปรดรอสักครู่</div>
+        </div>
+      </div>
+
+      <!-- Category Manager -->
+      <div class="sec-card">
+        <div class="sec-title">🏷️ จัดการประเภทอุปกรณ์</div>
+        <div class="cat-list" id="catList"></div>
+        <div class="cat-add-row">
+          <input class="cat-add-input" id="catAddName" placeholder="ชื่อประเภทใหม่ เช่น เครื่องพิมพ์" onkeydown="if(event.key==='Enter')addCategory()"/>
+          <input type="color" class="cat-color-pick" id="catAddColor" value="#1D9E75" title="เลือกสี"/>
+          <button class="btn-sm btn-sm-green" onclick="addCategory()">+ เพิ่ม</button>
+        </div>
+      </div>
+
+      <!-- Doc Meta -->
+      <div class="sec-card">
+        <div class="sec-title">📄 ข้อมูลเอกสาร</div>
+        <div class="meta-grid">
+          <div>
+            <div class="field-label">ชื่อเอกสาร / หัวข้อ</div>
+            <input class="field-input" id="docTitle" placeholder="รายการตัดทรัพย์สิน ประจำปี 2568" value="รายการตัดทรัพย์สิน"/>
+          </div>
+          <div>
+            <div class="field-label">เลขที่เอกสาร</div>
+            <input class="field-input" id="docRef" placeholder="เช่น FNITD-25-000147"/>
+          </div>
+          <div>
+            <div class="field-label">แผนก / หน่วยงาน</div>
+            <input class="field-input" id="docDept" placeholder="เช่น IT Department"/>
+          </div>
+          <div>
+            <div class="field-label">วันที่</div>
+            <input class="field-input" type="date" id="docDate"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div>
+        <div class="filter-bar" id="filterBar"></div>
+        <div class="filter-info" id="filterInfo" style="display:none">
+          <span id="filterInfoText"></span>
+          <span id="filterInfoClear" style="cursor:pointer;color:var(--g);font-weight:700;" onclick="setFilter('__all__')">✕ ล้างตัวกรอง</span>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div>
+        <div id="itemsContainer"></div>
+        <button class="add-item-btn" onclick="addItem()">+ เพิ่มรายการ</button>
+      </div>
+
+      <!-- Firestore status bar -->
+      <div class="fs-statusbar" id="fsStatusBar">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span id="fsStatusTitle" style="font-weight:700;font-size:13px;">🔥 กำลังบันทึกลง Firestore...</span>
+          <span id="fsStatusCount" style="font-size:12px;color:var(--tx3);"></span>
+        </div>
+        <div class="fs-progress-wrap"><div class="fs-progress-fill" id="fsProgressFill" style="width:0%"></div></div>
+        <div class="fs-log" id="fsLog"></div>
+      </div>
+
+      <!-- Action bar -->
+      <div class="action-bar" style="margin-top:14px;">
+        <button class="disp-btn disp-btn-primary" onclick="openPreview()">👁 ดูตัวอย่าง A4</button>
+        <button class="disp-btn" onclick="doPrint()">🖨️ พิมพ์</button>
+        <button class="disp-btn disp-btn-word" onclick="exportDocx()">📄 Export Word</button>
+        <button class="disp-btn disp-btn-fire" id="btnSaveFirestore" onclick="saveAllToFirestore()">🔥 บันทึกลง Firestore</button>
+        <button class="disp-btn disp-btn-load" id="btnLoadFirestore" onclick="openLoadConfirm()">☁️ โหลดจาก Firestore</button>
+        <button class="disp-btn disp-btn-ghost" onclick="clearAll()">🗑️ ล้างทั้งหมด</button>
+      </div>
+      <div style="font-size:11px;color:var(--tx3);text-align:center;padding:10px 0 24px;">
+        ประเภทอุปกรณ์บันทึกอัตโนมัติ · รูปขนาดเท่ากัน (4:3) · Preview A4 · 2 รายการต่อหน้า · Word export
+      </div>
+    </div>
+
+    <div id="printArea"></div>
+  </div>
+
+  <nav class="bottom-nav" id="bottomNav"></nav>
+</div>
+
+<div id="notif"></div>
 
 <!-- PREVIEW OVERLAY -->
 <div class="preview-overlay" id="previewOverlay" onclick="closePreviewOutside(event)">
   <div class="preview-toolbar">
     <div class="preview-toolbar-title">👁 ตัวอย่างเอกสาร A4 (2 รายการ/หน้า)</div>
     <div style="display:flex;gap:6px;">
-      <button class="btn btn-word" style="padding:6px 14px;font-size:12px;" onclick="exportDocx()">📄 Export Word</button>
-      <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;" onclick="doPrint()">🖨️ พิมพ์</button>
-      <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;" onclick="closePreview()">✕ ปิด</button>
+      <button class="disp-btn disp-btn-word" style="padding:6px 14px;font-size:12px;" onclick="exportDocx()">📄 Export Word</button>
+      <button class="disp-btn disp-btn-primary" style="padding:6px 14px;font-size:12px;" onclick="doPrint()">🖨️ พิมพ์</button>
+      <button class="disp-btn disp-btn-ghost" style="padding:6px 14px;font-size:12px;" onclick="closePreview()">✕ ปิด</button>
     </div>
   </div>
   <div class="preview-a4-wrap" id="previewA4Wrap"></div>
@@ -322,18 +337,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 </div>
 
 <!-- Edit Category Modal -->
-<div class="modal-wrap" id="editCatModal">
-  <div class="modal-box">
-    <div class="modal-title">✏️ แก้ไขประเภท</div>
-    <div class="modal-row">
-      <div class="modal-label">ชื่อประเภท</div>
+<div class="disp-modal-wrap" id="editCatModal">
+  <div class="disp-modal-box">
+    <div class="disp-modal-title">✏️ แก้ไขประเภท</div>
+    <div class="disp-modal-row">
+      <div class="disp-modal-label">ชื่อประเภท</div>
       <input class="field-input" id="editCatName" placeholder="ชื่อประเภท"/>
     </div>
-    <div class="modal-row">
-      <div class="modal-label">สี</div>
+    <div class="disp-modal-row">
+      <div class="disp-modal-label">สี</div>
       <input type="color" id="editCatColor" style="width:60px;height:36px;border-radius:8px;border:1.5px solid var(--bdrm);cursor:pointer;padding:3px;"/>
     </div>
-    <div class="modal-actions">
+    <div class="disp-modal-actions">
       <button class="btn-sm" onclick="closeEditCat()">ยกเลิก</button>
       <button class="btn-sm btn-sm-green" onclick="saveEditCat()">💾 บันทึก</button>
     </div>
@@ -341,14 +356,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 </div>
 
 <!-- Load Confirm Modal -->
-<div class="modal-wrap" id="loadConfirmModal">
-  <div class="modal-box load-confirm-box">
-    <div class="modal-title">☁️ โหลดข้อมูลจาก Firestore</div>
+<div class="disp-modal-wrap" id="loadConfirmModal">
+  <div class="disp-modal-box load-confirm-box">
+    <div class="disp-modal-title">☁️ โหลดข้อมูลจาก Firestore</div>
     <div class="load-confirm-info" id="loadConfirmInfo">กำลังตรวจสอบข้อมูล...</div>
     <div style="font-size:12px;color:var(--tx2);margin-bottom:14px;">
       ข้อมูลปัจจุบันในหน้าจะถูก<strong>แทนที่ทั้งหมด</strong> ด้วยข้อมูลจาก Firestore
     </div>
-    <div class="modal-actions">
+    <div class="disp-modal-actions">
       <button class="btn-sm" onclick="closeLoadConfirm()">ยกเลิก</button>
       <button class="btn-sm btn-sm-green" id="btnConfirmLoad" onclick="loadFromFirestore()">✅ โหลดเลย</button>
     </div>
@@ -356,54 +371,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 </div>
 
 <!-- Delete Confirm Modal -->
-<div class="modal-wrap" id="delConfirmModal">
-  <div class="modal-box" style="max-width:360px;">
-    <div class="modal-title" style="color:#EF4444;">🗑️ ยืนยันการลบ</div>
+<div class="disp-modal-wrap" id="delConfirmModal">
+  <div class="disp-modal-box" style="max-width:360px;">
+    <div class="disp-modal-title" style="color:#EF4444;">🗑️ ยืนยันการลบ</div>
     <div id="delConfirmBody" style="font-size:13px;color:var(--tx2);margin-bottom:4px;"></div>
     <div style="font-size:12px;color:var(--tx3);margin-top:6px;">รายการนี้จะถูกลบออกจาก Firestore และไม่สามารถกู้คืนได้</div>
-    <div class="modal-actions">
+    <div class="disp-modal-actions">
       <button class="btn-sm" onclick="closeDelConfirm()">ยกเลิก</button>
       <button class="btn-sm" id="btnConfirmDel" style="background:#EF4444;color:#fff;border-color:#EF4444;" onclick="confirmDeleteItem()">🗑️ ลบเลย</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="disp-toast" id="toast"></div>
 
 <script>
-// ── Firebase ──────────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyABKbRCDNh5SHwvbuFtAudLnRYepZfXk7s",
-  authDomain: "ryg-stock.firebaseapp.com",
-  projectId: "ryg-stock",
-  storageBucket: "ryg-stock.firebasestorage.app",
-  messagingSenderId: "338213551131",
-  appId: "1:338213551131:web:153773df4f8111b2364cbe",
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
+// ── Firebase (uses global `auth` / `firestore` instances from shared.js) ──
 const FS_COLLECTION  = 'dispose_items';
 const FS_CONFIG_DOC  = 'dispose_config';
 const IMGBB_KEY = '4aecea8adeacd9e1dc7815e351021b99';
+let db = null; // assigned from initShell callback
 
 document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
 
-// ── Auth ──────────────────────────────────────────────────────────
-const authBadge = document.getElementById('authBadge');
-auth.onAuthStateChanged(user => {
-  if (user) {
-    authBadge.className = 'auth-badge ok';
-    authBadge.textContent = '🔒 เชื่อมต่อแล้ว';
-    autoLoadFromFirestore();
-  } else {
-    authBadge.className = 'auth-badge pending';
-    authBadge.textContent = '⏳ กำลังเชื่อมต่อ...';
-    auth.signInAnonymously().catch(() => {
-      authBadge.className = 'auth-badge err';
-      authBadge.textContent = '⚠️ Auth ไม่สำเร็จ';
-    });
-  }
+// ── Shell init (login/role, topbar, nav) ───────────────────────────
+initShell('dispose', async (user, role, firestoreDb) => {
+  db = firestoreDb;
+  autoLoadFromFirestore();
 });
 
 function waitForAuth(timeout=8000){
@@ -436,24 +430,17 @@ function lightenHex(hex,amt=0.88){
 }
 function getCatById(id){return categories.find(c=>c.id===id)||null;}
 
-// ── FIX: หา category จาก name ถ้า id ไม่ตรง ──────────────────────
+// ── หา category จาก name ถ้า id ไม่ตรง ──────────────────────
 function resolveCatId(categoryId, categoryName){
-  // 1. ถ้ามี id และหาเจอ → ใช้เลย
   if(categoryId && getCatById(categoryId)) return categoryId;
-
-  // 2. ถ้า id หาไม่เจอ → ลอง match จาก name
   if(categoryName){
     const matched = categories.find(c => c.name === categoryName);
     if(matched) return matched.id;
-
-    // 3. ยังหาไม่เจอ → สร้าง category ใหม่อัตโนมัติ พร้อม id เดิม (ถ้ามี)
     const newId = categoryId || ('cat_' + Date.now() + '_' + Math.random().toString(36).slice(2,5));
     categories.push({id: newId, name: categoryName, color: '#6B7280'});
-    // บันทึกกลับ Firestore เงียบๆ
     saveCategoriesToFirestore();
     return newId;
   }
-
   return '';
 }
 
@@ -746,11 +733,9 @@ function refreshImgGrid(item){const el=document.getElementById('imgGrid_'+item.i
 function setStatus(itemId,msg){const el=document.getElementById('status_'+itemId);if(el)el.textContent=msg;}
 
 // ── Firestore helpers ─────────────────────────────────────────────
-// FIX: docsToItems ใช้ resolveCatId เพื่อ match category ถูกต้องเสมอ
 function docsToItems(docs){
   return docs.map(doc=>{
     const d=doc.data();
-    // resolve category id — ถ้า id ไม่ตรงจะ fallback จาก name
     const catId = resolveCatId(d.category_id||'', d.category_name||'');
     return{
       id:'item_'+doc.id,
@@ -787,7 +772,6 @@ async function autoLoadFromFirestore(){
   if(autoLoaded)return;autoLoaded=true;
   const banner=document.getElementById('loadBanner');banner.classList.add('open');
   try{
-    // FIX: โหลด categories ก่อนเสมอ ก่อน docsToItems
     await loadCategoriesFromFirestore();
 
     const snap=await db.collection(FS_COLLECTION)
@@ -797,7 +781,6 @@ async function autoLoadFromFirestore(){
     banner.classList.remove('open');
 
     if(snap.empty){
-      // FIX: renderCategories ก่อน addItem
       renderCategories();
       if(items.length===0)addItem();
       showToast('ยังไม่มีข้อมูลใน Firestore');
@@ -805,13 +788,11 @@ async function autoLoadFromFirestore(){
     }
 
     applyDocMeta(snap.docs);
-    // FIX: docsToItems เรียกหลัง categories พร้อมแล้ว
     items = docsToItems(snap.docs);
     renderCategories();
     showToast(`✅ โหลดสำเร็จ ${items.length} รายการ`);
   }catch(e){
     banner.classList.remove('open');
-    // FIX: renderCategories ก่อน addItem
     renderCategories();
     if(items.length===0)addItem();
     showToast('⚠️ โหลดข้อมูลไม่สำเร็จ: '+e.message);
@@ -844,7 +825,6 @@ async function loadFromFirestore(){
   document.getElementById('btnLoadFirestore').disabled=true;
   try{
     await waitForAuth();
-    // FIX: โหลด categories ก่อน docsToItems
     await loadCategoriesFromFirestore();
 
     const snap=await db.collection(FS_COLLECTION)
@@ -889,7 +869,6 @@ async function saveAllToFirestore(){
   document.getElementById('fsStatusTitle').textContent='🔥 กำลังบันทึกลง Firestore...';
   document.getElementById('fsStatusCount').textContent=`0 / ${saveItems.length}`;
 
-  // บันทึก categories พร้อมกัน
   await saveCategoriesToFirestore();
 
   let success=0,fail=0;
@@ -901,7 +880,6 @@ async function saveAllToFirestore(){
     const payload={
       doc_title:docTitle,doc_ref:docRef,doc_dept:docDept,doc_date:docDate,
       asset_no:item.assetNo,serial:item.serial,name:item.name,
-      // FIX: บันทึกทั้ง id และ name เพื่อใช้ fallback ตอน restore
       category_id:item.category||'',
       category_name:cat?cat.name:'',
       images:item.images.filter(img=>img.final).map(img=>({
@@ -1023,7 +1001,6 @@ function buildPageHTML(pageBlocks,isFirst,meta,totalItems){
       ${metaParts?`<div class="doc-meta">${metaParts}</div>`:''}
     </div>`;
   }
-  const headingBlocks=pageBlocks.filter(b=>b.type==='heading');
   const itemsInPage=pageBlocks.filter(b=>b.type==='item');
   let bodyHTML='';
   pageBlocks.forEach((blk)=>{
@@ -1289,8 +1266,6 @@ function showToast(msg,dur=2400){
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),dur);
 }
-
-renderCategories();
 </script>
 </body>
 </html>
