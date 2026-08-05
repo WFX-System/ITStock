@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Routine — RYG Stock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="shared.js"></script>
+
+<style>
+.rt-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 14px;background:var(--surf);border-radius:var(--radlg);border:1px solid var(--bdr);}
+.rt-head-logo{width:36px;height:36px;background:var(--g);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0;}
+.rt-head-title{font-size:15px;font-weight:700;}
+.rt-head-sub{font-size:11px;color:var(--tx3);margin-top:1px;}
+
+.rt-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+.rt-search{flex:1;min-width:160px;max-width:260px;padding:8px 12px;border:1.5px solid var(--bdrm);border-radius:var(--rad);font-size:13px;background:var(--surf);color:var(--tx1);}
+.rt-search:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 3px var(--gll);}
+.rt-toggle-label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2);cursor:pointer;white-space:nowrap;user-select:none;}
+.rt-toggle-label input{width:auto;accent-color:var(--g);cursor:pointer;}
+.rt-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--rad);font-size:12.5px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;transition:.15s;white-space:nowrap;font-family:var(--font);}
+.rt-btn:hover{border-color:var(--g);color:var(--g);}
+.rt-btn-primary{background:var(--g);border-color:var(--g);color:#fff;}
+.rt-btn-primary:hover{background:var(--gd);border-color:var(--gd);color:#fff;}
+
+.rt-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:18px;align-items:flex-start;}
+.rt-col{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radlg);min-width:270px;max-width:270px;flex-shrink:0;display:flex;flex-direction:column;max-height:calc(100vh - 250px);transition:.15s;}
+.rt-col.dragover{border-color:var(--g);box-shadow:0 0 0 3px var(--gll);}
+.rt-col-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:2.5px solid var(--bdr);}
+.rt-col-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.rt-col-name{font-size:13px;font-weight:700;flex:1;color:var(--tx1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rt-col-count{font-size:11px;font-weight:700;color:var(--tx3);background:var(--bg);border-radius:20px;padding:1px 8px;flex-shrink:0;}
+.rt-col-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:60px;}
+.rt-col-empty{text-align:center;font-size:11px;color:var(--tx3);padding:18px 4px;}
+
+.rt-card{background:var(--bg);border:1.5px solid var(--bdr);border-radius:10px;padding:10px;cursor:grab;transition:.15s;}
+.rt-card:active{cursor:grabbing;}
+.rt-card.dragging{opacity:.4;}
+.rt-card.is-done{opacity:.55;}
+.rt-card.is-done .rt-card-title{text-decoration:line-through;}
+.rt-card-top{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;}
+.rt-card-title{flex:1;border:none;background:transparent;font-size:13px;font-weight:700;color:var(--tx1);padding:2px 4px;border-radius:6px;font-family:var(--font);}
+.rt-card-title:focus{background:var(--surf);outline:1.5px solid var(--g);}
+.rt-card-del{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:13px;padding:2px 5px;line-height:1;flex-shrink:0;border-radius:5px;}
+.rt-card-del:hover{color:#EF4444;background:#FEF2F2;}
+.rt-card-detail{width:100%;border:1px solid transparent;background:transparent;font-size:12px;color:var(--tx2);padding:2px 4px;border-radius:6px;resize:none;min-height:30px;font-family:var(--font);margin-bottom:6px;}
+.rt-card-detail:focus{background:var(--surf);border-color:var(--bdrm);outline:none;}
+.rt-assign{margin-bottom:4px;}
+.rt-assign-line{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 4px;border-radius:6px;}
+.rt-assign-line:hover{background:var(--surf);}
+.rt-assign-lbl{font-size:11px;flex-shrink:0;}
+.rt-chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rt-chip.empty{background:var(--surf);color:var(--tx3);border:1px dashed var(--bdrm);font-weight:600;}
+.rt-assign-edit{font-size:9.5px;color:var(--g);font-weight:700;flex-shrink:0;}
+.rt-picker-panel{display:flex;flex-wrap:wrap;gap:4px;padding:6px 4px 2px;}
+.rt-pick-btn{padding:3px 9px;border-radius:14px;font-size:10.5px;font-weight:600;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;font-family:var(--font);}
+.rt-pick-btn.active{color:#fff;border-color:transparent;}
+.rt-pick-btn:hover{border-color:var(--g);}
+.rt-card-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdrm);}
+.rt-card-time{font-size:9.5px;color:var(--tx3);}
+.rt-foot-btns{display:flex;gap:2px;}
+.rt-icon-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:3px 6px;border-radius:5px;color:var(--tx3);font-family:var(--font);}
+.rt-icon-btn:hover{background:var(--surf);color:var(--tx1);}
+
+.rtm-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;padding:16px;}
+.rtm-wrap.open{display:flex;}
+.rtm-box{background:var(--surf);border-radius:16px;padding:20px 22px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.rtm-title{font-size:15px;font-weight:700;margin-bottom:14px;}
+.rtm-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;}
+
+.rt-manage-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.rt-manage-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1.5px solid var(--bdr);border-radius:var(--rad);}
+.rt-manage-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;cursor:pointer;border:none;padding:0;}
+.rt-manage-name{flex:1;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--tx1);padding:3px 4px;font-family:var(--font);}
+.rt-manage-name:focus{background:var(--bg);border-radius:6px;outline:none;}
+.rt-manage-order{display:flex;flex-direction:column;gap:1px;}
+.rt-order-btn{background:none;border:none;cursor:pointer;font-size:10px;color:var(--tx3);line-height:1;padding:1px 3px;}
+.rt-order-btn:hover{color:var(--g);}
+.rt-manage-del{background:none;border:none;cursor:pointer;font-size:12px;color:var(--tx3);padding:3px 5px;border-radius:5px;}
+.rt-manage-del:hover{color:#EF4444;background:#FEF2F2;}
+.rt-manage-add{display:flex;gap:6px;align-items:center;}
+.rt-manage-add input[type=text]{flex:1;padding:7px 10px;border:1.5px dashed var(--bdrm);border-radius:var(--rad);font-size:13px;font-family:var(--font);background:transparent;color:var(--tx1);}
+.rt-manage-add input[type=color]{width:34px;height:34px;border:1.5px solid var(--bdrm);border-radius:8px;cursor:pointer;padding:3px;background:none;}
+
+.rt-hist-list{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto;}
+.rt-hist-item{display:flex;gap:8px;font-size:12px;padding:8px 10px;background:var(--bg);border-radius:8px;}
+.rt-hist-icon{font-size:14px;flex-shrink:0;}
+.rt-hist-text{flex:1;color:var(--tx2);}
+.rt-hist-meta{font-size:10px;color:var(--tx3);margin-top:2px;}
+.rt-empty-hint{font-size:12px;color:var(--tx3);text-align:center;padding:20px;}
+
+.rt-toast{position:fixed;bottom:calc(var(--bn-h) + 16px);left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
+.rt-toast.show{opacity:1;}
+
+@media(max-width:640px){
+  .rt-col{min-width:240px;max-width:240px;max-height:calc(100vh - 300px);}
+}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <div style="width:52px;height:52px;background:#1D9E75;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;">🗂️</div>
+  <div style="font-size:15px;font-weight:700;">RYG Stock System</div>
+  <div class="spinner"></div>
+</div>
+
+<div id="mainApp">
+  <div class="topbar">
+    <div class="topbar-logo">📦</div>
+    <span class="topbar-title">RYG Stock</span>
+    <div class="user-mini">
+      <img id="uAvatar" class="user-ava" src="" onerror="this.style.display='none'" alt=""/>
+      <span id="uFallback" class="user-ava"></span>
+      <span id="uName" class="user-name-top"></span>
+      <span id="uRole" class="badge-role badge-admin"></span>
+      <button class="btn-topout" onclick="doLogout()">ออก</button>
+    </div>
+  </div>
+  <div class="nav-tabs" id="navTabs"></div>
+
+  <div class="content">
+    <div class="rt-head">
+      <div class="rt-head-logo">🗂️</div>
+      <div>
+        <div class="rt-head-title">Routine — คีย์งานค้าง</div>
+        <div class="rt-head-sub" id="rtSubtitle">ติดตามสถานะงาน ขั้นตอน และผู้รับเอกสาร</div>
+      </div>
+    </div>
+
+    <div class="rt-toolbar">
+      <input class="rt-search" id="rtSearch" type="text" placeholder="🔎 ค้นหางาน / ชื่อคน..." oninput="rtRenderBoard()"/>
+      <label class="rt-toggle-label">
+        <input type="checkbox" id="rtShowDone" onchange="rtRenderBoard()"/>
+        แสดงงานที่เสร็จแล้ว
+      </label>
+      <button class="rt-btn rt-btn-primary" onclick="rtOpenNewTask()">➕ เพิ่มงานค้าง</button>
+      <button class="rt-btn" onclick="rtOpenStepsManager()">🔀 จัดการขั้นตอน</button>
+      <button class="rt-btn" onclick="rtOpenPeopleManager()">👤 จัดการรายชื่อ</button>
+    </div>
+
+    <div class="rt-board" id="rtBoard"></div>
+  </div>
+
+  <nav class="bottom-nav" id="bottomNav"></nav>
+</div>
+
+<div id="notif"></div>
+
+<!-- New Task Modal -->
+<div class="rtm-wrap" id="rtNewTaskModal">
+  <div class="rtm-box">
+    <div class="rtm-title">➕ เพิ่มงานค้าง</div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">ชื่องาน *</div>
+      <input class="rt-search" style="max-width:none;width:100%;" id="rtNewTitle" placeholder="เช่น ตัดจำหน่ายเครื่อง ACC001-RYG" onkeydown="if(event.key==='Enter')rtSubmitNewTask()"/>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">รายละเอียด (ไม่บังคับ)</div>
+      <textarea class="rt-card-detail" style="border:1.5px solid var(--bdrm);min-height:60px;" id="rtNewDetail" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+    </div>
+    <div class="rtm-actions">
+      <button class="rt-btn" onclick="rtCloseNewTask()">ยกเลิก</button>
+      <button class="rt-btn rt-btn-primary" onclick="rtSubmitNewTask()">💾 เพิ่มงาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- Steps Manager Modal -->
+<div class="rtm-wrap" id="rtStepsModal">
+  <div class="rtm-box">
+    <div class="rtm-title">🔀 จัดการขั้นตอน</div>
+    <div class="rt-manage-list" id="rtStepsList"></div>
+    <div class="rt-manage-add">
+      <input type="text" id="rtStepAddName" placeholder="ชื่อขั้นตอนใหม่ เช่น รออนุมัติ" onkeydown="if(event.key==='Enter')rtAddStep()"/>
+      <input type="color" id="rtStepAddColor" value="#6366f1"/>
+      <button class="rt-btn rt-btn-primary" onclick="rtAddStep()">+ เพิ่ม</button>
+    </div>
+    <div class="rtm-actions">
+      <button class="rt-btn rt-btn-primary" onclick="rtCloseStepsManager()">✅ เสร็จสิ้น</button>
+    </div>
+  </div>
+</div>
+
+<!-- People Manager Modal -->
+<div class="rtm-wrap" id="rtPeopleModal">
+  <div class="rtm-box">
+    <div class="rtm-title">👤 จัดการรายชื่อ</div>
+    <div class="rt-manage-list" id="rtPeopleList"></div>
+    <div class="rt-manage-add">
+      <input type="text" id="rtPersonAddName" placeholder="ชื่อคนใหม่ เช่น สมชาย" onkeydown="if(event.key==='Enter')rtAddPerson()"/>
+      <input type="color" id="rtPersonAddColor" value="#0EA5E9"/>
+      <button class="rt-btn rt-btn-primary" onclick="rtAddPerson()">+ เพิ่ม</button>
+    </div>
+    <div class="rtm-actions">
+      <button class="rt-btn rt-btn-primary" onclick="rtClosePeopleManager()">✅ เสร็จสิ้น</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Modal -->
+<div class="rtm-wrap" id="rtHistModal">
+  <div class="rtm-box">
+    <div class="rtm-title">🕐 ประวัติงาน — <span id="rtHistTaskTitle"></span></div>
+    <div class="rt-hist-list" id="rtHistList"></div>
+    <div class="rtm-actions">
+      <button class="rt-btn" onclick="rtCloseHistory()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="rtm-wrap" id="rtDelModal">
+  <div class="rtm-box" style="max-width:360px;">
+    <div class="rtm-title" style="color:#EF4444;">🗑️ ยืนยันการลบ</div>
+    <div id="rtDelBody" style="font-size:13px;color:var(--tx2);margin-bottom:14px;"></div>
+    <div class="rtm-actions">
+      <button class="rt-btn" onclick="rtCloseDel()">ยกเลิก</button>
+      <button class="rt-btn" style="background:#EF4444;color:#fff;border-color:#EF4444;" onclick="rtConfirmDelete()">🗑️ ลบเลย</button>
+    </div>
+  </div>
+</div>
+
+<div class="rt-toast" id="rtToast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let db=null, currentUser=null;
+const RT_TASKS_COL  = 'routine_tasks';
+const RT_CONFIG_COL = 'routine_config';
+
+const DEFAULT_STEPS=[
+  {id:'step_receive',  name:'รับเรื่อง',            color:'#6366f1'},
+  {id:'step_progress', name:'กำลังดำเนินการ',       color:'#F59E0B'},
+  {id:'step_wait',     name:'รอเอกสาร/รออนุมัติ',    color:'#EF4444'},
+  {id:'step_forward',  name:'ส่งต่อ/ส่งเอกสาร',      color:'#0EA5E9'},
+  {id:'step_done',     name:'เสร็จสิ้น',             color:'#10B981'},
+];
+let rtSteps=[...DEFAULT_STEPS];
+let rtPeople=[];
+let rtTasks=[];
+let _rtOpenPersonPicker=new Set();
+let _rtOpenStepPicker=new Set();
+let _rtDragTaskId=null;
+let _rtPendingDelId=null;
+
+// ══════════════════════════════════════════
+// SHELL INIT
+// ══════════════════════════════════════════
+initShell('routine', async(user,role,firestoreDb)=>{
+  currentUser=user; db=firestoreDb;
+  rtStartSync();
+});
+
+function rtUserName(){ return currentUser?.displayName || currentUser?.email || 'ไม่ระบุ'; }
+
+// ══════════════════════════════════════════
+// REALTIME SYNC
+// ══════════════════════════════════════════
+function rtStartSync(){
+  db.collection(RT_CONFIG_COL).doc('steps').onSnapshot(snap=>{
+    if(snap.exists && Array.isArray(snap.data().list) && snap.data().list.length){
+      rtSteps=snap.data().list;
+    } else {
+      rtSteps=[...DEFAULT_STEPS];
+    }
+    rtRenderBoard();
+    if(document.getElementById('rtStepsModal').classList.contains('open')) rtRenderStepsManager();
+  }, err=>console.warn('steps sync error',err));
+
+  db.collection(RT_CONFIG_COL).doc('people').onSnapshot(snap=>{
+    rtPeople=(snap.exists && Array.isArray(snap.data().list))?snap.data().list:[];
+    rtRenderBoard();
+    if(document.getElementById('rtPeopleModal').classList.contains('open')) rtRenderPeopleManager();
+  }, err=>console.warn('people sync error',err));
+
+  db.collection(RT_TASKS_COL).onSnapshot(snap=>{
+    rtTasks=snap.docs.map(d=>({id:d.id,...d.data()}));
+    rtRenderBoard();
+  }, err=>console.warn('tasks sync error',err));
+}
+
+async function rtSaveSteps(){
+  try{ await db.collection(RT_CONFIG_COL).doc('steps').set({list:rtSteps,updated_at:firebase.firestore.FieldValue.serverTimestamp()}); }
+  catch(e){ rtToast('⚠️ บันทึกขั้นตอนไม่สำเร็จ: '+e.message); }
+}
+async function rtSavePeople(){
+  try{ await db.collection(RT_CONFIG_COL).doc('people').set({list:rtPeople,updated_at:firebase.firestore.FieldValue.serverTimestamp()}); }
+  catch(e){ rtToast('⚠️ บันทึกรายชื่อไม่สำเร็จ: '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function getStep(id){ return rtSteps.find(s=>s.id===id)||null; }
+function getPerson(id){ return rtPeople.find(p=>p.id===id)||null; }
+function hexToRgb(hex){ const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return{r,g,b}; }
+function lighten(hex,amt=0.85){ const{r,g,b}=hexToRgb(hex); return`rgb(${Math.round(r+(255-r)*amt)},${Math.round(g+(255-g)*amt)},${Math.round(b+(255-b)*amt)})`; }
+function rtToast(msg,dur=2400){ const t=document.getElementById('rtToast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),dur); }
+function relTime(ts){
+  if(!ts) return '';
+  const ms = ts.toDate ? ts.toDate().getTime() : (typeof ts==='number'?ts:new Date(ts).getTime());
+  const diff=Date.now()-ms;
+  const min=Math.floor(diff/60000);
+  if(min<1) return 'เมื่อสักครู่';
+  if(min<60) return `${min} นาทีที่แล้ว`;
+  const hr=Math.floor(min/60);
+  if(hr<24) return `${hr} ชม.ที่แล้ว`;
+  const day=Math.floor(hr/24);
+  if(day<7) return `${day} วันที่แล้ว`;
+  return new Date(ms).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+function fullTime(ts){
+  if(!ts) return '';
+  const ms = ts.toDate ? ts.toDate().getTime() : (typeof ts==='number'?ts:new Date(ts).getTime());
+  return new Date(ms).toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+// ══════════════════════════════════════════
+// BOARD RENDER
+// ══════════════════════════════════════════
+function rtFilteredTasks(){
+  const q=(document.getElementById('rtSearch')?.value||'').trim().toLowerCase();
+  const showDone=document.getElementById('rtShowDone')?.checked;
+  return rtTasks.filter(t=>{
+    if(t.archived && !showDone) return false;
+    if(!q) return true;
+    const person=getPerson(t.personId);
+    const hay=`${t.title||''} ${t.detail||''} ${person?person.name:''}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function rtRenderBoard(){
+  const board=document.getElementById('rtBoard');
+  const filtered=rtFilteredTasks();
+  const total=rtTasks.filter(t=>!t.archived).length;
+  document.getElementById('rtSubtitle').textContent=`งานค้างทั้งหมด ${total} รายการ · ${rtSteps.length} ขั้นตอน · ${rtPeople.length} รายชื่อ`;
+
+  if(!rtSteps.length){
+    board.innerHTML=`<div class="rt-empty-hint">ยังไม่มีขั้นตอน — กดปุ่ม "จัดการขั้นตอน" เพื่อเริ่มสร้าง</div>`;
+    return;
+  }
+
+  board.innerHTML=rtSteps.map(step=>{
+    const tasksInStep=filtered.filter(t=>t.stepId===step.id)
+      .sort((a,b)=>{
+        const ta=a.updatedAt?.toDate?a.updatedAt.toDate().getTime():(a.order||0);
+        const tb=b.updatedAt?.toDate?b.updatedAt.toDate().getTime():(b.order||0);
+        return tb-ta;
+      });
+    const cardsHtml=tasksInStep.length
+      ? tasksInStep.map(t=>rtCardHtml(t)).join('')
+      : `<div class="rt-col-empty">ไม่มีงานในขั้นตอนนี้</div>`;
+    return `
+    <div class="rt-col" id="rtCol_${step.id}"
+      ondragover="rtColDragOver(event,'${step.id}')"
+      ondragleave="rtColDragLeave(event,'${step.id}')"
+      ondrop="rtColDrop(event,'${step.id}')">
+      <div class="rt-col-head" style="border-bottom-color:${step.color};">
+        <div class="rt-col-dot" style="background:${step.color};"></div>
+        <div class="rt-col-name">${esc(step.name)}</div>
+        <div class="rt-col-count">${tasksInStep.length}</div>
+      </div>
+      <div class="rt-col-body">${cardsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function rtCardHtml(t){
+  const step=getStep(t.stepId);
+  const person=getPerson(t.personId);
+  const personOpen=_rtOpenPersonPicker.has(t.id);
+  const stepOpen=_rtOpenStepPicker.has(t.id);
+
+  const personChip=person
+    ? `<span class="rt-chip" style="background:${lighten(person.color)};color:${person.color};">${esc(person.name)}</span>`
+    : `<span class="rt-chip empty">ยังไม่ระบุ</span>`;
+
+  const personPickerBtns=[
+    `<button type="button" class="rt-pick-btn ${!t.personId?'active':''}" ${!t.personId?`style="background:#6B7280;"`:''} onclick="rtSetPerson('${t.id}','')">ไม่ระบุ</button>`,
+    ...rtPeople.map(p=>`<button type="button" class="rt-pick-btn ${t.personId===p.id?'active':''}" ${t.personId===p.id?`style="background:${p.color};"`:''} onclick="rtSetPerson('${t.id}','${p.id}')">${esc(p.name)}</button>`)
+  ].join('');
+
+  const stepChip=step
+    ? `<span class="rt-chip" style="background:${lighten(step.color)};color:${step.color};">${esc(step.name)}</span>`
+    : `<span class="rt-chip empty">ไม่ระบุขั้นตอน</span>`;
+
+  const stepPickerBtns=rtSteps.map(s=>`<button type="button" class="rt-pick-btn ${t.stepId===s.id?'active':''}" ${t.stepId===s.id?`style="background:${s.color};"`:''} onclick="rtSetStep('${t.id}','${s.id}')">${esc(s.name)}</button>`).join('');
+
+  return `
+  <div class="rt-card ${t.archived?'is-done':''}" id="rtCard_${t.id}" draggable="true"
+    ondragstart="rtCardDragStart(event,'${t.id}')" ondragend="rtCardDragEnd(event)">
+    <div class="rt-card-top">
+      <input class="rt-card-title" value="${esc(t.title||'')}" placeholder="ชื่องาน..."
+        oninput="rtFieldLocal('${t.id}','title',this.value)" onblur="rtSaveField('${t.id}','title')"/>
+      <button class="rt-card-del" onclick="rtOpenDel('${t.id}')" title="ลบ">✕</button>
+    </div>
+    <textarea class="rt-card-detail" placeholder="รายละเอียด..."
+      oninput="rtFieldLocal('${t.id}','detail',this.value)" onblur="rtSaveField('${t.id}','detail')">${esc(t.detail||'')}</textarea>
+
+    <div class="rt-assign">
+      <div class="rt-assign-line" onclick="rtTogglePicker('person','${t.id}')">
+        <span class="rt-assign-lbl">👤</span>
+        ${personChip}
+        <span class="rt-assign-edit">เปลี่ยน ▾</span>
+      </div>
+      ${personOpen?`<div class="rt-picker-panel">${personPickerBtns}</div>`:''}
+    </div>
+
+    <div class="rt-assign">
+      <div class="rt-assign-line" onclick="rtTogglePicker('step','${t.id}')">
+        <span class="rt-assign-lbl">🔀</span>
+        ${stepChip}
+        <span class="rt-assign-edit">ย้าย ▾</span>
+      </div>
+      ${stepOpen?`<div class="rt-picker-panel">${stepPickerBtns}</div>`:''}
+    </div>
+
+    <div class="rt-card-foot">
+      <span class="rt-card-time">อัปเดต ${relTime(t.updatedAt)}</span>
+      <div class="rt-foot-btns">
+        <button class="rt-icon-btn" onclick="rtOpenHistory('${t.id}')" title="ประวัติ">🕐</button>
+        <button class="rt-icon-btn" onclick="rtToggleDone('${t.id}')" title="${t.archived?'เปิดงานใหม่':'เสร็จสิ้น'}">${t.archived?'↩️':'✅'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function rtTogglePicker(kind,taskId){
+  const set = kind==='person' ? _rtOpenPersonPicker : _rtOpenStepPicker;
+  if(set.has(taskId)) set.delete(taskId); else set.add(taskId);
+  rtRenderBoard();
+}
+
+// ══════════════════════════════════════════
+// TASK FIELD EDITS (debounced text fields)
+// ══════════════════════════════════════════
+let _rtLocalEdits={};
+function rtFieldLocal(id,field,val){
+  if(!_rtLocalEdits[id]) _rtLocalEdits[id]={};
+  _rtLocalEdits[id][field]=val;
+}
+async function rtSaveField(id,field){
+  const val=_rtLocalEdits[id]?.[field];
+  if(val===undefined) return;
+  try{
+    await db.collection(RT_TASKS_COL).doc(id).update({
+      [field]:val,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){ rtToast('⚠️ บันทึกไม่สำเร็จ: '+e.message); }
+}
+
+async function rtSetPerson(id,personId){
+  const t=rtTasks.find(x=>x.id===id); if(!t) return;
+  const person=getPerson(personId);
+  const histText=person?`มอบเอกสารให้ ${person.name}`:'ยกเลิกการมอบหมาย';
+  _rtOpenPersonPicker.delete(id);
+  try{
+    await db.collection(RT_TASKS_COL).doc(id).update({
+      personId: personId||'',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'person',text:histText,by:rtUserName()})
+    });
+  }catch(e){ rtToast('⚠️ '+e.message); }
+}
+
+async function rtSetStep(id,stepId){
+  const t=rtTasks.find(x=>x.id===id); if(!t || t.stepId===stepId) { _rtOpenStepPicker.delete(id); rtRenderBoard(); return; }
+  const fromStep=getStep(t.stepId), toStep=getStep(stepId);
+  const histText=`ย้ายขั้นตอน "${fromStep?fromStep.name:'-'}" → "${toStep?toStep.name:'-'}"`;
+  _rtOpenStepPicker.delete(id);
+  try{
+    await db.collection(RT_TASKS_COL).doc(id).update({
+      stepId: stepId,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'step',text:histText,by:rtUserName()})
+    });
+  }catch(e){ rtToast('⚠️ '+e.message); }
+}
+
+async function rtToggleDone(id){
+  const t=rtTasks.find(x=>x.id===id); if(!t) return;
+  const newVal=!t.archived;
+  const histText=newVal?'ทำเครื่องหมายเสร็จสิ้น':'เปิดงานใหม่อีกครั้ง';
+  try{
+    await db.collection(RT_TASKS_COL).doc(id).update({
+      archived:newVal,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      history:firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:newVal?'done':'reopen',text:histText,by:rtUserName()})
+    });
+    rtToast(newVal?'✅ ทำเครื่องหมายเสร็จสิ้นแล้ว':'↩️ เปิดงานใหม่แล้ว');
+  }catch(e){ rtToast('⚠️ '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// NEW TASK
+// ══════════════════════════════════════════
+function rtOpenNewTask(){
+  document.getElementById('rtNewTitle').value='';
+  document.getElementById('rtNewDetail').value='';
+  document.getElementById('rtNewTaskModal').classList.add('open');
+  setTimeout(()=>document.getElementById('rtNewTitle').focus(),80);
+}
+function rtCloseNewTask(){ document.getElementById('rtNewTaskModal').classList.remove('open'); }
+async function rtSubmitNewTask(){
+  const title=document.getElementById('rtNewTitle').value.trim();
+  const detail=document.getElementById('rtNewDetail').value.trim();
+  if(!title){ rtToast('กรุณากรอกชื่องาน'); return; }
+  if(!rtSteps.length){ rtToast('กรุณาเพิ่มขั้นตอนก่อน'); return; }
+  try{
+    await db.collection(RT_TASKS_COL).add({
+      title, detail, stepId:rtSteps[0].id, personId:'', archived:false,
+      order: Date.now(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: rtUserName(),
+      history: [{ts:Date.now(),type:'create',text:'สร้างงาน',by:rtUserName()}]
+    });
+    rtCloseNewTask();
+    rtToast('✅ เพิ่มงานค้างแล้ว');
+  }catch(e){ rtToast('⚠️ เพิ่มงานไม่สำเร็จ: '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// DELETE
+// ══════════════════════════════════════════
+function rtOpenDel(id){
+  const t=rtTasks.find(x=>x.id===id); if(!t) return;
+  _rtPendingDelId=id;
+  document.getElementById('rtDelBody').innerHTML=`ต้องการลบ <strong>${esc(t.title||'งานนี้')}</strong> ใช่หรือไม่?`;
+  document.getElementById('rtDelModal').classList.add('open');
+}
+function rtCloseDel(){ document.getElementById('rtDelModal').classList.remove('open'); _rtPendingDelId=null; }
+async function rtConfirmDelete(){
+  if(!_rtPendingDelId) return;
+  const id=_rtPendingDelId;
+  rtCloseDel();
+  try{
+    await db.collection(RT_TASKS_COL).doc(id).delete();
+    rtToast('ลบงานแล้ว');
+  }catch(e){ rtToast('⚠️ ลบไม่สำเร็จ: '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// HISTORY MODAL
+// ══════════════════════════════════════════
+const RT_HIST_ICON={create:'✨',step:'🔀',person:'👤',done:'✅',reopen:'↩️'};
+function rtOpenHistory(id){
+  const t=rtTasks.find(x=>x.id===id); if(!t) return;
+  document.getElementById('rtHistTaskTitle').textContent=t.title||'(ไม่มีชื่อ)';
+  const hist=[...(t.history||[])].sort((a,b)=>b.ts-a.ts);
+  const listEl=document.getElementById('rtHistList');
+  if(!hist.length){
+    listEl.innerHTML=`<div class="rt-empty-hint">ยังไม่มีประวัติ</div>`;
+  } else {
+    listEl.innerHTML=hist.map(h=>`
+      <div class="rt-hist-item">
+        <span class="rt-hist-icon">${RT_HIST_ICON[h.type]||'📌'}</span>
+        <div class="rt-hist-text">
+          ${esc(h.text)}
+          <div class="rt-hist-meta">👤 ${esc(h.by||'-')} · ${fullTime(h.ts)}</div>
+        </div>
+      </div>`).join('');
+  }
+  document.getElementById('rtHistModal').classList.add('open');
+}
+function rtCloseHistory(){ document.getElementById('rtHistModal').classList.remove('open'); }
+
+// ══════════════════════════════════════════
+// DRAG & DROP (card between columns)
+// ══════════════════════════════════════════
+function rtCardDragStart(e,taskId){
+  _rtDragTaskId=taskId;
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',taskId);
+  setTimeout(()=>document.getElementById('rtCard_'+taskId)?.classList.add('dragging'),0);
+}
+function rtCardDragEnd(e){
+  if(_rtDragTaskId) document.getElementById('rtCard_'+_rtDragTaskId)?.classList.remove('dragging');
+  _rtDragTaskId=null;
+  document.querySelectorAll('.rt-col.dragover').forEach(c=>c.classList.remove('dragover'));
+}
+function rtColDragOver(e,stepId){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  document.getElementById('rtCol_'+stepId)?.classList.add('dragover');
+}
+function rtColDragLeave(e,stepId){
+  document.getElementById('rtCol_'+stepId)?.classList.remove('dragover');
+}
+function rtColDrop(e,stepId){
+  e.preventDefault();
+  document.getElementById('rtCol_'+stepId)?.classList.remove('dragover');
+  const taskId=_rtDragTaskId || e.dataTransfer.getData('text/plain');
+  if(!taskId) return;
+  rtSetStep(taskId,stepId);
+}
+
+// ══════════════════════════════════════════
+// STEPS MANAGER
+// ══════════════════════════════════════════
+function rtOpenStepsManager(){ rtRenderStepsManager(); document.getElementById('rtStepsModal').classList.add('open'); }
+function rtCloseStepsManager(){ document.getElementById('rtStepsModal').classList.remove('open'); }
+function rtRenderStepsManager(){
+  document.getElementById('rtStepsList').innerHTML=rtSteps.map((s,i)=>`
+    <div class="rt-manage-row">
+      <input type="color" class="rt-manage-dot" style="background:${s.color};" value="${s.color}" onchange="rtStepColorChange(${i},this.value)"/>
+      <input type="text" class="rt-manage-name" value="${esc(s.name)}" onblur="rtStepNameChange(${i},this.value)"/>
+      <div class="rt-manage-order">
+        <button class="rt-order-btn" onclick="rtStepMove(${i},-1)" ${i===0?'disabled':''}>▲</button>
+        <button class="rt-order-btn" onclick="rtStepMove(${i},1)" ${i===rtSteps.length-1?'disabled':''}>▼</button>
+      </div>
+      <button class="rt-manage-del" onclick="rtDeleteStep(${i})" title="ลบ">🗑️</button>
+    </div>`).join('') || `<div class="rt-empty-hint">ยังไม่มีขั้นตอน</div>`;
+}
+function rtStepNameChange(i,val){
+  const name=val.trim(); if(!name || rtSteps[i].name===name) { rtRenderStepsManager(); return; }
+  rtSteps[i].name=name; rtSaveSteps();
+}
+function rtStepColorChange(i,val){ rtSteps[i].color=val; rtSaveSteps(); rtRenderStepsManager(); }
+function rtStepMove(i,dir){
+  const j=i+dir; if(j<0||j>=rtSteps.length) return;
+  [rtSteps[i],rtSteps[j]]=[rtSteps[j],rtSteps[i]];
+  rtSaveSteps(); rtRenderStepsManager();
+}
+function rtDeleteStep(i){
+  const step=rtSteps[i]; if(!step) return;
+  const used=rtTasks.filter(t=>t.stepId===step.id).length;
+  if(used>0 && !confirm(`ขั้นตอน "${step.name}" มีงานอยู่ ${used} รายการ ลบทิ้ง?`)) return;
+  rtSteps.splice(i,1); rtSaveSteps(); rtRenderStepsManager();
+}
+function rtAddStep(){
+  const nameEl=document.getElementById('rtStepAddName'), colorEl=document.getElementById('rtStepAddColor');
+  const name=nameEl.value.trim(); if(!name){ rtToast('กรุณากรอกชื่อขั้นตอน'); return; }
+  rtSteps.push({id:'step_'+Date.now(),name,color:colorEl.value});
+  nameEl.value='';
+  rtSaveSteps(); rtRenderStepsManager();
+}
+
+// ══════════════════════════════════════════
+// PEOPLE MANAGER
+// ══════════════════════════════════════════
+function rtOpenPeopleManager(){ rtRenderPeopleManager(); document.getElementById('rtPeopleModal').classList.add('open'); }
+function rtClosePeopleManager(){ document.getElementById('rtPeopleModal').classList.remove('open'); }
+function rtRenderPeopleManager(){
+  document.getElementById('rtPeopleList').innerHTML=rtPeople.map((p,i)=>`
+    <div class="rt-manage-row">
+      <input type="color" class="rt-manage-dot" style="background:${p.color};" value="${p.color}" onchange="rtPersonColorChange(${i},this.value)"/>
+      <input type="text" class="rt-manage-name" value="${esc(p.name)}" onblur="rtPersonNameChange(${i},this.value)"/>
+      <button class="rt-manage-del" onclick="rtDeletePerson(${i})" title="ลบ">🗑️</button>
+    </div>`).join('') || `<div class="rt-empty-hint">ยังไม่มีรายชื่อ — เพิ่มด้านล่าง</div>`;
+}
+function rtPersonNameChange(i,val){
+  const name=val.trim(); if(!name || rtPeople[i].name===name) { rtRenderPeopleManager(); return; }
+  rtPeople[i].name=name; rtSavePeople();
+}
+function rtPersonColorChange(i,val){ rtPeople[i].color=val; rtSavePeople(); rtRenderPeopleManager(); }
+function rtDeletePerson(i){
+  const p=rtPeople[i]; if(!p) return;
+  const used=rtTasks.filter(t=>t.personId===p.id).length;
+  if(used>0 && !confirm(`"${p.name}" ถูกมอบหมายอยู่ ${used} งาน ลบทิ้ง?`)) return;
+  rtPeople.splice(i,1); rtSavePeople(); rtRenderPeopleManager();
+}
+function rtAddPerson(){
+  const nameEl=document.getElementById('rtPersonAddName'), colorEl=document.getElementById('rtPersonAddColor');
+  const name=nameEl.value.trim(); if(!name){ rtToast('กรุณากรอกชื่อ'); return; }
+  rtPeople.push({id:'person_'+Date.now(),name,color:colorEl.value});
+  nameEl.value='';
+  rtSavePeople(); rtRenderPeopleManager();
+}
+</script>
+</body>
+</html>
