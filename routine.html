@@ -257,6 +257,7 @@
 let db=null, currentUser=null;
 const RT_TASKS_COL  = 'routine_tasks';
 const RT_CONFIG_COL = 'routine_config';
+const IMGBB_API_KEY = '4aecea8adeacd9e1dc7815e351021b99';
 
 const DEFAULT_STEPS=[
   {id:'step_receive',  name:'รับเรื่อง',            color:'#6366f1', requirePerson:false, requirePhoto:false},
@@ -599,7 +600,7 @@ async function rtToggleDone(id){
 }
 
 // ══════════════════════════════════════════
-// PHOTO ATTACH MODAL
+// PHOTO ATTACH MODAL (uploads to imgbb, not Firebase Storage)
 // ══════════════════════════════════════════
 function rtOpenPhotoModal(taskId,stepId){
   _rtPendingPhoto={taskId,stepId,file:null};
@@ -624,6 +625,19 @@ function rtPhotoPreview(e){
   };
   reader.readAsDataURL(file);
 }
+// Reads a File as a pure base64 string (no data: prefix) for imgbb's "image" field
+function rtFileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const result=reader.result; // "data:image/jpeg;base64,XXXX"
+      const base64=result.split(',')[1]||'';
+      resolve(base64);
+    };
+    reader.onerror=()=>reject(new Error('อ่านไฟล์รูปไม่สำเร็จ'));
+    reader.readAsDataURL(file);
+  });
+}
 async function rtUploadPhotoAndMove(){
   if(!_rtPendingPhoto || !_rtPendingPhoto.file){ rtToast('กรุณาเลือกรูปก่อน'); return; }
   const {taskId,stepId,file}=_rtPendingPhoto;
@@ -631,10 +645,20 @@ async function rtUploadPhotoAndMove(){
   const btn=document.getElementById('rtPhotoUploadBtn');
   btn.disabled=true; statusEl.textContent='⏳ กำลังอัปโหลด...';
   try{
-    if(!firebase.storage){ throw new Error('ยังไม่ได้เปิดใช้งาน Firebase Storage'); }
-    const storageRef=firebase.storage().ref().child(`routine_photos/${taskId}/${Date.now()}_${file.name}`);
-    const snap=await storageRef.put(file);
-    const url=await snap.ref.getDownloadURL();
+    const base64=await rtFileToBase64(file);
+    const form=new FormData();
+    form.append('key',IMGBB_API_KEY);
+    form.append('image',base64);
+    form.append('name',`routine_${taskId}_${Date.now()}`);
+
+    const res=await fetch('https://api.imgbb.com/1/upload',{ method:'POST', body:form });
+    const json=await res.json();
+    if(!res.ok || !json.success){
+      const msg=json?.error?.message || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+    const url=json.data.url; // direct image URL hosted on imgbb
+
     rtClosePhotoModal();
     await rtSetStep(taskId,stepId,{photoUrl:url});
     rtToast('✅ แนบรูปและย้ายขั้นตอนแล้ว');
