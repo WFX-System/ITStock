@@ -278,7 +278,9 @@
 let db=null, currentUser=null;
 const RT_TASKS_COL  = 'routine_tasks';
 const RT_CONFIG_COL = 'routine_config';
-const IMGBB_API_KEY = '4aecea8adeacd9e1dc7815e351021b99';
+const CLOUDINARY_CLOUD_NAME = 'nh7uxlbq';
+const CLOUDINARY_UPLOAD_PRESET = 'routine';
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const DEFAULT_STEPS=[
   {id:'step_receive',  name:'รับเรื่อง',            color:'#6366f1', requirePerson:false, requirePhoto:false},
@@ -299,8 +301,8 @@ let _rtPendingPhoto=null; // {taskId, stepId, file}
 let _rtPendingPersonReq=null; // {taskId, stepId, selectedPersonId}
 
 // Image compression settings (used before uploading to imgbb)
-const RT_IMG_MAX_DIM = 1280;   // max width/height in px
-const RT_IMG_QUALITY = 0.7;    // JPEG quality (0-1)
+const RT_IMG_MAX_DIM = 1000;   // max width/height in px
+const RT_IMG_QUALITY = 0.6;    // JPEG quality (0-1)
 
 // ══════════════════════════════════════════
 // SHELL INIT
@@ -707,9 +709,9 @@ function rtPhotoPreview(e){
   };
   reader.readAsDataURL(file);
 }
-// Resizes/compresses an image File via canvas, returns a pure base64 string (no data: prefix)
-// so uploads are smaller and faster, especially on mobile photos straight from camera.
-function rtCompressImageToBase64(file, maxDim, quality){
+// Resizes/compresses an image File via canvas, returns a Blob (JPEG) ready to upload —
+// smaller and faster than sending the original, especially for mobile camera photos.
+function rtCompressImageToBlob(file, maxDim, quality){
   maxDim = maxDim || RT_IMG_MAX_DIM;
   quality = quality || RT_IMG_QUALITY;
   return new Promise((resolve,reject)=>{
@@ -726,11 +728,37 @@ function rtCompressImageToBase64(file, maxDim, quality){
       canvas.width=width; canvas.height=height;
       const ctx=canvas.getContext('2d');
       ctx.drawImage(img,0,0,width,height);
-      const dataUrl=canvas.toDataURL('image/jpeg',quality);
-      resolve(dataUrl.split(',')[1]||'');
+      canvas.toBlob(blob=>{
+        if(blob) resolve(blob); else reject(new Error('บีบอัดรูปไม่สำเร็จ'));
+      },'image/jpeg',quality);
     };
     img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('อ่านไฟล์รูปไม่สำเร็จ')); };
     img.src=url;
+  });
+}
+// Uploads a Blob to Cloudinary (unsigned preset) via XHR so we can show upload progress %.
+function rtCloudinaryUpload(blob,fileName,onProgress){
+  return new Promise((resolve,reject)=>{
+    const form=new FormData();
+    form.append('file',blob,fileName);
+    form.append('upload_preset',CLOUDINARY_UPLOAD_PRESET);
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',CLOUDINARY_UPLOAD_URL,true);
+    xhr.upload.onprogress=e=>{
+      if(e.lengthComputable && onProgress) onProgress(Math.round((e.loaded/e.total)*100));
+    };
+    xhr.onload=()=>{
+      try{
+        const json=JSON.parse(xhr.responseText);
+        if(xhr.status>=200 && xhr.status<300 && json.secure_url){
+          resolve(json.secure_url);
+        } else {
+          reject(new Error(json?.error?.message || `HTTP ${xhr.status}`));
+        }
+      }catch(err){ reject(new Error('อ่านผลลัพธ์จาก Cloudinary ไม่สำเร็จ')); }
+    };
+    xhr.onerror=()=>reject(new Error('เชื่อมต่อ Cloudinary ไม่สำเร็จ'));
+    xhr.send(form);
   });
 }
 async function rtUploadPhotoAndMove(){
@@ -740,20 +768,11 @@ async function rtUploadPhotoAndMove(){
   const btn=document.getElementById('rtPhotoUploadBtn');
   btn.disabled=true; statusEl.textContent='⏳ กำลังบีบอัดรูป...';
   try{
-    const base64=await rtCompressImageToBase64(file);
+    const blob=await rtCompressImageToBlob(file);
     statusEl.textContent='⏳ กำลังอัปโหลด...';
-    const form=new FormData();
-    form.append('key',IMGBB_API_KEY);
-    form.append('image',base64);
-    form.append('name',`routine_${taskId}_${Date.now()}`);
-
-    const res=await fetch('https://api.imgbb.com/1/upload',{ method:'POST', body:form });
-    const json=await res.json();
-    if(!res.ok || !json.success){
-      const msg=json?.error?.message || `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
-    const url=json.data.url; // direct image URL hosted on imgbb
+    const url=await rtCloudinaryUpload(blob,`routine_${taskId}_${Date.now()}.jpg`,pct=>{
+      statusEl.textContent=`⏳ กำลังอัปโหลด... ${pct}%`;
+    }); // direct image URL hosted on Cloudinary CDN
 
     rtClosePhotoModal();
     await rtSetStep(taskId,stepId,{photoUrl:url});
