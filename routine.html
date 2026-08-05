@@ -47,6 +47,9 @@
 .rt-card-top{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;}
 .rt-card-title{flex:1;border:none;background:transparent;font-size:13px;font-weight:700;color:var(--tx1);padding:2px 4px;border-radius:6px;font-family:var(--font);}
 .rt-card-title:focus{background:var(--surf);outline:1.5px solid var(--g);}
+.rt-card-subtitle{flex:1;border:none;background:transparent;font-size:11.5px;font-weight:600;color:var(--tx2);padding:2px 4px;border-radius:6px;font-family:var(--font);margin-bottom:4px;}
+.rt-card-subtitle:focus{background:var(--surf);outline:1.5px solid var(--g);}
+.rt-card-subtitle::placeholder{color:var(--tx3);font-weight:400;}
 .rt-card-del{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:13px;padding:2px 5px;line-height:1;flex-shrink:0;border-radius:5px;}
 .rt-card-del:hover{color:#EF4444;background:#FEF2F2;}
 .rt-card-detail{width:100%;border:1px solid transparent;background:transparent;font-size:12px;color:var(--tx2);padding:2px 4px;border-radius:6px;resize:none;min-height:30px;font-family:var(--font);margin-bottom:6px;}
@@ -62,7 +65,8 @@
 .rt-pick-btn{padding:3px 9px;border-radius:14px;font-size:10.5px;font-weight:600;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;font-family:var(--font);}
 .rt-pick-btn.active{color:#fff;border-color:transparent;}
 .rt-pick-btn:hover{border-color:var(--g);}
-.rt-card-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdrm);}
+.rt-card-foot{display:flex;flex-direction:column;gap:2px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdrm);}
+.rt-card-foot-row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
 .rt-card-time{font-size:9.5px;color:var(--tx3);}
 .rt-foot-btns{display:flex;gap:2px;}
 .rt-icon-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:3px 6px;border-radius:5px;color:var(--tx3);font-family:var(--font);}
@@ -161,8 +165,12 @@
   <div class="rtm-box">
     <div class="rtm-title">➕ เพิ่มRoutine</div>
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">ชื่องาน *</div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">ชื่อเอกสาร/ชื่องาน *</div>
       <input class="rt-search" style="max-width:none;width:100%;" id="rtNewTitle" placeholder="เช่น ตัดจำหน่ายเครื่อง ACC001-RYG" onkeydown="if(event.key==='Enter')rtSubmitNewTask()"/>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">ผู้เซ็น/งานของ (ไม่บังคับ)</div>
+      <input class="rt-search" style="max-width:none;width:100%;" id="rtNewSubtitle" placeholder="เช่น คุณสมชาย / แผนกบัญชี" onkeydown="if(event.key==='Enter')rtSubmitNewTask()"/>
     </div>
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">รายละเอียด (ไม่บังคับ)</div>
@@ -276,6 +284,10 @@ let _rtDragTaskId=null;
 let _rtPendingDelId=null;
 let _rtPendingPhoto=null; // {taskId, stepId, file}
 
+// Image compression settings (used before uploading to imgbb)
+const RT_IMG_MAX_DIM = 1280;   // max width/height in px
+const RT_IMG_QUALITY = 0.7;    // JPEG quality (0-1)
+
 // ══════════════════════════════════════════
 // SHELL INIT
 // ══════════════════════════════════════════
@@ -348,6 +360,12 @@ function fullTime(ts){
   const ms = ts.toDate ? ts.toDate().getTime() : (typeof ts==='number'?ts:new Date(ts).getTime());
   return new Date(ms).toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
+// short date+time for card footer, e.g. "05/08/26 14:32"
+function dateTimeShort(ts){
+  if(!ts) return '-';
+  const ms = ts.toDate ? ts.toDate().getTime() : (typeof ts==='number'?ts:new Date(ts).getTime());
+  return new Date(ms).toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
 
 // ══════════════════════════════════════════
 // BOARD RENDER
@@ -360,7 +378,7 @@ function rtFilteredTasks(){
     if(!q) return true;
     const person=getPerson(t.personId);
     const owner=getPerson(t.ownerId);
-    const hay=`${t.title||''} ${t.detail||''} ${person?person.name:''} ${owner?owner.name:''}`.toLowerCase();
+    const hay=`${t.title||''} ${t.subtitle||''} ${t.detail||''} ${person?person.name:''} ${owner?owner.name:''}`.toLowerCase();
     return hay.includes(q);
   });
 }
@@ -442,10 +460,12 @@ function rtCardHtml(t){
   <div class="rt-card ${t.archived?'is-done':''}" id="rtCard_${t.id}" draggable="true"
     ondragstart="rtCardDragStart(event,'${t.id}')" ondragend="rtCardDragEnd(event)">
     <div class="rt-card-top">
-      <input class="rt-card-title" value="${esc(t.title||'')}" placeholder="ชื่องาน..."
+      <input class="rt-card-title" value="${esc(t.title||'')}" placeholder="ชื่อเอกสาร/ชื่องาน..."
         oninput="rtFieldLocal('${t.id}','title',this.value)" onblur="rtSaveField('${t.id}','title')"/>
       <button class="rt-card-del" onclick="rtOpenDel('${t.id}')" title="ลบ">✕</button>
     </div>
+    <input class="rt-card-subtitle" value="${esc(t.subtitle||'')}" placeholder="✍️ ผู้เซ็น/งานของ..."
+      oninput="rtFieldLocal('${t.id}','subtitle',this.value)" onblur="rtSaveField('${t.id}','subtitle')"/>
     <textarea class="rt-card-detail" placeholder="รายละเอียด..."
       oninput="rtFieldLocal('${t.id}','detail',this.value)" onblur="rtSaveField('${t.id}','detail')">${esc(t.detail||'')}</textarea>
 
@@ -479,10 +499,15 @@ function rtCardHtml(t){
     ${t.photos&&t.photos.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">${t.photos.map(ph=>`<img src="${ph.url}" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr);cursor:pointer;" onclick="window.open('${ph.url}','_blank')"/>`).join('')}</div>`:''}
 
     <div class="rt-card-foot">
-      <span class="rt-card-time">อัปเดต ${relTime(t.updatedAt)}</span>
-      <div class="rt-foot-btns">
-        <button class="rt-icon-btn" onclick="rtOpenHistory('${t.id}')" title="ประวัติ">🕐</button>
-        <button class="rt-icon-btn" onclick="rtToggleDone('${t.id}')" title="${t.archived?'เปิดงานใหม่':'เสร็จสิ้น'}">${t.archived?'↩️':'✅'}</button>
+      <div class="rt-card-foot-row">
+        <span class="rt-card-time">📅 สร้าง ${dateTimeShort(t.createdAt)}</span>
+      </div>
+      <div class="rt-card-foot-row">
+        <span class="rt-card-time">🔄 อัปเดต ${dateTimeShort(t.updatedAt)}</span>
+        <div class="rt-foot-btns">
+          <button class="rt-icon-btn" onclick="rtOpenHistory('${t.id}')" title="ประวัติ">🕐</button>
+          <button class="rt-icon-btn" onclick="rtToggleDone('${t.id}')" title="${t.archived?'เปิดงานใหม่':'เสร็จสิ้น'}">${t.archived?'↩️':'✅'}</button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -600,7 +625,7 @@ async function rtToggleDone(id){
 }
 
 // ══════════════════════════════════════════
-// PHOTO ATTACH MODAL (uploads to imgbb, not Firebase Storage)
+// PHOTO ATTACH MODAL (compressed client-side, uploads to imgbb)
 // ══════════════════════════════════════════
 function rtOpenPhotoModal(taskId,stepId){
   _rtPendingPhoto={taskId,stepId,file:null};
@@ -625,17 +650,30 @@ function rtPhotoPreview(e){
   };
   reader.readAsDataURL(file);
 }
-// Reads a File as a pure base64 string (no data: prefix) for imgbb's "image" field
-function rtFileToBase64(file){
+// Resizes/compresses an image File via canvas, returns a pure base64 string (no data: prefix)
+// so uploads are smaller and faster, especially on mobile photos straight from camera.
+function rtCompressImageToBase64(file, maxDim, quality){
+  maxDim = maxDim || RT_IMG_MAX_DIM;
+  quality = quality || RT_IMG_QUALITY;
   return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>{
-      const result=reader.result; // "data:image/jpeg;base64,XXXX"
-      const base64=result.split(',')[1]||'';
-      resolve(base64);
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let{width,height}=img;
+      if(width>maxDim || height>maxDim){
+        if(width>height){ height=Math.round(height*(maxDim/width)); width=maxDim; }
+        else{ width=Math.round(width*(maxDim/height)); height=maxDim; }
+      }
+      const canvas=document.createElement('canvas');
+      canvas.width=width; canvas.height=height;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,width,height);
+      const dataUrl=canvas.toDataURL('image/jpeg',quality);
+      resolve(dataUrl.split(',')[1]||'');
     };
-    reader.onerror=()=>reject(new Error('อ่านไฟล์รูปไม่สำเร็จ'));
-    reader.readAsDataURL(file);
+    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('อ่านไฟล์รูปไม่สำเร็จ')); };
+    img.src=url;
   });
 }
 async function rtUploadPhotoAndMove(){
@@ -643,9 +681,10 @@ async function rtUploadPhotoAndMove(){
   const {taskId,stepId,file}=_rtPendingPhoto;
   const statusEl=document.getElementById('rtPhotoUploadStatus');
   const btn=document.getElementById('rtPhotoUploadBtn');
-  btn.disabled=true; statusEl.textContent='⏳ กำลังอัปโหลด...';
+  btn.disabled=true; statusEl.textContent='⏳ กำลังบีบอัดรูป...';
   try{
-    const base64=await rtFileToBase64(file);
+    const base64=await rtCompressImageToBase64(file);
+    statusEl.textContent='⏳ กำลังอัปโหลด...';
     const form=new FormData();
     form.append('key',IMGBB_API_KEY);
     form.append('image',base64);
@@ -673,6 +712,7 @@ async function rtUploadPhotoAndMove(){
 // ══════════════════════════════════════════
 function rtOpenNewTask(){
   document.getElementById('rtNewTitle').value='';
+  document.getElementById('rtNewSubtitle').value='';
   document.getElementById('rtNewDetail').value='';
   document.getElementById('rtNewTaskModal').classList.add('open');
   setTimeout(()=>document.getElementById('rtNewTitle').focus(),80);
@@ -680,12 +720,13 @@ function rtOpenNewTask(){
 function rtCloseNewTask(){ document.getElementById('rtNewTaskModal').classList.remove('open'); }
 async function rtSubmitNewTask(){
   const title=document.getElementById('rtNewTitle').value.trim();
+  const subtitle=document.getElementById('rtNewSubtitle').value.trim();
   const detail=document.getElementById('rtNewDetail').value.trim();
   if(!title){ rtToast('กรุณากรอกชื่องาน'); return; }
   if(!rtSteps.length){ rtToast('กรุณาเพิ่มขั้นตอนก่อน'); return; }
   try{
     await db.collection(RT_TASKS_COL).add({
-      title, detail, stepId:rtSteps[0].id, personId:'', ownerId:'', archived:false, photos:[],
+      title, subtitle, detail, stepId:rtSteps[0].id, personId:'', ownerId:'', archived:false, photos:[],
       order: Date.now(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
