@@ -183,6 +183,19 @@
   </div>
 </div>
 
+<!-- Person Required Modal (pops up when dragging/moving into a step that requires a recipient) -->
+<div class="rtm-wrap" id="rtPersonReqModal">
+  <div class="rtm-box" style="max-width:380px;">
+    <div class="rtm-title">🔒 ต้องระบุผู้รับก่อนย้าย</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;">ขั้นตอน "<strong id="rtPersonReqStepName"></strong>" บังคับให้ระบุ/เปลี่ยนผู้รับก่อนย้ายเข้า กรุณาเลือกผู้รับ</div>
+    <div class="rt-picker-panel" id="rtPersonReqList"></div>
+    <div class="rtm-actions">
+      <button class="rt-btn" onclick="rtClosePersonReqModal()">ยกเลิก</button>
+      <button class="rt-btn rt-btn-primary" id="rtPersonReqConfirmBtn" onclick="rtConfirmPersonReq()">✅ ยืนยันและย้าย</button>
+    </div>
+  </div>
+</div>
+
 <!-- Steps Manager Modal -->
 <div class="rtm-wrap" id="rtStepsModal">
   <div class="rtm-box">
@@ -283,6 +296,7 @@ let _rtOpenStepPicker=new Set();
 let _rtDragTaskId=null;
 let _rtPendingDelId=null;
 let _rtPendingPhoto=null; // {taskId, stepId, file}
+let _rtPendingPersonReq=null; // {taskId, stepId, selectedPersonId}
 
 // Image compression settings (used before uploading to imgbb)
 const RT_IMG_MAX_DIM = 1280;   // max width/height in px
@@ -575,12 +589,14 @@ async function rtSetStep(id,stepId,opts){
   if(t.stepId===stepId){ _rtOpenStepPicker.delete(id); rtRenderBoard(); return; }
   const toStep=getStep(stepId);
 
-  // Rule: this step requires a recipient (ส่งให้) to be set first
-  if(toStep && toStep.requirePerson && !t.personId){
+  // Rule: this step requires a recipient (ส่งให้) — pop up a modal to choose/confirm it
+  // before the move goes through. Triggers whether the move came from drag-and-drop
+  // or from the step picker, and always asks (even if a recipient is already set)
+  // so the person can be changed at this handoff point.
+  if(toStep && toStep.requirePerson && !opts.personConfirmed){
     _rtOpenStepPicker.delete(id);
-    _rtOpenPersonPicker.add(id);
     rtRenderBoard();
-    rtToast(`⚠️ ขั้นตอน "${toStep.name}" ต้องระบุผู้รับก่อน กรุณาเลือก "ส่งให้"`, 3200);
+    rtOpenPersonReqModal(id,stepId);
     return;
   }
 
@@ -622,6 +638,47 @@ async function rtToggleDone(id){
     });
     rtToast(newVal?'✅ ทำเครื่องหมายเสร็จสิ้นแล้ว':'↩️ เปิดงานใหม่แล้ว');
   }catch(e){ rtToast('⚠️ '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// PERSON REQUIRED MODAL (pops up on drag/move into a step requiring a recipient)
+// ══════════════════════════════════════════
+function rtOpenPersonReqModal(taskId,stepId){
+  const t=rtTasks.find(x=>x.id===taskId); if(!t) return;
+  const toStep=getStep(stepId);
+  _rtPendingPersonReq={taskId,stepId,selectedPersonId:t.personId||''};
+  document.getElementById('rtPersonReqStepName').textContent=toStep?toStep.name:'-';
+  rtRenderPersonReqList();
+  document.getElementById('rtPersonReqModal').classList.add('open');
+}
+function rtRenderPersonReqList(){
+  if(!_rtPendingPersonReq) return;
+  const sel=_rtPendingPersonReq.selectedPersonId;
+  const listEl=document.getElementById('rtPersonReqList');
+  if(!rtPeople.length){
+    listEl.innerHTML=`<div class="rt-empty-hint">ยังไม่มีรายชื่อ — เพิ่มที่ "จัดการรายชื่อ" ก่อน</div>`;
+    return;
+  }
+  listEl.innerHTML=rtPeople.map(p=>
+    `<button type="button" class="rt-pick-btn ${sel===p.id?'active':''}" ${sel===p.id?`style="background:${p.color};"`:''} onclick="rtPersonReqPick('${p.id}')">${esc(p.name)}</button>`
+  ).join('');
+}
+function rtPersonReqPick(personId){
+  if(!_rtPendingPersonReq) return;
+  _rtPendingPersonReq.selectedPersonId=personId;
+  rtRenderPersonReqList();
+}
+function rtClosePersonReqModal(){
+  document.getElementById('rtPersonReqModal').classList.remove('open');
+  _rtPendingPersonReq=null;
+}
+async function rtConfirmPersonReq(){
+  if(!_rtPendingPersonReq) return;
+  const {taskId,stepId,selectedPersonId}=_rtPendingPersonReq;
+  if(!selectedPersonId){ rtToast('กรุณาเลือกผู้รับก่อน'); return; }
+  rtClosePersonReqModal();
+  await rtSetPerson(taskId,selectedPersonId);
+  await rtSetStep(taskId,stepId,{personConfirmed:true});
 }
 
 // ══════════════════════════════════════════
