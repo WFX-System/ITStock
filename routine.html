@@ -112,7 +112,6 @@
 .rt-docdate-field{margin-bottom:10px;}
 .rt-docdate-row{display:flex;align-items:center;gap:8px;}
 .rt-docdate-row input[type=date]{padding:8px 10px;border:1.5px solid var(--bdrm);border-radius:var(--rad);font-size:13px;font-family:var(--font);background:var(--surf);color:var(--tx1);}
-.rt-docdate-preview{font-size:11.5px;color:var(--g);font-weight:700;white-space:nowrap;}
 .rt-carddate-line{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 4px;border-radius:6px;margin-bottom:4px;}
 .rt-carddate-line:hover{background:var(--surf);}
 .rt-carddate-input{border:none;background:transparent;font-size:11px;font-family:var(--font);color:var(--tx1);padding:1px 2px;}
@@ -183,8 +182,7 @@
     <div class="rt-docdate-field">
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">📅 วันที่เอกสาร (ไม่บังคับ)</div>
       <div class="rt-docdate-row">
-        <input type="date" id="rtNewDocDate" onchange="rtNewDocDatePreview()"/>
-        <span class="rt-docdate-preview" id="rtNewDocDatePreview"></span>
+        <input type="date" id="rtNewDocDate"/>
       </div>
     </div>
     <div style="margin-bottom:10px;">
@@ -401,19 +399,6 @@ function dateTimeShort(ts){
   const ms = ts.toDate ? ts.toDate().getTime() : (typeof ts==='number'?ts:new Date(ts).getTime());
   return new Date(ms).toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
-// Formats a plain "YYYY-MM-DD" date string (as produced by <input type="date">) into
-// Thai Buddhist-era "DD/MM/YYYY" (e.g. "2026-08-10" -> "10/08/2569"). Returns '' if empty/invalid.
-function rtFormatDocDateBE(dateStr){
-  if(!dateStr) return '';
-  const parts=String(dateStr).split('-');
-  if(parts.length!==3) return '';
-  const[y,m,d]=parts;
-  const yNum=parseInt(y,10);
-  if(isNaN(yNum)) return '';
-  const beYear=yNum+543;
-  return `${d}/${m}/${beYear}`;
-}
-
 // ══════════════════════════════════════════
 // BOARD RENDER
 // ══════════════════════════════════════════
@@ -507,8 +492,6 @@ function rtCardHtml(t){
   const stepIdx=rtSteps.findIndex(s=>s.id===t.stepId);
   const isLastStep = stepIdx===-1 ? true : stepIdx>=rtSteps.length-1;
 
-  const docDateBE=rtFormatDocDateBE(t.docDate);
-
   return `
   <div class="rt-card ${t.archived?'is-done':''}" id="rtCard_${t.id}" draggable="true"
     ondragstart="rtCardDragStart(event,'${t.id}')" ondragend="rtCardDragEnd(event)">
@@ -520,7 +503,6 @@ function rtCardHtml(t){
     <label class="rt-carddate-line" title="คลิกเพื่อเลือกวันที่เอกสาร">
       <span class="rt-assign-lbl">📅 วันที่เอกสาร:</span>
       <input type="date" class="rt-carddate-input" value="${esc(t.docDate||'')}" onclick="event.stopPropagation()" onchange="rtSetDocDate('${t.id}',this.value)"/>
-      ${docDateBE?`<span class="rt-docdate-preview">(พ.ศ. ${docDateBE})</span>`:''}
     </label>
     <input class="rt-card-subtitle" value="${esc(t.subtitle||'')}" placeholder="✍️ ผู้เซ็น/งานของ..."
       oninput="rtFieldLocal('${t.id}','subtitle',this.value)" onblur="rtSaveField('${t.id}','subtitle')"/>
@@ -601,12 +583,12 @@ async function rtSaveField(id,field){
 // and logs a Buddhist-era-formatted entry in the task history.
 async function rtSetDocDate(id,value){
   const t=rtTasks.find(x=>x.id===id); if(!t) return;
-  const beText=value?`ตั้งวันที่เอกสาร: ${rtFormatDocDateBE(value)}`:'ยกเลิกวันที่เอกสาร';
+  const histText=value?`ตั้งวันที่เอกสาร: ${value}`:'ยกเลิกวันที่เอกสาร';
   try{
     await db.collection(RT_TASKS_COL).doc(id).update({
       docDate: value||'',
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'docdate',text:beText,by:rtUserName()})
+      history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'docdate',text:histText,by:rtUserName()})
     });
   }catch(e){ rtToast('⚠️ '+e.message); }
 }
@@ -888,17 +870,10 @@ function rtOpenNewTask(){
   document.getElementById('rtNewSubtitle').value='';
   document.getElementById('rtNewDetail').value='';
   document.getElementById('rtNewDocDate').value='';
-  document.getElementById('rtNewDocDatePreview').textContent='';
   document.getElementById('rtNewTaskModal').classList.add('open');
   setTimeout(()=>document.getElementById('rtNewTitle').focus(),80);
 }
 function rtCloseNewTask(){ document.getElementById('rtNewTaskModal').classList.remove('open'); }
-// Live preview of the picked date in Thai Buddhist era, shown next to the date picker.
-function rtNewDocDatePreview(){
-  const val=document.getElementById('rtNewDocDate').value;
-  const be=rtFormatDocDateBE(val);
-  document.getElementById('rtNewDocDatePreview').textContent = be ? `พ.ศ. ${be}` : '';
-}
 async function rtSubmitNewTask(){
   const title=document.getElementById('rtNewTitle').value.trim();
   const subtitle=document.getElementById('rtNewSubtitle').value.trim();
@@ -913,7 +888,7 @@ async function rtSubmitNewTask(){
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdBy: rtUserName(),
-      history: [{ts:Date.now(),type:'create',text:docDate?`สร้างงาน · วันที่เอกสาร ${rtFormatDocDateBE(docDate)}`:'สร้างงาน',by:rtUserName()}]
+      history: [{ts:Date.now(),type:'create',text:docDate?`สร้างงาน · วันที่เอกสาร ${docDate}`:'สร้างงาน',by:rtUserName()}]
     });
     rtCloseNewTask();
     rtToast('✅ เพิ่มRoutineแล้ว');
