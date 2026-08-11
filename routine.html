@@ -111,10 +111,17 @@
 
 .rt-docdate-field{margin-bottom:10px;}
 .rt-docdate-row{display:flex;align-items:center;gap:8px;}
-.rt-docdate-row input[type=date]{padding:8px 10px;border:1.5px solid var(--bdrm);border-radius:var(--rad);font-size:13px;font-family:var(--font);background:var(--surf);color:var(--tx1);}
+.rt-date-wrap{position:relative;display:inline-flex;}
+.rt-date-wrap input[type=date]{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;border:none;padding:0;margin:0;cursor:pointer;z-index:2;}
+#rtNewDocDateDisplay{padding:8px 10px;border:1.5px solid var(--bdrm);border-radius:var(--rad);font-size:13px;font-family:var(--font);background:var(--surf);color:var(--tx1);cursor:pointer;width:140px;}
 .rt-carddate-line{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 4px;border-radius:6px;margin-bottom:4px;}
 .rt-carddate-line:hover{background:var(--surf);}
-.rt-carddate-input{border:none;background:transparent;font-size:11px;font-family:var(--font);color:var(--tx1);padding:1px 2px;}
+.rt-carddate-input{border:none;background:transparent;font-size:11px;font-family:var(--font);color:var(--tx1);padding:1px 2px;cursor:pointer;width:78px;}
+
+.rt-photo-preview-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.rt-photo-thumb{position:relative;width:70px;height:70px;}
+.rt-photo-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1.5px solid var(--bdr);}
+.rt-photo-thumb-del{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#EF4444;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
 
 @media(max-width:640px){
   .rt-col{min-width:240px;max-width:240px;max-height:calc(100vh - 300px);}
@@ -182,7 +189,10 @@
     <div class="rt-docdate-field">
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">📅 วันที่เอกสาร (ไม่บังคับ)</div>
       <div class="rt-docdate-row">
-        <input type="date" id="rtNewDocDate"/>
+        <span class="rt-date-wrap">
+          <input type="text" id="rtNewDocDateDisplay" readonly placeholder="วว/ดด/ปปปป"/>
+          <input type="date" id="rtNewDocDate" onchange="rtNewDocDateChanged()"/>
+        </span>
       </div>
     </div>
     <div style="margin-bottom:10px;">
@@ -273,11 +283,9 @@
 <div class="rtm-wrap" id="rtPhotoModal">
   <div class="rtm-box" style="max-width:380px;">
     <div class="rtm-title">📷 แนบรูปยืนยัน</div>
-    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;">ขั้นตอนนี้ต้องแนบรูปก่อนย้าย เช่น เอกสารที่เซ็นแล้ว</div>
-    <input type="file" id="rtPhotoInput" accept="image/*" capture="environment" onchange="rtPhotoPreview(event)" style="margin-bottom:10px;width:100%;"/>
-    <div id="rtPhotoPreviewWrap" style="display:none;margin-bottom:10px;">
-      <img id="rtPhotoPreviewImg" style="max-width:100%;border-radius:10px;border:1.5px solid var(--bdr);"/>
-    </div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;">ขั้นตอนนี้ต้องแนบรูปก่อนย้าย เช่น เอกสารที่เซ็นแล้ว (แนบได้มากกว่า 1 รูป)</div>
+    <input type="file" id="rtPhotoInput" accept="image/*" capture="environment" multiple onchange="rtPhotoPreview(event)" style="margin-bottom:10px;width:100%;"/>
+    <div id="rtPhotoPreviewWrap" class="rt-photo-preview-grid" style="display:none;margin-bottom:10px;"></div>
     <div id="rtPhotoUploadStatus" style="font-size:11px;color:var(--tx3);"></div>
     <div class="rtm-actions">
       <button class="rt-btn" onclick="rtClosePhotoModal()">ยกเลิก</button>
@@ -314,7 +322,7 @@ let _rtOpenOwnerPicker=new Set();
 let _rtOpenStepPicker=new Set();
 let _rtDragTaskId=null;
 let _rtPendingDelId=null;
-let _rtPendingPhoto=null; // {taskId, stepId, file}
+let _rtPendingPhoto=null; // {taskId, stepId, files:[], carryOpts}
 let _rtPendingPersonReq=null; // {taskId, stepId, selectedPersonId}
 
 // Image compression settings (used before uploading to imgbb)
@@ -392,6 +400,14 @@ function fullTime(ts){
   if(!ts) return '';
   const ms = ts.toDate ? ts.toDate().getTime() : (typeof ts==='number'?ts:new Date(ts).getTime());
   return new Date(ms).toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+// Formats a stored "YYYY-MM-DD" doc date into "DD/MM/YYYY" for display.
+function ddmmyyyy(iso){
+  if(!iso) return '';
+  const parts=String(iso).split('-');
+  if(parts.length!==3) return '';
+  const [y,m,d]=parts;
+  return `${d}/${m}/${y}`;
 }
 // short date+time for card footer, e.g. "05/08/26 14:32"
 function dateTimeShort(ts){
@@ -502,7 +518,10 @@ function rtCardHtml(t){
     </div>
     <label class="rt-carddate-line" title="คลิกเพื่อเลือกวันที่เอกสาร">
       <span class="rt-assign-lbl">📅 วันที่เอกสาร:</span>
-      <input type="date" class="rt-carddate-input" value="${esc(t.docDate||'')}" onclick="event.stopPropagation()" onchange="rtSetDocDate('${t.id}',this.value)"/>
+      <span class="rt-date-wrap">
+        <input type="text" class="rt-carddate-input" readonly value="${ddmmyyyy(t.docDate)}" placeholder="วว/ดด/ปปปป" onclick="event.stopPropagation()"/>
+        <input type="date" value="${esc(t.docDate||'')}" onclick="event.stopPropagation()" onchange="rtSetDocDate('${t.id}',this.value)"/>
+      </span>
     </label>
     <input class="rt-card-subtitle" value="${esc(t.subtitle||'')}" placeholder="✍️ ผู้เซ็น/งานของ..."
       oninput="rtFieldLocal('${t.id}','subtitle',this.value)" onblur="rtSaveField('${t.id}','subtitle')"/>
@@ -581,9 +600,14 @@ async function rtSaveField(id,field){
 
 // Sets/updates the document date (t.docDate, stored as "YYYY-MM-DD") on an existing card,
 // and logs a Buddhist-era-formatted entry in the task history.
+function rtNewDocDateChanged(){
+  const hidden=document.getElementById('rtNewDocDate');
+  document.getElementById('rtNewDocDateDisplay').value=ddmmyyyy(hidden.value);
+}
+
 async function rtSetDocDate(id,value){
   const t=rtTasks.find(x=>x.id===id); if(!t) return;
-  const histText=value?`ตั้งวันที่เอกสาร: ${value}`:'ยกเลิกวันที่เอกสาร';
+  const histText=value?`ตั้งวันที่เอกสาร: ${ddmmyyyy(value)}`:'ยกเลิกวันที่เอกสาร';
   try{
     await db.collection(RT_TASKS_COL).doc(id).update({
       docDate: value||'',
@@ -649,8 +673,8 @@ async function rtSetStep(id,stepId,opts){
     return;
   }
 
-  // Rule: this step requires a photo attached before moving (e.g. signed document)
-  if(toStep && toStep.requirePhoto && !opts.photoUrl){
+  // Rule: this step requires photo(s) attached before moving (e.g. signed document)
+  if(toStep && toStep.requirePhoto && !(opts.photoUrls && opts.photoUrls.length)){
     _rtOpenStepPicker.delete(id);
     rtRenderBoard();
     rtOpenPhotoModal(id,stepId,opts);
@@ -666,10 +690,12 @@ async function rtSetStep(id,stepId,opts){
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'step',text:histText,by:rtUserName()})
     });
-    if(opts.photoUrl){
+    if(opts.photoUrls && opts.photoUrls.length){
+      const photoEntries=opts.photoUrls.map(url=>({ts:Date.now(),url,stepId:stepId,by:rtUserName()}));
+      const histEntries=opts.photoUrls.map((url,idx)=>({ts:Date.now()+1+idx,type:'photo',text:`แนบรูปยืนยันสำหรับขั้นตอน "${toStep?toStep.name:'-'}"`,by:rtUserName(),url}));
       await db.collection(RT_TASKS_COL).doc(id).update({
-        photos: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),url:opts.photoUrl,stepId:stepId,by:rtUserName()}),
-        history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now()+1,type:'photo',text:`แนบรูปยืนยันสำหรับขั้นตอน "${toStep?toStep.name:'-'}"`,by:rtUserName(),url:opts.photoUrl})
+        photos: firebase.firestore.FieldValue.arrayUnion(...photoEntries),
+        history: firebase.firestore.FieldValue.arrayUnion(...histEntries)
       });
     }
   }catch(e){ rtToast('⚠️ '+e.message); }
@@ -763,13 +789,14 @@ async function rtConfirmPersonReq(){
 }
 
 // ══════════════════════════════════════════
-// PHOTO ATTACH MODAL (compressed client-side, uploads to imgbb)
+// PHOTO ATTACH MODAL (compressed client-side, uploads to Cloudinary) — supports multiple photos
 // ══════════════════════════════════════════
 function rtOpenPhotoModal(taskId,stepId,carryOpts){
-  _rtPendingPhoto={taskId,stepId,file:null,carryOpts:carryOpts||{}};
+  _rtPendingPhoto={taskId,stepId,files:[],carryOpts:carryOpts||{}};
   const inputEl=document.getElementById('rtPhotoInput');
   inputEl.value='';
   document.getElementById('rtPhotoPreviewWrap').style.display='none';
+  document.getElementById('rtPhotoPreviewWrap').innerHTML='';
   document.getElementById('rtPhotoUploadStatus').textContent='';
   document.getElementById('rtPhotoUploadBtn').disabled=false;
   document.getElementById('rtPhotoModal').classList.add('open');
@@ -779,14 +806,31 @@ function rtClosePhotoModal(){
   _rtPendingPhoto=null;
 }
 function rtPhotoPreview(e){
-  const file=e.target.files[0]; if(!file || !_rtPendingPhoto) return;
-  _rtPendingPhoto.file=file;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    document.getElementById('rtPhotoPreviewImg').src=ev.target.result;
-    document.getElementById('rtPhotoPreviewWrap').style.display='block';
-  };
-  reader.readAsDataURL(file);
+  const files=Array.from(e.target.files||[]); if(!files.length || !_rtPendingPhoto) return;
+  _rtPendingPhoto.files=files;
+  rtRenderPhotoPreviews();
+}
+function rtRenderPhotoPreviews(){
+  const wrap=document.getElementById('rtPhotoPreviewWrap');
+  const files=_rtPendingPhoto?_rtPendingPhoto.files:[];
+  if(!files.length){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+  wrap.style.display='flex';
+  wrap.innerHTML='';
+  files.forEach((file,idx)=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const thumb=document.createElement('div');
+      thumb.className='rt-photo-thumb';
+      thumb.innerHTML=`<img src="${ev.target.result}"/><button type="button" class="rt-photo-thumb-del" onclick="rtRemovePendingPhoto(${idx})">✕</button>`;
+      wrap.appendChild(thumb);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function rtRemovePendingPhoto(idx){
+  if(!_rtPendingPhoto) return;
+  _rtPendingPhoto.files.splice(idx,1);
+  rtRenderPhotoPreviews();
 }
 // Resizes/compresses an image File via canvas, returns a Blob (JPEG) ready to upload —
 // smaller and faster than sending the original, especially for mobile camera photos.
@@ -841,21 +885,24 @@ function rtCloudinaryUpload(blob,fileName,onProgress){
   });
 }
 async function rtUploadPhotoAndMove(){
-  if(!_rtPendingPhoto || !_rtPendingPhoto.file){ rtToast('กรุณาเลือกรูปก่อน'); return; }
-  const {taskId,stepId,file,carryOpts}=_rtPendingPhoto;
+  if(!_rtPendingPhoto || !_rtPendingPhoto.files || !_rtPendingPhoto.files.length){ rtToast('กรุณาเลือกรูปอย่างน้อย 1 รูป'); return; }
+  const {taskId,stepId,files,carryOpts}=_rtPendingPhoto;
   const statusEl=document.getElementById('rtPhotoUploadStatus');
   const btn=document.getElementById('rtPhotoUploadBtn');
-  btn.disabled=true; statusEl.textContent='⏳ กำลังบีบอัดรูป...';
+  btn.disabled=true;
+  const urls=[];
   try{
-    const blob=await rtCompressImageToBlob(file);
-    statusEl.textContent='⏳ กำลังอัปโหลด...';
-    const url=await rtCloudinaryUpload(blob,`routine_${taskId}_${Date.now()}.jpg`,pct=>{
-      statusEl.textContent=`⏳ กำลังอัปโหลด... ${pct}%`;
-    }); // direct image URL hosted on Cloudinary CDN
-
+    for(let i=0;i<files.length;i++){
+      statusEl.textContent=`⏳ กำลังบีบอัดรูป ${i+1}/${files.length}...`;
+      const blob=await rtCompressImageToBlob(files[i]);
+      const url=await rtCloudinaryUpload(blob,`routine_${taskId}_${Date.now()}_${i}.jpg`,pct=>{
+        statusEl.textContent=`⏳ กำลังอัปโหลดรูป ${i+1}/${files.length}... ${pct}%`;
+      });
+      urls.push(url);
+    }
     rtClosePhotoModal();
-    await rtSetStep(taskId,stepId,{...carryOpts,photoUrl:url});
-    rtToast('✅ แนบรูปและย้ายขั้นตอนแล้ว');
+    await rtSetStep(taskId,stepId,{...carryOpts,photoUrls:urls});
+    rtToast(`✅ แนบรูป ${urls.length} รูปและย้ายขั้นตอนแล้ว`);
   }catch(e){
     statusEl.textContent='⚠️ อัปโหลดไม่สำเร็จ: '+e.message;
     btn.disabled=false;
@@ -870,6 +917,7 @@ function rtOpenNewTask(){
   document.getElementById('rtNewSubtitle').value='';
   document.getElementById('rtNewDetail').value='';
   document.getElementById('rtNewDocDate').value='';
+  document.getElementById('rtNewDocDateDisplay').value='';
   document.getElementById('rtNewTaskModal').classList.add('open');
   setTimeout(()=>document.getElementById('rtNewTitle').focus(),80);
 }
@@ -888,7 +936,7 @@ async function rtSubmitNewTask(){
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdBy: rtUserName(),
-      history: [{ts:Date.now(),type:'create',text:docDate?`สร้างงาน · วันที่เอกสาร ${docDate}`:'สร้างงาน',by:rtUserName()}]
+      history: [{ts:Date.now(),type:'create',text:docDate?`สร้างงาน · วันที่เอกสาร ${ddmmyyyy(docDate)}`:'สร้างงาน',by:rtUserName()}]
     });
     rtCloseNewTask();
     rtToast('✅ เพิ่มRoutineแล้ว');
