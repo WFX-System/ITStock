@@ -130,6 +130,9 @@
 .rt-docnum-chip button:hover{opacity:1;}
 .rt-docnum-addrow{display:flex;gap:6px;}
 .rt-docnum-addrow input{flex:1;padding:8px 10px;border:1.5px dashed var(--bdrm);border-radius:var(--rad);font-size:13px;font-family:var(--font);background:transparent;color:var(--tx1);}
+.rt-docnum-suggest{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.rt-docnum-suggest:empty{margin-top:0;}
+.rt-docnum-suggest-lbl{font-size:10px;color:var(--tx3);font-weight:700;width:100%;margin-top:2px;}
 
 @media(max-width:640px){
   .rt-col{min-width:240px;max-width:240px;max-height:calc(100vh - 300px);}
@@ -194,9 +197,10 @@
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">🔢 เลขที่เอกสาร (ไม่บังคับ เพิ่มได้มากกว่า 1 เลข)</div>
       <div class="rt-docnum-chips" id="rtNewDocNumChips"></div>
       <div class="rt-docnum-addrow">
-        <input type="text" id="rtNewDocNumInput" placeholder="พิมพ์เลขที่เอกสาร แล้วกด Enter หรือ +เพิ่ม" onkeydown="rtNewDocNumKeydown(event)"/>
+        <input type="text" id="rtNewDocNumInput" placeholder="พิมพ์เลขที่เอกสาร แล้วกด Enter หรือ +เพิ่ม" oninput="rtRenderNewDocNumSuggest()" onkeydown="rtNewDocNumKeydown(event)"/>
         <button type="button" class="rt-btn" onclick="rtNewDocNumAdd()">+ เพิ่ม</button>
       </div>
+      <div class="rt-docnum-suggest" id="rtNewDocNumSuggest"></div>
     </div>
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">ชื่อเอกสาร/ชื่องาน *</div>
@@ -451,6 +455,13 @@ function dateTimeShort(ts){
   const ms = ts.toDate ? ts.toDate().getTime() : (typeof ts==='number'?ts:new Date(ts).getTime());
   return new Date(ms).toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
+// Returns a sorted, de-duplicated list of every document number ever used across all tasks,
+// so the person can pick a previously-used number instead of retyping it.
+function rtAllKnownDocNumbers(){
+  const set=new Set();
+  rtTasks.forEach(t=>(t.docNumbers||[]).forEach(n=>{ if(n) set.add(n); }));
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'th'));
+}
 // ══════════════════════════════════════════
 // BOARD RENDER
 // ══════════════════════════════════════════
@@ -469,9 +480,28 @@ function rtFilteredTasks(){
   });
 }
 
+// Tasks used for the column counter badge only. Unlike rtFilteredTasks() (which is used
+// for the visible card list and hides tasks sitting in a "hideInBoard" step unless the
+// person ticks "แสดงงานที่เสร็จแล้ว"), this always counts tasks in hidden steps — only
+// the search box and the archived flag affect the number. So a hidden column's badge
+// still shows the real amount of work sitting in it even while its cards stay tucked away.
+function rtCountedTasks(){
+  const q=(document.getElementById('rtSearch')?.value||'').trim().toLowerCase();
+  const showDone=document.getElementById('rtShowDone')?.checked;
+  return rtTasks.filter(t=>{
+    if(t.archived && !showDone) return false;
+    if(!q) return true;
+    const person=getPerson(t.personId);
+    const owner=getPerson(t.ownerId);
+    const hay=`${t.title||''} ${t.subtitle||''} ${t.detail||''} ${(t.docNumbers||[]).join(' ')} ${person?person.name:''} ${owner?owner.name:''}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+
 function rtRenderBoard(){
   const board=document.getElementById('rtBoard');
   const filtered=rtFilteredTasks();
+  const counted=rtCountedTasks();
   const total=rtTasks.filter(t=>!t.archived).length;
   document.getElementById('rtSubtitle').textContent=`Routineทั้งหมด ${total} รายการ · ${rtSteps.length} ขั้นตอน · ${rtPeople.length} รายชื่อ`;
 
@@ -487,9 +517,10 @@ function rtRenderBoard(){
         const tb=b.updatedAt?.toDate?b.updatedAt.toDate().getTime():(b.order||0);
         return tb-ta;
       });
+    const countInStep=counted.filter(t=>t.stepId===step.id).length;
     const cardsHtml=tasksInStep.length
       ? tasksInStep.map(t=>rtCardHtml(t)).join('')
-      : `<div class="rt-col-empty">ไม่มีงานในขั้นตอนนี้</div>`;
+      : `<div class="rt-col-empty">${step.hideInBoard && countInStep>0 ? 'มีงานซ่อนอยู่ — ติ๊ก "แสดงงานที่เสร็จแล้ว" เพื่อดู' : 'ไม่มีงานในขั้นตอนนี้'}</div>`;
     const flagsBadge=[
       step.requirePerson?'🔒 ต้องมีผู้รับ':'',
       step.requireOwner?'🧑‍💻 ต้องมีผู้ดำเนินการ':'',
@@ -504,7 +535,7 @@ function rtRenderBoard(){
       <div class="rt-col-head" style="border-bottom-color:${step.color};flex-wrap:wrap;">
         <div class="rt-col-dot" style="background:${step.color};"></div>
         <div class="rt-col-name">${esc(step.name)}</div>
-        <div class="rt-col-count">${tasksInStep.length}</div>
+        <div class="rt-col-count">${countInStep}</div>
         ${flagsBadge?`<div style="width:100%;font-size:9px;color:var(--tx3);margin-top:2px;">${flagsBadge}</div>`:''}
       </div>
       <div class="rt-col-body">${cardsHtml}</div>
@@ -521,6 +552,7 @@ function rtCardHtml(t){
   const stepOpen=_rtOpenStepPicker.has(t.id);
   const docNumOpen=_rtOpenDocNumPicker.has(t.id);
   const docNums=t.docNumbers||[];
+  const docNumSuggestions=rtAllKnownDocNumbers().filter(n=>!docNums.includes(n));
 
   const personChip=person
     ? `<span class="rt-chip" style="background:${lighten(person.color)};color:${person.color};">${esc(person.name)}</span>`
@@ -569,6 +601,7 @@ function rtCardHtml(t){
           <button type="button" class="rt-btn" onclick="rtCardDocNumAdd('${t.id}')">+ เพิ่ม</button>
         </div>
         ${docNums.length?`<div class="rt-docnum-chips">${docNums.map((n,idx)=>`<span class="rt-docnum-chip">${esc(n)}<button type="button" onclick="rtRemoveDocNumberAt('${t.id}',${idx})">✕</button></span>`).join('')}</div>`:''}
+        ${docNumSuggestions.length?`<div class="rt-docnum-suggest-lbl">เคยใช้มาก่อน — เลือกได้เลย</div><div class="rt-docnum-suggest">${docNumSuggestions.map(n=>`<button type="button" class="rt-pick-btn" onclick="rtAddDocNumber('${t.id}','${esc(n).replace(/'/g,"\\'")}')">${esc(n)}</button>`).join('')}</div>`:''}
       </div>`:''}
     </div>
     <div class="rt-carddate-line" title="คลิกเพื่อเลือกวันที่เอกสาร" onclick="rtOpenDatePicker(event,'rtCardDate_${t.id}')">
@@ -703,13 +736,13 @@ async function rtSetOwner(id,ownerId){
 // ══════════════════════════════════════════
 // DOCUMENT NUMBERS (a task can carry more than one)
 // ══════════════════════════════════════════
-async function rtCardDocNumAdd(taskId){
+function rtCardDocNumAdd(taskId){
   const inp=document.getElementById('rtCardDocNumInput_'+taskId);
   if(!inp) return;
   const val=inp.value.trim();
   if(!val) return;
   inp.value='';
-  await rtAddDocNumber(taskId,val);
+  rtAddDocNumber(taskId,val);
   inp.focus();
 }
 async function rtAddDocNumber(id,value){
@@ -1022,6 +1055,26 @@ function rtCloseNewTask(){ document.getElementById('rtNewTaskModal').classList.r
 function rtRenderNewDocNumChips(){
   const wrap=document.getElementById('rtNewDocNumChips');
   wrap.innerHTML=_rtNewDocNums.map((n,i)=>`<span class="rt-docnum-chip">${esc(n)}<button type="button" onclick="rtNewDocNumRemove(${i})">✕</button></span>`).join('');
+  rtRenderNewDocNumSuggest();
+}
+// Shows previously-used document numbers (across all tasks) as one-tap chips, so the
+// person can reuse a number instead of retyping it. Filters out numbers already added,
+// and narrows the list down as the person types in the input box.
+function rtRenderNewDocNumSuggest(){
+  const wrap=document.getElementById('rtNewDocNumSuggest');
+  if(!wrap) return;
+  const q=(document.getElementById('rtNewDocNumInput')?.value||'').trim().toLowerCase();
+  let known=rtAllKnownDocNumbers().filter(n=>!_rtNewDocNums.includes(n));
+  if(q) known=known.filter(n=>n.toLowerCase().includes(q));
+  known=known.slice(0,12);
+  if(!known.length){ wrap.innerHTML=''; return; }
+  wrap.innerHTML=`<div class="rt-docnum-suggest-lbl">เคยใช้มาก่อน — เลือกได้เลย</div>`+
+    known.map(n=>`<button type="button" class="rt-pick-btn" onclick="rtNewDocNumPick('${esc(n).replace(/'/g,"\\'")}')">${esc(n)}</button>`).join('');
+}
+function rtNewDocNumPick(value){
+  if(!_rtNewDocNums.includes(value)) _rtNewDocNums.push(value);
+  document.getElementById('rtNewDocNumInput').value='';
+  rtRenderNewDocNumChips();
 }
 function rtNewDocNumAdd(){
   const inp=document.getElementById('rtNewDocNumInput');
@@ -1165,7 +1218,7 @@ function rtRenderStepsManager(){
           <input type="checkbox" ${s.requirePhoto?'checked':''} onchange="rtStepFlagChange(${i},'requirePhoto',this.checked)"/> 📷 บังคับแนบรูปก่อนย้ายเข้า
         </label>
         <label class="rt-manage-flag">
-          <input type="checkbox" ${s.hideInBoard?'checked':''} onchange="rtStepFlagChange(${i},'hideInBoard',this.checked)"/> 🙈 ซ่อนงานเมื่อมาถึงขั้นตอนนี้ (โชว์เมื่อติ๊ก "แสดงงานที่เสร็จแล้ว")
+          <input type="checkbox" ${s.hideInBoard?'checked':''} onchange="rtStepFlagChange(${i},'hideInBoard',this.checked)"/> 🙈 ซ่อนงานเมื่อมาถึงขั้นตอนนี้ (โชว์เมื่อติ๊ก "แสดงงานที่เสร็จแล้ว" — ตัวเลขจำนวนงานยังนับให้เห็นตลอด)
         </label>
       </div>
     </div>`).join('') || `<div class="rt-empty-hint">ยังไม่มีขั้นตอน</div>`;
