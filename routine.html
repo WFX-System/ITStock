@@ -112,7 +112,7 @@
 .rt-docdate-field{margin-bottom:10px;}
 .rt-docdate-row{display:flex;align-items:center;gap:8px;}
 .rt-date-wrap{position:relative;display:inline-flex;}
-.rt-date-wrap input[type=date]{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;border:none;padding:0;margin:0;cursor:pointer;z-index:2;}
+.rt-date-wrap input[type=date]{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;border:none;padding:0;margin:0;pointer-events:none;}
 #rtNewDocDateDisplay{padding:8px 10px;border:1.5px solid var(--bdrm);border-radius:var(--rad);font-size:13px;font-family:var(--font);background:var(--surf);color:var(--tx1);cursor:pointer;width:140px;}
 .rt-carddate-line{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 4px;border-radius:6px;margin-bottom:4px;}
 .rt-carddate-line:hover{background:var(--surf);}
@@ -189,7 +189,7 @@
     <div class="rt-docdate-field">
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">📅 วันที่เอกสาร (ไม่บังคับ)</div>
       <div class="rt-docdate-row">
-        <span class="rt-date-wrap">
+        <span class="rt-date-wrap" onclick="rtOpenDatePicker(event,'rtNewDocDate')">
           <input type="text" id="rtNewDocDateDisplay" readonly placeholder="วว/ดด/ปปปป"/>
           <input type="date" id="rtNewDocDate" onchange="rtNewDocDateChanged()"/>
         </span>
@@ -401,6 +401,19 @@ function fullTime(ts){
   const ms = ts.toDate ? ts.toDate().getTime() : (typeof ts==='number'?ts:new Date(ts).getTime());
   return new Date(ms).toLocaleString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
+// Opens the native date picker for the given hidden <input type="date"> id.
+// Uses showPicker() where supported (Chrome/Edge/Android); falls back to
+// focus()+click() for browsers (Firefox/Safari) that don't support showPicker().
+function rtOpenDatePicker(e,inputId){
+  if(e) e.stopPropagation();
+  const el=document.getElementById(inputId);
+  if(!el) return;
+  if(typeof el.showPicker==='function'){
+    try{ el.showPicker(); return; }catch(err){ /* fall through to fallback below */ }
+  }
+  el.focus();
+  el.click();
+}
 // Formats a stored "YYYY-MM-DD" doc date into "DD/MM/YYYY" for display.
 function ddmmyyyy(iso){
   if(!iso) return '';
@@ -516,13 +529,13 @@ function rtCardHtml(t){
         oninput="rtFieldLocal('${t.id}','title',this.value)" onblur="rtSaveField('${t.id}','title')"/>
       <button class="rt-card-del" onclick="rtOpenDel('${t.id}')" title="ลบ">✕</button>
     </div>
-    <label class="rt-carddate-line" title="คลิกเพื่อเลือกวันที่เอกสาร">
+    <div class="rt-carddate-line" title="คลิกเพื่อเลือกวันที่เอกสาร" onclick="rtOpenDatePicker(event,'rtCardDate_${t.id}')">
       <span class="rt-assign-lbl">📅 วันที่เอกสาร:</span>
       <span class="rt-date-wrap">
-        <input type="text" class="rt-carddate-input" readonly value="${ddmmyyyy(t.docDate)}" placeholder="วว/ดด/ปปปป" onclick="event.stopPropagation()"/>
-        <input type="date" value="${esc(t.docDate||'')}" onclick="event.stopPropagation()" onchange="rtSetDocDate('${t.id}',this.value)"/>
+        <input type="text" class="rt-carddate-input" readonly value="${ddmmyyyy(t.docDate)}" placeholder="วว/ดด/ปปปป"/>
+        <input type="date" id="rtCardDate_${t.id}" value="${esc(t.docDate||'')}" onchange="rtSetDocDate('${t.id}',this.value)"/>
       </span>
-    </label>
+    </div>
     <input class="rt-card-subtitle" value="${esc(t.subtitle||'')}" placeholder="✍️ ผู้เซ็น/งานของ..."
       oninput="rtFieldLocal('${t.id}','subtitle',this.value)" onblur="rtSaveField('${t.id}','subtitle')"/>
     <textarea class="rt-card-detail" placeholder="รายละเอียด..."
