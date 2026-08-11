@@ -65,6 +65,10 @@
 .rt-pick-btn{padding:3px 9px;border-radius:14px;font-size:10.5px;font-weight:600;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;font-family:var(--font);}
 .rt-pick-btn.active{color:#fff;border-color:transparent;}
 .rt-pick-btn:hover{border-color:var(--g);}
+.rt-detail-toggle{width:100%;background:none;border:none;border-top:1px dashed var(--bdrm);margin-top:4px;padding:6px 2px 2px;font-size:10.5px;font-weight:700;color:var(--g);cursor:pointer;font-family:var(--font);text-align:center;}
+.rt-detail-toggle:hover{color:var(--gd);}
+.rt-detail-wrap{display:flex;flex-direction:column;gap:2px;margin-top:2px;animation:rtDetailIn .12s ease;}
+@keyframes rtDetailIn{from{opacity:0;}to{opacity:1;}}
 .rt-card-foot{display:flex;flex-direction:column;gap:2px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdrm);}
 .rt-card-foot-row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
 .rt-card-time{font-size:9.5px;color:var(--tx3);}
@@ -346,6 +350,7 @@ let _rtOpenPersonPicker=new Set();
 let _rtOpenOwnerPicker=new Set();
 let _rtOpenStepPicker=new Set();
 let _rtOpenDocNumPicker=new Set();
+let _rtOpenDetail=new Set(); // task ids whose "แสดงรายละเอียด" section is expanded
 let _rtDragTaskId=null;
 let _rtPendingDelId=null;
 let _rtPendingPhoto=null; // {taskId, stepId, files:[], carryOpts}
@@ -557,6 +562,7 @@ function rtCardHtml(t){
   const ownerOpen=_rtOpenOwnerPicker.has(t.id);
   const stepOpen=_rtOpenStepPicker.has(t.id);
   const docNumOpen=_rtOpenDocNumPicker.has(t.id);
+  const detailOpen=_rtOpenDetail.has(t.id);
   const docNums=t.docNumbers||[];
   const docNumSuggestions=rtAllKnownDocNumbers().filter(n=>!docNums.includes(n));
 
@@ -619,8 +625,6 @@ function rtCardHtml(t){
     </div>
     <input class="rt-card-subtitle" value="${esc(t.subtitle||'')}" placeholder="✍️ ผู้เซ็น/งานของ..."
       oninput="rtFieldLocal('${t.id}','subtitle',this.value)" onblur="rtSaveField('${t.id}','subtitle')"/>
-    <textarea class="rt-card-detail" placeholder="รายละเอียด..."
-      oninput="rtFieldLocal('${t.id}','detail',this.value)" onblur="rtSaveField('${t.id}','detail')">${esc(t.detail||'')}</textarea>
 
     <div class="rt-assign">
       <div class="rt-assign-line" onclick="rtTogglePicker('owner','${t.id}')">
@@ -631,25 +635,33 @@ function rtCardHtml(t){
       ${ownerOpen?`<div class="rt-picker-panel">${ownerPickerBtns}</div>`:''}
     </div>
 
-    <div class="rt-assign">
-      <div class="rt-assign-line" onclick="rtTogglePicker('person','${t.id}')">
-        <span class="rt-assign-lbl">👤 ส่งให้:</span>
-        ${personChip}
-        <span class="rt-assign-edit">เปลี่ยน ▾</span>
-      </div>
-      ${personOpen?`<div class="rt-picker-panel">${personPickerBtns}</div>`:''}
-    </div>
+    <button type="button" class="rt-detail-toggle" onclick="rtToggleDetail('${t.id}')">${detailOpen?'▴ ซ่อนรายละเอียด':'▾ แสดงรายละเอียด'}</button>
 
-    <div class="rt-assign">
-      <div class="rt-assign-line" onclick="rtTogglePicker('step','${t.id}')">
-        <span class="rt-assign-lbl">🔀 ขั้นตอน:</span>
-        ${stepChip}
-        <span class="rt-assign-edit">ย้าย ▾</span>
-      </div>
-      ${stepOpen?`<div class="rt-picker-panel">${stepPickerBtns}</div>`:''}
-    </div>
+    ${detailOpen?`
+    <div class="rt-detail-wrap">
+      <textarea class="rt-card-detail" placeholder="รายละเอียด..."
+        oninput="rtFieldLocal('${t.id}','detail',this.value)" onblur="rtSaveField('${t.id}','detail')">${esc(t.detail||'')}</textarea>
 
-    ${t.photos&&t.photos.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">${t.photos.map(ph=>`<img src="${ph.url}" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr);cursor:pointer;" onclick="window.open('${ph.url}','_blank')"/>`).join('')}</div>`:''}
+      <div class="rt-assign">
+        <div class="rt-assign-line" onclick="rtTogglePicker('person','${t.id}')">
+          <span class="rt-assign-lbl">👤 ส่งให้:</span>
+          ${personChip}
+          <span class="rt-assign-edit">เปลี่ยน ▾</span>
+        </div>
+        ${personOpen?`<div class="rt-picker-panel">${personPickerBtns}</div>`:''}
+      </div>
+
+      <div class="rt-assign">
+        <div class="rt-assign-line" onclick="rtTogglePicker('step','${t.id}')">
+          <span class="rt-assign-lbl">🔀 ขั้นตอน:</span>
+          ${stepChip}
+          <span class="rt-assign-edit">ย้าย ▾</span>
+        </div>
+        ${stepOpen?`<div class="rt-picker-panel">${stepPickerBtns}</div>`:''}
+      </div>
+
+      ${t.photos&&t.photos.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">${t.photos.map(ph=>`<img src="${ph.url}" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr);cursor:pointer;" onclick="window.open('${ph.url}','_blank')"/>`).join('')}</div>`:''}
+    </div>`:''}
 
     <div class="rt-card-foot">
       <div class="rt-card-foot-row">
@@ -670,6 +682,12 @@ function rtCardHtml(t){
 function rtTogglePicker(kind,taskId){
   const set = kind==='person' ? _rtOpenPersonPicker : (kind==='owner' ? _rtOpenOwnerPicker : (kind==='docnum' ? _rtOpenDocNumPicker : _rtOpenStepPicker));
   if(set.has(taskId)) set.delete(taskId); else set.add(taskId);
+  rtRenderBoard();
+}
+// Expands/collapses the "แสดงรายละเอียด" section on a card (detail text, recipient,
+// step picker, photos) — keeps the default card compact with just the essentials.
+function rtToggleDetail(taskId){
+  if(_rtOpenDetail.has(taskId)) _rtOpenDetail.delete(taskId); else _rtOpenDetail.add(taskId);
   rtRenderBoard();
 }
 
