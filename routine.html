@@ -198,7 +198,7 @@
   <div class="rtm-box">
     <div class="rtm-title">➕ เพิ่มRoutine</div>
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">🔢 เลขที่เอกสาร (ไม่บังคับ เพิ่มได้มากกว่า 1 เลข)</div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">🔢 เลขที่ (ไม่บังคับ เพิ่มได้มากกว่า 1 เลข)</div>
       <div class="rt-docnum-chips" id="rtNewDocNumChips"></div>
       <div class="rt-docnum-addrow">
         <input type="text" id="rtNewDocNumInput" placeholder="พิมพ์เลขที่เอกสาร แล้วกด Enter หรือ +เพิ่ม" oninput="rtRenderNewDocNumSuggest()" onkeydown="rtNewDocNumKeydown(event)"/>
@@ -620,7 +620,7 @@ function rtCardHtml(t){
     </div>
     <div class="rt-assign">
       <div class="rt-assign-line" onclick="rtTogglePicker('docnum','${t.id}')">
-        <span class="rt-assign-lbl">🔢 เลขที่เอกสาร:</span>
+        <span class="rt-assign-lbl">🔢 เลขที่:</span>
         ${docNums.length?`<span class="rt-chip" style="background:${lighten('#6366f1')};color:#6366f1;">${esc(docNums.join(', '))}</span>`:`<span class="rt-chip empty">ยังไม่ระบุ</span>`}
         <span class="rt-assign-edit">แก้ไข ▾</span>
       </div>
