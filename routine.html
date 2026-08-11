@@ -123,6 +123,14 @@
 .rt-photo-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1.5px solid var(--bdr);}
 .rt-photo-thumb-del{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#EF4444;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
 
+.rt-docnum-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.rt-docnum-chips:empty{margin-bottom:0;}
+.rt-docnum-chip{display:inline-flex;align-items:center;gap:5px;background:var(--gll);color:var(--gd);font-size:11.5px;font-weight:700;padding:4px 6px 4px 10px;border-radius:14px;}
+.rt-docnum-chip button{background:none;border:none;cursor:pointer;color:inherit;font-size:12px;line-height:1;padding:2px;opacity:.65;font-family:var(--font);}
+.rt-docnum-chip button:hover{opacity:1;}
+.rt-docnum-addrow{display:flex;gap:6px;}
+.rt-docnum-addrow input{flex:1;padding:8px 10px;border:1.5px dashed var(--bdrm);border-radius:var(--rad);font-size:13px;font-family:var(--font);background:transparent;color:var(--tx1);}
+
 @media(max-width:640px){
   .rt-col{min-width:240px;max-width:240px;max-height:calc(100vh - 300px);}
 }
@@ -182,6 +190,14 @@
 <div class="rtm-wrap" id="rtNewTaskModal">
   <div class="rtm-box">
     <div class="rtm-title">➕ เพิ่มRoutine</div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">🔢 เลขที่เอกสาร (ไม่บังคับ เพิ่มได้มากกว่า 1 เลข)</div>
+      <div class="rt-docnum-chips" id="rtNewDocNumChips"></div>
+      <div class="rt-docnum-addrow">
+        <input type="text" id="rtNewDocNumInput" placeholder="พิมพ์เลขที่เอกสาร แล้วกด Enter หรือ +เพิ่ม" onkeydown="rtNewDocNumKeydown(event)"/>
+        <button type="button" class="rt-btn" onclick="rtNewDocNumAdd()">+ เพิ่ม</button>
+      </div>
+    </div>
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">ชื่อเอกสาร/ชื่องาน *</div>
       <input class="rt-search" style="max-width:none;width:100%;" id="rtNewTitle" placeholder="เช่น ตัดจำหน่ายเครื่อง ACC001-RYG" onkeydown="if(event.key==='Enter')rtSubmitNewTask()"/>
@@ -313,11 +329,11 @@ const CLOUDINARY_UPLOAD_PRESET = 'routine';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const DEFAULT_STEPS=[
-  {id:'step_receive',  name:'รับเรื่อง',            color:'#6366f1', requirePerson:false, requireOwner:false, requirePhoto:false},
-  {id:'step_progress', name:'กำลังดำเนินการ',       color:'#F59E0B', requirePerson:false, requireOwner:false, requirePhoto:false},
-  {id:'step_wait',     name:'รอเอกสาร/รออนุมัติ',    color:'#EF4444', requirePerson:false, requireOwner:false, requirePhoto:false},
-  {id:'step_forward',  name:'ส่งต่อ/ส่งเอกสาร',      color:'#0EA5E9', requirePerson:true,  requireOwner:false, requirePhoto:false},
-  {id:'step_done',     name:'เสร็จสิ้น',             color:'#10B981', requirePerson:false, requireOwner:false, requirePhoto:false},
+  {id:'step_receive',  name:'รับเรื่อง',            color:'#6366f1', requirePerson:false, requireOwner:false, requirePhoto:false, hideInBoard:false},
+  {id:'step_progress', name:'กำลังดำเนินการ',       color:'#F59E0B', requirePerson:false, requireOwner:false, requirePhoto:false, hideInBoard:false},
+  {id:'step_wait',     name:'รอเอกสาร/รออนุมัติ',    color:'#EF4444', requirePerson:false, requireOwner:false, requirePhoto:false, hideInBoard:false},
+  {id:'step_forward',  name:'ส่งต่อ/ส่งเอกสาร',      color:'#0EA5E9', requirePerson:true,  requireOwner:false, requirePhoto:false, hideInBoard:false},
+  {id:'step_done',     name:'เสร็จสิ้น',             color:'#10B981', requirePerson:false, requireOwner:false, requirePhoto:false, hideInBoard:false},
 ];
 let rtSteps=[...DEFAULT_STEPS];
 let rtPeople=[];
@@ -325,10 +341,12 @@ let rtTasks=[];
 let _rtOpenPersonPicker=new Set();
 let _rtOpenOwnerPicker=new Set();
 let _rtOpenStepPicker=new Set();
+let _rtOpenDocNumPicker=new Set();
 let _rtDragTaskId=null;
 let _rtPendingDelId=null;
 let _rtPendingPhoto=null; // {taskId, stepId, files:[], carryOpts}
 let _rtPendingPersonReq=null; // {taskId, stepId, selectedPersonId}
+let _rtNewDocNums=[]; // pending doc numbers for the New Task modal, before the task exists
 
 // Image compression settings (used before uploading to imgbb)
 const RT_IMG_MAX_DIM = 1000;   // max width/height in px
@@ -440,11 +458,13 @@ function rtFilteredTasks(){
   const q=(document.getElementById('rtSearch')?.value||'').trim().toLowerCase();
   const showDone=document.getElementById('rtShowDone')?.checked;
   return rtTasks.filter(t=>{
-    if(t.archived && !showDone) return false;
+    const step=getStep(t.stepId);
+    const isHiddenByStep = step && step.hideInBoard;
+    if((t.archived || isHiddenByStep) && !showDone) return false;
     if(!q) return true;
     const person=getPerson(t.personId);
     const owner=getPerson(t.ownerId);
-    const hay=`${t.title||''} ${t.subtitle||''} ${t.detail||''} ${person?person.name:''} ${owner?owner.name:''}`.toLowerCase();
+    const hay=`${t.title||''} ${t.subtitle||''} ${t.detail||''} ${(t.docNumbers||[]).join(' ')} ${person?person.name:''} ${owner?owner.name:''}`.toLowerCase();
     return hay.includes(q);
   });
 }
@@ -473,7 +493,8 @@ function rtRenderBoard(){
     const flagsBadge=[
       step.requirePerson?'🔒 ต้องมีผู้รับ':'',
       step.requireOwner?'🧑‍💻 ต้องมีผู้ดำเนินการ':'',
-      step.requirePhoto?'📷 ต้องแนบรูป':''
+      step.requirePhoto?'📷 ต้องแนบรูป':'',
+      step.hideInBoard?'🙈 ซ่อนอัตโนมัติ':''
     ].filter(Boolean).join(' · ');
     return `
     <div class="rt-col" id="rtCol_${step.id}"
@@ -498,6 +519,8 @@ function rtCardHtml(t){
   const personOpen=_rtOpenPersonPicker.has(t.id);
   const ownerOpen=_rtOpenOwnerPicker.has(t.id);
   const stepOpen=_rtOpenStepPicker.has(t.id);
+  const docNumOpen=_rtOpenDocNumPicker.has(t.id);
+  const docNums=t.docNumbers||[];
 
   const personChip=person
     ? `<span class="rt-chip" style="background:${lighten(person.color)};color:${person.color};">${esc(person.name)}</span>`
@@ -521,7 +544,7 @@ function rtCardHtml(t){
     ? `<span class="rt-chip" style="background:${lighten(step.color)};color:${step.color};">${esc(step.name)}</span>`
     : `<span class="rt-chip empty">ไม่ระบุขั้นตอน</span>`;
 
-  const stepPickerBtns=rtSteps.map(s=>`<button type="button" class="rt-pick-btn ${t.stepId===s.id?'active':''}" ${t.stepId===s.id?`style="background:${s.color};"`:''} onclick="rtSetStep('${t.id}','${s.id}')">${esc(s.name)}${s.requirePerson?' 🔒':''}${s.requireOwner?' 🧑‍💻':''}${s.requirePhoto?' 📷':''}</button>`).join('');
+  const stepPickerBtns=rtSteps.map(s=>`<button type="button" class="rt-pick-btn ${t.stepId===s.id?'active':''}" ${t.stepId===s.id?`style="background:${s.color};"`:''} onclick="rtSetStep('${t.id}','${s.id}')">${esc(s.name)}${s.requirePerson?' 🔒':''}${s.requireOwner?' 🧑‍💻':''}${s.requirePhoto?' 📷':''}${s.hideInBoard?' 🙈':''}</button>`).join('');
 
   const stepIdx=rtSteps.findIndex(s=>s.id===t.stepId);
   const isLastStep = stepIdx===-1 ? true : stepIdx>=rtSteps.length-1;
@@ -533,6 +556,20 @@ function rtCardHtml(t){
       <input class="rt-card-title" value="${esc(t.title||'')}" placeholder="ชื่อเอกสาร/ชื่องาน..."
         oninput="rtFieldLocal('${t.id}','title',this.value)" onblur="rtSaveField('${t.id}','title')"/>
       <button class="rt-card-del" onclick="rtOpenDel('${t.id}')" title="ลบ">✕</button>
+    </div>
+    <div class="rt-assign">
+      <div class="rt-assign-line" onclick="rtTogglePicker('docnum','${t.id}')">
+        <span class="rt-assign-lbl">🔢 เลขที่เอกสาร:</span>
+        ${docNums.length?`<span class="rt-chip" style="background:${lighten('#6366f1')};color:#6366f1;">${esc(docNums.join(', '))}</span>`:`<span class="rt-chip empty">ยังไม่ระบุ</span>`}
+        <span class="rt-assign-edit">แก้ไข ▾</span>
+      </div>
+      ${docNumOpen?`<div class="rt-picker-panel" style="flex-direction:column;align-items:stretch;">
+        <div class="rt-docnum-addrow" style="margin-bottom:6px;">
+          <input type="text" id="rtCardDocNumInput_${t.id}" placeholder="เพิ่มเลขที่เอกสาร..." onkeydown="if(event.key==='Enter'){event.preventDefault();rtCardDocNumAdd('${t.id}');}"/>
+          <button type="button" class="rt-btn" onclick="rtCardDocNumAdd('${t.id}')">+ เพิ่ม</button>
+        </div>
+        ${docNums.length?`<div class="rt-docnum-chips">${docNums.map((n,idx)=>`<span class="rt-docnum-chip">${esc(n)}<button type="button" onclick="rtRemoveDocNumberAt('${t.id}',${idx})">✕</button></span>`).join('')}</div>`:''}
+      </div>`:''}
     </div>
     <div class="rt-carddate-line" title="คลิกเพื่อเลือกวันที่เอกสาร" onclick="rtOpenDatePicker(event,'rtCardDate_${t.id}')">
       <span class="rt-assign-lbl">📅 วันที่เอกสาร:</span>
@@ -592,7 +629,7 @@ function rtCardHtml(t){
 }
 
 function rtTogglePicker(kind,taskId){
-  const set = kind==='person' ? _rtOpenPersonPicker : (kind==='owner' ? _rtOpenOwnerPicker : _rtOpenStepPicker);
+  const set = kind==='person' ? _rtOpenPersonPicker : (kind==='owner' ? _rtOpenOwnerPicker : (kind==='docnum' ? _rtOpenDocNumPicker : _rtOpenStepPicker));
   if(set.has(taskId)) set.delete(taskId); else set.add(taskId);
   rtRenderBoard();
 }
@@ -659,6 +696,43 @@ async function rtSetOwner(id,ownerId){
       ownerId: ownerId||'',
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'owner',text:histText,by:rtUserName()})
+    });
+  }catch(e){ rtToast('⚠️ '+e.message); }
+}
+
+// ══════════════════════════════════════════
+// DOCUMENT NUMBERS (a task can carry more than one)
+// ══════════════════════════════════════════
+async function rtCardDocNumAdd(taskId){
+  const inp=document.getElementById('rtCardDocNumInput_'+taskId);
+  if(!inp) return;
+  const val=inp.value.trim();
+  if(!val) return;
+  inp.value='';
+  await rtAddDocNumber(taskId,val);
+  inp.focus();
+}
+async function rtAddDocNumber(id,value){
+  const t=rtTasks.find(x=>x.id===id); if(!t) return;
+  const existing=t.docNumbers||[];
+  if(existing.includes(value)){ rtToast('มีเลขที่เอกสารนี้อยู่แล้ว'); return; }
+  try{
+    await db.collection(RT_TASKS_COL).doc(id).update({
+      docNumbers: firebase.firestore.FieldValue.arrayUnion(value),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'docnum',text:`เพิ่มเลขที่เอกสาร: ${value}`,by:rtUserName()})
+    });
+  }catch(e){ rtToast('⚠️ '+e.message); }
+}
+async function rtRemoveDocNumberAt(id,idx){
+  const t=rtTasks.find(x=>x.id===id); if(!t) return;
+  const list=t.docNumbers||[];
+  const value=list[idx]; if(value===undefined) return;
+  try{
+    await db.collection(RT_TASKS_COL).doc(id).update({
+      docNumbers: firebase.firestore.FieldValue.arrayRemove(value),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      history: firebase.firestore.FieldValue.arrayUnion({ts:Date.now(),type:'docnum',text:`ลบเลขที่เอกสาร: ${value}`,by:rtUserName()})
     });
   }catch(e){ rtToast('⚠️ '+e.message); }
 }
@@ -938,25 +1012,51 @@ function rtOpenNewTask(){
   document.getElementById('rtNewDetail').value='';
   document.getElementById('rtNewDocDate').value='';
   document.getElementById('rtNewDocDateDisplay').value='';
+  document.getElementById('rtNewDocNumInput').value='';
+  _rtNewDocNums=[];
+  rtRenderNewDocNumChips();
   document.getElementById('rtNewTaskModal').classList.add('open');
   setTimeout(()=>document.getElementById('rtNewTitle').focus(),80);
 }
 function rtCloseNewTask(){ document.getElementById('rtNewTaskModal').classList.remove('open'); }
+function rtRenderNewDocNumChips(){
+  const wrap=document.getElementById('rtNewDocNumChips');
+  wrap.innerHTML=_rtNewDocNums.map((n,i)=>`<span class="rt-docnum-chip">${esc(n)}<button type="button" onclick="rtNewDocNumRemove(${i})">✕</button></span>`).join('');
+}
+function rtNewDocNumAdd(){
+  const inp=document.getElementById('rtNewDocNumInput');
+  const val=inp.value.trim();
+  if(!val) return;
+  if(!_rtNewDocNums.includes(val)) _rtNewDocNums.push(val);
+  inp.value='';
+  rtRenderNewDocNumChips();
+  inp.focus();
+}
+function rtNewDocNumKeydown(e){
+  if(e.key==='Enter' || e.key===','){ e.preventDefault(); rtNewDocNumAdd(); }
+}
+function rtNewDocNumRemove(i){ _rtNewDocNums.splice(i,1); rtRenderNewDocNumChips(); }
 async function rtSubmitNewTask(){
   const title=document.getElementById('rtNewTitle').value.trim();
   const subtitle=document.getElementById('rtNewSubtitle').value.trim();
   const detail=document.getElementById('rtNewDetail').value.trim();
   const docDate=document.getElementById('rtNewDocDate').value;
+  const docNumInput=document.getElementById('rtNewDocNumInput').value.trim();
+  if(docNumInput && !_rtNewDocNums.includes(docNumInput)) _rtNewDocNums.push(docNumInput); // catch a number left in the box without pressing Enter/+เพิ่ม
+  const docNumbers=[..._rtNewDocNums];
   if(!title){ rtToast('กรุณากรอกชื่องาน'); return; }
   if(!rtSteps.length){ rtToast('กรุณาเพิ่มขั้นตอนก่อน'); return; }
   try{
+    const histParts=[];
+    if(docNumbers.length) histParts.push(`เลขที่เอกสาร ${docNumbers.join(', ')}`);
+    if(docDate) histParts.push(`วันที่เอกสาร ${ddmmyyyy(docDate)}`);
     await db.collection(RT_TASKS_COL).add({
-      title, subtitle, detail, docDate, stepId:rtSteps[0].id, personId:'', ownerId:'', archived:false, photos:[],
+      title, subtitle, detail, docDate, docNumbers, stepId:rtSteps[0].id, personId:'', ownerId:'', archived:false, photos:[],
       order: Date.now(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdBy: rtUserName(),
-      history: [{ts:Date.now(),type:'create',text:docDate?`สร้างงาน · วันที่เอกสาร ${ddmmyyyy(docDate)}`:'สร้างงาน',by:rtUserName()}]
+      history: [{ts:Date.now(),type:'create',text: histParts.length?`สร้างงาน · ${histParts.join(' · ')}`:'สร้างงาน',by:rtUserName()}]
     });
     rtCloseNewTask();
     rtToast('✅ เพิ่มRoutineแล้ว');
@@ -986,7 +1086,7 @@ async function rtConfirmDelete(){
 // ══════════════════════════════════════════
 // HISTORY MODAL
 // ══════════════════════════════════════════
-const RT_HIST_ICON={create:'✨',step:'🔀',person:'👤',owner:'🧑‍💻',done:'✅',reopen:'↩️',photo:'📷',docdate:'📅'};
+const RT_HIST_ICON={create:'✨',step:'🔀',person:'👤',owner:'🧑‍💻',done:'✅',reopen:'↩️',photo:'📷',docdate:'📅',docnum:'🔢'};
 function rtOpenHistory(id){
   const t=rtTasks.find(x=>x.id===id); if(!t) return;
   document.getElementById('rtHistTaskTitle').textContent=t.title||'(ไม่มีชื่อ)';
@@ -1063,6 +1163,9 @@ function rtRenderStepsManager(){
         </label>
         <label class="rt-manage-flag">
           <input type="checkbox" ${s.requirePhoto?'checked':''} onchange="rtStepFlagChange(${i},'requirePhoto',this.checked)"/> 📷 บังคับแนบรูปก่อนย้ายเข้า
+        </label>
+        <label class="rt-manage-flag">
+          <input type="checkbox" ${s.hideInBoard?'checked':''} onchange="rtStepFlagChange(${i},'hideInBoard',this.checked)"/> 🙈 ซ่อนงานเมื่อมาถึงขั้นตอนนี้ (โชว์เมื่อติ๊ก "แสดงงานที่เสร็จแล้ว")
         </label>
       </div>
     </div>`).join('') || `<div class="rt-empty-hint">ยังไม่มีขั้นตอน</div>`;
