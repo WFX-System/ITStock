@@ -19,15 +19,20 @@
 .rt-head-title{font-size:15px;font-weight:700;}
 .rt-head-sub{font-size:11px;color:var(--tx3);margin-top:1px;}
 
-.rt-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
-.rt-search{flex:1;min-width:160px;max-width:260px;padding:8px 12px;border:1.5px solid var(--bdrm);border-radius:var(--rad);font-size:13px;background:var(--surf);color:var(--tx1);}
+.rt-toolbar{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radlg);padding:10px 12px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;}
+.rt-toolbar-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.rt-toolbar-row+.rt-toolbar-row{padding-top:8px;border-top:1px dashed var(--bdrm);}
+.rt-search{flex:1;min-width:160px;max-width:280px;padding:8px 12px;border:1.5px solid var(--bdrm);border-radius:var(--rad);font-size:13px;background:var(--bg);color:var(--tx1);}
 .rt-search:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 3px var(--gll);}
-.rt-toggle-label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2);cursor:pointer;white-space:nowrap;user-select:none;}
+.rt-toggle-label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2);cursor:pointer;white-space:nowrap;user-select:none;padding:6px 10px;border-radius:var(--rad);border:1.5px solid transparent;transition:.15s;}
+.rt-toggle-label:hover{background:var(--bg);}
 .rt-toggle-label input{width:auto;accent-color:var(--g);cursor:pointer;}
-.rt-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--rad);font-size:12.5px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--surf);color:var(--tx2);cursor:pointer;transition:.15s;white-space:nowrap;font-family:var(--font);}
+.rt-toggle-label.active{border-color:var(--g);background:var(--gll);color:var(--gd);font-weight:700;}
+.rt-btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--rad);font-size:12.5px;font-weight:700;border:1.5px solid var(--bdrm);background:var(--bg);color:var(--tx2);cursor:pointer;transition:.15s;white-space:nowrap;font-family:var(--font);}
 .rt-btn:hover{border-color:var(--g);color:var(--g);}
 .rt-btn-primary{background:var(--g);border-color:var(--g);color:#fff;}
 .rt-btn-primary:hover{background:var(--gd);border-color:var(--gd);color:#fff;}
+.rt-toolbar-spacer{flex:1;min-width:4px;}
 
 .rt-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:18px;align-items:flex-start;}
 .rt-col{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--radlg);min-width:270px;max-width:270px;flex-shrink:0;display:flex;flex-direction:column;max-height:calc(100vh - 250px);transition:.15s;}
@@ -73,6 +78,14 @@
 .rt-card-foot-row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
 .rt-card-time{font-size:9.5px;color:var(--tx3);}
 .rt-foot-btns{display:flex;gap:4px;align-items:center;}
+
+/* Compact card mode — shows only doc number / doc date / signer, plus the essential
+   footer actions (history / next step / done). Toggled by the "ย่อการ์ด" checkbox. */
+.rt-card.compact{padding:8px 10px;}
+.rt-card.compact .rt-card-top{margin-bottom:2px;}
+.rt-card.compact .rt-assign-line{padding:2px 4px;}
+.rt-card.compact .rt-card-subtitle{margin-bottom:2px;}
+.rt-card.compact .rt-card-foot{margin-top:4px;padding-top:4px;}
 .rt-icon-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:3px 6px;border-radius:5px;color:var(--tx3);font-family:var(--font);}
 .rt-icon-btn:hover{background:var(--surf);color:var(--tx1);}
 .rt-next-btn{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,var(--g),var(--gd));color:#fff;font-weight:700;font-size:11px;padding:5px 11px;border-radius:20px;box-shadow:0 2px 6px rgba(0,0,0,.18);transition:.15s;}
@@ -175,14 +188,24 @@
     </div>
 
     <div class="rt-toolbar">
-      <input class="rt-search" id="rtSearch" type="text" placeholder="🔎 ค้นหางาน / ชื่อคน..." oninput="rtRenderBoard()"/>
-      <label class="rt-toggle-label">
-        <input type="checkbox" id="rtShowDone" onchange="rtRenderBoard()"/>
-        แสดงงานที่เสร็จแล้ว
-      </label>
-      <button class="rt-btn rt-btn-primary" onclick="rtOpenNewTask()">➕ เพิ่มRoutine</button>
-      <button class="rt-btn" onclick="rtOpenStepsManager()">🔀 จัดการขั้นตอน</button>
-      <button class="rt-btn" onclick="rtOpenPeopleManager()">👤 จัดการรายชื่อ</button>
+      <div class="rt-toolbar-row">
+        <input class="rt-search" id="rtSearch" type="text" placeholder="🔎 ค้นหางาน / ชื่อคน..." oninput="rtRenderBoard()"/>
+        <label class="rt-toggle-label" id="rtShowDoneLbl">
+          <input type="checkbox" id="rtShowDone" onchange="rtOnToggleChange()"/>
+          ✅ แสดงงานที่เสร็จแล้ว
+        </label>
+        <label class="rt-toggle-label" id="rtCompactLbl">
+          <input type="checkbox" id="rtCompactMode" onchange="rtOnToggleChange()"/>
+          📇 ย่อการ์ด
+        </label>
+      </div>
+      <div class="rt-toolbar-row">
+        <button class="rt-btn rt-btn-primary" onclick="rtOpenNewTask()">➕ เพิ่มRoutine</button>
+        <button class="rt-btn" onclick="rtCollapseAll()">📐 ย่อทั้งหมด</button>
+        <div class="rt-toolbar-spacer"></div>
+        <button class="rt-btn" onclick="rtOpenStepsManager()">🔀 จัดการขั้นตอน</button>
+        <button class="rt-btn" onclick="rtOpenPeopleManager()">👤 จัดการรายชื่อ</button>
+      </div>
     </div>
 
     <div class="rt-board" id="rtBoard"></div>
@@ -503,6 +526,29 @@ function rtCountedTasks(){
   });
 }
 
+// Called when "แสดงงานที่เสร็จแล้ว" or "ย่อการ์ด" checkboxes change — keeps the
+// pill-style highlight on the label in sync with its checkbox, then re-renders.
+function rtOnToggleChange(){
+  const showDone=document.getElementById('rtShowDone');
+  const compact=document.getElementById('rtCompactMode');
+  document.getElementById('rtShowDoneLbl')?.classList.toggle('active', !!showDone?.checked);
+  document.getElementById('rtCompactLbl')?.classList.toggle('active', !!compact?.checked);
+  rtRenderBoard();
+}
+
+// "ย่อทั้งหมด" — closes every card's expanded detail section and every open picker
+// (person / owner / step / doc-number) across the whole board in one click, so the
+// person can quickly tidy the board back up after browsing several cards.
+function rtCollapseAll(){
+  _rtOpenDetail.clear();
+  _rtOpenPersonPicker.clear();
+  _rtOpenOwnerPicker.clear();
+  _rtOpenStepPicker.clear();
+  _rtOpenDocNumPicker.clear();
+  rtRenderBoard();
+  rtToast('📐 ย่อการ์ดทั้งหมดแล้ว');
+}
+
 function rtRenderBoard(){
   const board=document.getElementById('rtBoard');
 
@@ -572,6 +618,7 @@ function rtRenderBoard(){
 }
 
 function rtCardHtml(t){
+  const compact=!!document.getElementById('rtCompactMode')?.checked;
   const step=getStep(t.stepId);
   const person=getPerson(t.personId);
   const owner=getPerson(t.ownerId);
@@ -579,7 +626,10 @@ function rtCardHtml(t){
   const ownerOpen=_rtOpenOwnerPicker.has(t.id);
   const stepOpen=_rtOpenStepPicker.has(t.id);
   const docNumOpen=_rtOpenDocNumPicker.has(t.id);
-  const detailOpen=_rtOpenDetail.has(t.id);
+  // In compact mode the detail section (extra fields) never shows, regardless of
+  // whether the person previously expanded it — compact mode's whole point is to
+  // hide everything except doc number / doc date / signer.
+  const detailOpen=!compact && _rtOpenDetail.has(t.id);
   const docNums=t.docNumbers||[];
   const docNumSuggestions=rtAllKnownDocNumbers().filter(n=>!docNums.includes(n));
 
@@ -611,7 +661,7 @@ function rtCardHtml(t){
   const isLastStep = stepIdx===-1 ? true : stepIdx>=rtSteps.length-1;
 
   return `
-  <div class="rt-card ${t.archived?'is-done':''}" id="rtCard_${t.id}" draggable="true"
+  <div class="rt-card ${t.archived?'is-done':''} ${compact?'compact':''}" id="rtCard_${t.id}" draggable="true"
     ondragstart="rtCardDragStart(event,'${t.id}')" ondragend="rtCardDragEnd(event)">
     <div class="rt-card-top">
       <input class="rt-card-title" value="${esc(t.title||'')}" placeholder="ชื่อเอกสาร/ชื่องาน..."
@@ -643,6 +693,7 @@ function rtCardHtml(t){
     <input class="rt-card-subtitle" value="${esc(t.subtitle||'')}" placeholder="✍️ ผู้เซ็น/งานของ..."
       oninput="rtFieldLocal('${t.id}','subtitle',this.value)" onblur="rtSaveField('${t.id}','subtitle')"/>
 
+    ${compact?'':`
     <div class="rt-assign">
       <div class="rt-assign-line" onclick="rtTogglePicker('owner','${t.id}')">
         <span class="rt-assign-lbl">🧑‍💻 ผู้ดำเนินการ:</span>
@@ -652,7 +703,7 @@ function rtCardHtml(t){
       ${ownerOpen?`<div class="rt-picker-panel">${ownerPickerBtns}</div>`:''}
     </div>
 
-    <button type="button" class="rt-detail-toggle" onclick="rtToggleDetail('${t.id}')">${detailOpen?'▴ ซ่อนรายละเอียด':'▾ แสดงรายละเอียด'}</button>
+    <button type="button" class="rt-detail-toggle" onclick="rtToggleDetail('${t.id}')">${detailOpen?'▴ ซ่อนรายละเอียด':'▾ แสดงรายละเอียด'}</button>`}
 
     ${detailOpen?`
     <div class="rt-detail-wrap">
@@ -681,12 +732,12 @@ function rtCardHtml(t){
     </div>`:''}
 
     <div class="rt-card-foot">
-      <div class="rt-card-foot-row">
+      ${compact?'':`<div class="rt-card-foot-row">
         <span class="rt-card-time">📅 สร้าง ${dateTimeShort(t.createdAt)}</span>
-      </div>
+      </div>`}
       <div class="rt-card-foot-row">
-        <span class="rt-card-time">🔄 อัปเดต ${dateTimeShort(t.updatedAt)}</span>
-        <div class="rt-foot-btns">
+        ${compact?'':`<span class="rt-card-time">🔄 อัปเดต ${dateTimeShort(t.updatedAt)}</span>`}
+        <div class="rt-foot-btns" style="${compact?'margin-left:auto;':''}">
           <button class="rt-icon-btn" onclick="rtOpenHistory('${t.id}')" title="ประวัติ">🕐</button>
           <button class="rt-icon-btn rt-next-btn" onclick="rtNextStep('${t.id}')" title="ไปขั้นตอนถัดไป" ${isLastStep?'disabled':''}>ถัดไป ⏭️</button>
           <button class="rt-icon-btn" onclick="rtToggleDone('${t.id}')" title="${t.archived?'เปิดงานใหม่':'เสร็จสิ้น'}">${t.archived?'↩️':'✅'}</button>
