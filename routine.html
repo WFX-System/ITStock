@@ -283,8 +283,13 @@
 <div class="rtm-wrap" id="rtPhotoModal">
   <div class="rtm-box" style="max-width:380px;">
     <div class="rtm-title">📷 แนบรูปยืนยัน</div>
-    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;">ขั้นตอนนี้ต้องแนบรูปก่อนย้าย เช่น เอกสารที่เซ็นแล้ว (แนบได้มากกว่า 1 รูป)</div>
-    <input type="file" id="rtPhotoInput" accept="image/*" capture="environment" multiple onchange="rtPhotoPreview(event)" style="margin-bottom:10px;width:100%;"/>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;">ขั้นตอนนี้ต้องแนบรูปก่อนย้าย เช่น เอกสารที่เซ็นแล้ว (เลือกจากคลังภาพหรือถ่ายใหม่ก็ได้ แนบได้หลายรูป แล้วค่อยกดอัปโหลดทีเดียว)</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <button type="button" class="rt-btn" style="flex:1;justify-content:center;" onclick="document.getElementById('rtPhotoInputGallery').click()">🖼️ เลือกรูปที่มีอยู่</button>
+      <button type="button" class="rt-btn" style="flex:1;justify-content:center;" onclick="document.getElementById('rtPhotoInputCamera').click()">📷 ถ่ายรูปใหม่</button>
+    </div>
+    <input type="file" id="rtPhotoInputGallery" accept="image/*" multiple onchange="rtPhotoPreview(event)" style="display:none;"/>
+    <input type="file" id="rtPhotoInputCamera" accept="image/*" capture="environment" onchange="rtPhotoPreview(event)" style="display:none;"/>
     <div id="rtPhotoPreviewWrap" class="rt-photo-preview-grid" style="display:none;margin-bottom:10px;"></div>
     <div id="rtPhotoUploadStatus" style="font-size:11px;color:var(--tx3);"></div>
     <div class="rtm-actions">
@@ -806,8 +811,8 @@ async function rtConfirmPersonReq(){
 // ══════════════════════════════════════════
 function rtOpenPhotoModal(taskId,stepId,carryOpts){
   _rtPendingPhoto={taskId,stepId,files:[],carryOpts:carryOpts||{}};
-  const inputEl=document.getElementById('rtPhotoInput');
-  inputEl.value='';
+  document.getElementById('rtPhotoInputGallery').value='';
+  document.getElementById('rtPhotoInputCamera').value='';
   document.getElementById('rtPhotoPreviewWrap').style.display='none';
   document.getElementById('rtPhotoPreviewWrap').innerHTML='';
   document.getElementById('rtPhotoUploadStatus').textContent='';
@@ -819,8 +824,10 @@ function rtClosePhotoModal(){
   _rtPendingPhoto=null;
 }
 function rtPhotoPreview(e){
-  const files=Array.from(e.target.files||[]); if(!files.length || !_rtPendingPhoto) return;
-  _rtPendingPhoto.files=files;
+  const files=Array.from(e.target.files||[]);
+  e.target.value=''; // reset so picking again (same file, or camera again) still fires onchange
+  if(!files.length || !_rtPendingPhoto) return;
+  _rtPendingPhoto.files=_rtPendingPhoto.files.concat(files);
   rtRenderPhotoPreviews();
 }
 function rtRenderPhotoPreviews(){
