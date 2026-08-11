@@ -505,6 +505,17 @@ function rtCountedTasks(){
 
 function rtRenderBoard(){
   const board=document.getElementById('rtBoard');
+
+  // เก็บตำแหน่ง scroll ของแต่ละคอลัมน์ไว้ก่อน re-render — เพราะการแทนที่ innerHTML
+  // ทั้งหมดด้านล่างนี้ทำให้ browser รีเซ็ต scrollTop ของ .rt-col-body กลับไปบนสุดโดย
+  // อัตโนมัติทุกครั้ง ซึ่งเป็นสาเหตุที่การ์ดดู "เลื่อนขึ้นไปบนสุด" เวลากดแก้ไข/เพิ่ม
+  // เลขที่เอกสาร เปิด picker หรือมีข้อมูลใหม่ sync เข้ามาจาก Firestore
+  const _rtScrollPos={};
+  rtSteps.forEach(s=>{
+    const body=document.querySelector('#rtCol_'+s.id+' .rt-col-body');
+    if(body) _rtScrollPos[s.id]=body.scrollTop;
+  });
+
   const filtered=rtFilteredTasks();
   const counted=rtCountedTasks();
   const total=rtTasks.filter(t=>!t.archived).length;
@@ -552,6 +563,12 @@ function rtRenderBoard(){
       <div class="rt-col-body">${cardsHtml}</div>
     </div>`;
   }).join('');
+
+  // คืนตำแหน่ง scroll กลับให้แต่ละคอลัมน์ หลังจาก DOM ถูกสร้างใหม่แล้ว
+  rtSteps.forEach(s=>{
+    const body=document.querySelector('#rtCol_'+s.id+' .rt-col-body');
+    if(body && _rtScrollPos[s.id]!==undefined) body.scrollTop=_rtScrollPos[s.id];
+  });
 }
 
 function rtCardHtml(t){
