@@ -79,27 +79,19 @@
 .rt-card-time{font-size:9.5px;color:var(--tx3);}
 .rt-foot-btns{display:flex;gap:4px;align-items:center;}
 
-/* Compact card mode — single-line row. Only shows: step-color dot, title (inline
-   editable), doc number badge, doc date, recipient chip, and the essential footer
-   icon buttons (history / next / done / delete). Everything else (subtitle,
-   detail, owner, step picker, photos) lives behind a "⋯" toggle that expands
-   just that one card without leaving compact mode. */
-.rt-card.compact{padding:0;}
-.rt-c1{display:flex;align-items:center;gap:6px;padding:7px 10px;}
-.rt-c1-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.rt-c1-title{flex:1;min-width:0;border:none;background:transparent;font-size:12.5px;font-weight:700;color:var(--tx1);padding:2px 4px;border-radius:6px;font-family:var(--font);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.rt-c1-title:focus{background:var(--surf);outline:1.5px solid var(--g);}
-.rt-c1-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:12px;white-space:nowrap;cursor:pointer;flex-shrink:0;border:none;font-family:var(--font);}
-.rt-c1-badge.empty{color:var(--tx3);background:var(--bg);border:1px dashed var(--bdrm);font-weight:600;}
-.rt-c1-date{font-size:10px;color:var(--tx3);white-space:nowrap;cursor:pointer;flex-shrink:0;padding:2px 4px;position:relative;}
-.rt-c1-person{font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;white-space:nowrap;cursor:pointer;flex-shrink:0;max-width:70px;overflow:hidden;text-overflow:ellipsis;border:none;font-family:var(--font);}
-.rt-c1-more{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:13px;padding:2px 5px;flex-shrink:0;border-radius:5px;}
-.rt-c1-more:hover{background:var(--bg);color:var(--tx1);}
-.rt-c1-btns{display:flex;align-items:center;gap:1px;flex-shrink:0;}
-.rt-c1-icon{background:none;border:none;cursor:pointer;font-size:12px;padding:3px 5px;border-radius:5px;color:var(--tx3);}
-.rt-c1-icon:hover{background:var(--bg);color:var(--tx1);}
-.rt-c1-icon:disabled{opacity:.35;cursor:default;}
-.rt-c1-expand{padding:0 10px 8px;animation:rtDetailIn .12s ease;}
+/* Compact card mode — shows only doc number / doc date / signer, plus the essential
+   footer actions (history / next step / done). Toggled by the "ย่อการ์ด" checkbox. */
+.rt-card.compact{padding:8px 10px;}
+.rt-card.compact .rt-card-top{margin-bottom:2px;}
+.rt-card.compact .rt-assign-line{padding:2px 4px;}
+.rt-card.compact .rt-card-subtitle{margin-bottom:2px;}
+.rt-card.compact .rt-card-foot{margin-top:4px;padding-top:4px;}
+.rt-icon-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:3px 6px;border-radius:5px;color:var(--tx3);font-family:var(--font);}
+.rt-icon-btn:hover{background:var(--surf);color:var(--tx1);}
+.rt-next-btn{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,var(--g),var(--gd));color:#fff;font-weight:700;font-size:11px;padding:5px 11px;border-radius:20px;box-shadow:0 2px 6px rgba(0,0,0,.18);transition:.15s;}
+.rt-next-btn:hover{background:linear-gradient(135deg,var(--gd),var(--g));transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.24);color:#fff;}
+.rt-next-btn:active{transform:translateY(0);box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.rt-next-btn:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none;}
 
 .rtm-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;padding:16px;}
 .rtm-wrap.open{display:flex;}
@@ -634,10 +626,9 @@ function rtCardHtml(t){
   const ownerOpen=_rtOpenOwnerPicker.has(t.id);
   const stepOpen=_rtOpenStepPicker.has(t.id);
   const docNumOpen=_rtOpenDocNumPicker.has(t.id);
-  // In compact mode the detail toggle ("⋯") now controls its own inline expand
-  // block (see the compact branch below) rather than the old full-card detail
-  // section, so it always starts closed per-render like everywhere else — the
-  // _rtOpenDetail set is shared and still driven the same way via rtToggleDetail().
+  // In compact mode the detail section (extra fields) never shows, regardless of
+  // whether the person previously expanded it — compact mode's whole point is to
+  // hide everything except doc number / doc date / signer.
   const detailOpen=!compact && _rtOpenDetail.has(t.id);
   const docNums=t.docNumbers||[];
   const docNumSuggestions=rtAllKnownDocNumbers().filter(n=>!docNums.includes(n));
@@ -669,70 +660,8 @@ function rtCardHtml(t){
   const stepIdx=rtSteps.findIndex(s=>s.id===t.stepId);
   const isLastStep = stepIdx===-1 ? true : stepIdx>=rtSteps.length-1;
 
-  // ─────────────────────────────────────────────────────────
-  // Compact mode — single-line row per card. Only the essentials show
-  // (step dot, title, doc number, doc date, recipient, footer icon buttons).
-  // Everything else (subtitle, owner, step move, detail text, photos) is
-  // reachable via the "⋯" button, which expands just this one card in place
-  // without leaving compact mode or affecting any other card.
-  // ─────────────────────────────────────────────────────────
-  if(compact){
-    const expandOpen=_rtOpenDetail.has(t.id);
-    return `
-    <div class="rt-card compact ${t.archived?'is-done':''}" id="rtCard_${t.id}" draggable="true"
-      ondragstart="rtCardDragStart(event,'${t.id}')" ondragend="rtCardDragEnd(event)">
-      <div class="rt-c1">
-        <span class="rt-c1-dot" style="background:${step?step.color:'#999'};" title="${step?esc(step.name):''}"></span>
-        <input class="rt-c1-title" value="${esc(t.title||'')}" placeholder="ชื่องาน..." title="${esc(t.title||'')}"
-          oninput="rtFieldLocal('${t.id}','title',this.value)" onblur="rtSaveField('${t.id}','title')"/>
-        <span class="rt-c1-badge ${docNums.length?'':'empty'}" style="${docNums.length?`background:${lighten('#6366f1')};color:#6366f1;`:''}" onclick="rtTogglePicker('docnum','${t.id}')" title="เลขที่เอกสาร">${docNums.length?esc(docNums.join(', ')):'🔢 -'}</span>
-        <span class="rt-c1-date" onclick="rtOpenDatePicker(event,'rtCardDate_${t.id}')">📅 ${ddmmyyyy(t.docDate)||'-'}<input type="date" id="rtCardDate_${t.id}" value="${esc(t.docDate||'')}" onchange="rtSetDocDate('${t.id}',this.value)" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none;"/></span>
-        <span class="rt-c1-person" style="background:${person?lighten(person.color):'var(--bg)'};color:${person?person.color:'var(--tx3)'};" onclick="rtTogglePicker('person','${t.id}')" title="ผู้รับ">${person?esc(person.name):'👤 -'}</span>
-        <button type="button" class="rt-c1-more" onclick="rtToggleDetail('${t.id}')" title="รายละเอียดเพิ่มเติม">${expandOpen?'▴':'⋯'}</button>
-        <div class="rt-c1-btns">
-          <button class="rt-c1-icon" onclick="rtOpenHistory('${t.id}')" title="ประวัติ">🕐</button>
-          <button class="rt-c1-icon" onclick="rtNextStep('${t.id}')" title="ถัดไป" ${isLastStep?'disabled':''}>⏭️</button>
-          <button class="rt-c1-icon" onclick="rtToggleDone('${t.id}')" title="${t.archived?'เปิดงานใหม่':'เสร็จสิ้น'}">${t.archived?'↩️':'✅'}</button>
-          <button class="rt-c1-icon" onclick="rtOpenDel('${t.id}')" title="ลบ">✕</button>
-        </div>
-      </div>
-      ${docNumOpen?`<div class="rt-c1-expand"><div class="rt-picker-panel" style="flex-direction:column;align-items:stretch;">
-        <div class="rt-docnum-addrow" style="margin-bottom:6px;">
-          <input type="text" id="rtCardDocNumInput_${t.id}" placeholder="เพิ่มเลขที่เอกสาร..." onkeydown="if(event.key==='Enter'){event.preventDefault();rtCardDocNumAdd('${t.id}');}"/>
-          <button type="button" class="rt-btn" onclick="rtCardDocNumAdd('${t.id}')">+ เพิ่ม</button>
-        </div>
-        ${docNums.length?`<div class="rt-docnum-chips">${docNums.map((n,idx)=>`<span class="rt-docnum-chip">${esc(n)}<button type="button" onclick="rtRemoveDocNumberAt('${t.id}',${idx})">✕</button></span>`).join('')}</div>`:''}
-        ${docNumSuggestions.length?`<div class="rt-docnum-suggest-lbl">เคยใช้มาก่อน — เลือกได้เลย</div><div class="rt-docnum-suggest">${docNumSuggestions.map(n=>`<button type="button" class="rt-pick-btn" onclick="rtAddDocNumber('${t.id}','${esc(n).replace(/'/g,"\\'")}')">${esc(n)}</button>`).join('')}</div>`:''}
-      </div></div>`:''}
-      ${personOpen?`<div class="rt-c1-expand"><div class="rt-picker-panel">${personPickerBtns}</div></div>`:''}
-      ${expandOpen?`<div class="rt-c1-expand">
-        <input class="rt-card-subtitle" style="border:1.5px solid var(--bdrm);border-radius:var(--rad);padding:6px 8px;margin-bottom:6px;width:100%;" value="${esc(t.subtitle||'')}" placeholder="✍️ ผู้เซ็น/งานของ..."
-          oninput="rtFieldLocal('${t.id}','subtitle',this.value)" onblur="rtSaveField('${t.id}','subtitle')"/>
-        <textarea class="rt-card-detail" style="border:1.5px solid var(--bdrm);margin-bottom:6px;" placeholder="รายละเอียด..."
-          oninput="rtFieldLocal('${t.id}','detail',this.value)" onblur="rtSaveField('${t.id}','detail')">${esc(t.detail||'')}</textarea>
-        <div class="rt-assign">
-          <div class="rt-assign-line" onclick="rtTogglePicker('owner','${t.id}')">
-            <span class="rt-assign-lbl">🧑‍💻 ผู้ดำเนินการ:</span>
-            ${ownerChip}
-            <span class="rt-assign-edit">เปลี่ยน ▾</span>
-          </div>
-          ${ownerOpen?`<div class="rt-picker-panel">${ownerPickerBtns}</div>`:''}
-        </div>
-        <div class="rt-assign">
-          <div class="rt-assign-line" onclick="rtTogglePicker('step','${t.id}')">
-            <span class="rt-assign-lbl">🔀 ขั้นตอน:</span>
-            ${stepChip}
-            <span class="rt-assign-edit">ย้าย ▾</span>
-          </div>
-          ${stepOpen?`<div class="rt-picker-panel">${stepPickerBtns}</div>`:''}
-        </div>
-        ${t.photos&&t.photos.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">${t.photos.map(ph=>`<img src="${ph.url}" style="width:34px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr);cursor:pointer;" onclick="window.open('${ph.url}','_blank')"/>`).join('')}</div>`:''}
-      </div>`:''}
-    </div>`;
-  }
-
   return `
-  <div class="rt-card ${t.archived?'is-done':''}" id="rtCard_${t.id}" draggable="true"
+  <div class="rt-card ${t.archived?'is-done':''} ${compact?'compact':''}" id="rtCard_${t.id}" draggable="true"
     ondragstart="rtCardDragStart(event,'${t.id}')" ondragend="rtCardDragEnd(event)">
     <div class="rt-card-top">
       <input class="rt-card-title" value="${esc(t.title||'')}" placeholder="ชื่อเอกสาร/ชื่องาน..."
@@ -764,6 +693,7 @@ function rtCardHtml(t){
     <input class="rt-card-subtitle" value="${esc(t.subtitle||'')}" placeholder="✍️ ผู้เซ็น/งานของ..."
       oninput="rtFieldLocal('${t.id}','subtitle',this.value)" onblur="rtSaveField('${t.id}','subtitle')"/>
 
+    ${compact?'':`
     <div class="rt-assign">
       <div class="rt-assign-line" onclick="rtTogglePicker('owner','${t.id}')">
         <span class="rt-assign-lbl">🧑‍💻 ผู้ดำเนินการ:</span>
@@ -773,7 +703,7 @@ function rtCardHtml(t){
       ${ownerOpen?`<div class="rt-picker-panel">${ownerPickerBtns}</div>`:''}
     </div>
 
-    <button type="button" class="rt-detail-toggle" onclick="rtToggleDetail('${t.id}')">${detailOpen?'▴ ซ่อนรายละเอียด':'▾ แสดงรายละเอียด'}</button>
+    <button type="button" class="rt-detail-toggle" onclick="rtToggleDetail('${t.id}')">${detailOpen?'▴ ซ่อนรายละเอียด':'▾ แสดงรายละเอียด'}</button>`}
 
     ${detailOpen?`
     <div class="rt-detail-wrap">
@@ -802,12 +732,12 @@ function rtCardHtml(t){
     </div>`:''}
 
     <div class="rt-card-foot">
-      <div class="rt-card-foot-row">
+      ${compact?'':`<div class="rt-card-foot-row">
         <span class="rt-card-time">📅 สร้าง ${dateTimeShort(t.createdAt)}</span>
-      </div>
+      </div>`}
       <div class="rt-card-foot-row">
-        <span class="rt-card-time">🔄 อัปเดต ${dateTimeShort(t.updatedAt)}</span>
-        <div class="rt-foot-btns">
+        ${compact?'':`<span class="rt-card-time">🔄 อัปเดต ${dateTimeShort(t.updatedAt)}</span>`}
+        <div class="rt-foot-btns" style="${compact?'margin-left:auto;':''}">
           <button class="rt-icon-btn" onclick="rtOpenHistory('${t.id}')" title="ประวัติ">🕐</button>
           <button class="rt-icon-btn rt-next-btn" onclick="rtNextStep('${t.id}')" title="ไปขั้นตอนถัดไป" ${isLastStep?'disabled':''}>ถัดไป ⏭️</button>
           <button class="rt-icon-btn" onclick="rtToggleDone('${t.id}')" title="${t.archived?'เปิดงานใหม่':'เสร็จสิ้น'}">${t.archived?'↩️':'✅'}</button>
@@ -824,7 +754,6 @@ function rtTogglePicker(kind,taskId){
 }
 // Expands/collapses the "แสดงรายละเอียด" section on a card (detail text, recipient,
 // step picker, photos) — keeps the default card compact with just the essentials.
-// In compact mode this also drives the "⋯" inline expand block on the single-line row.
 function rtToggleDetail(taskId){
   if(_rtOpenDetail.has(taskId)) _rtOpenDetail.delete(taskId); else _rtOpenDetail.add(taskId);
   rtRenderBoard();
