@@ -194,7 +194,7 @@
   <div class="rtm-box">
     <div class="rtm-title">➕ เพิ่มRoutine</div>
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">🔢 เลขที่ (ไม่บังคับ เพิ่มได้มากกว่า 1 เลข)</div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px;">🔢 เลขที่เอกสาร (ไม่บังคับ เพิ่มได้มากกว่า 1 เลข)</div>
       <div class="rt-docnum-chips" id="rtNewDocNumChips"></div>
       <div class="rt-docnum-addrow">
         <input type="text" id="rtNewDocNumInput" placeholder="พิมพ์เลขที่เอกสาร แล้วกด Enter หรือ +เพิ่ม" oninput="rtRenderNewDocNumSuggest()" onkeydown="rtNewDocNumKeydown(event)"/>
@@ -513,8 +513,14 @@ function rtRenderBoard(){
   board.innerHTML=rtSteps.map(step=>{
     const tasksInStep=filtered.filter(t=>t.stepId===step.id)
       .sort((a,b)=>{
-        const ta=a.updatedAt?.toDate?a.updatedAt.toDate().getTime():(a.order||0);
-        const tb=b.updatedAt?.toDate?b.updatedAt.toDate().getTime():(b.order||0);
+        // Sort by the stable "order" (set once at creation, Date.now()) rather than
+        // updatedAt. updatedAt changes on every field edit / assignment / step move,
+        // which used to re-sort the whole column and yank the card the person was
+        // actively editing straight to the top — very disorienting. "order" never
+        // changes after creation, so newest tasks still land on top but editing an
+        // existing card no longer moves it.
+        const ta=a.order||0;
+        const tb=b.order||0;
         return tb-ta;
       });
     const countInStep=counted.filter(t=>t.stepId===step.id).length;
@@ -591,7 +597,7 @@ function rtCardHtml(t){
     </div>
     <div class="rt-assign">
       <div class="rt-assign-line" onclick="rtTogglePicker('docnum','${t.id}')">
-        <span class="rt-assign-lbl">🔢 เลขที่:</span>
+        <span class="rt-assign-lbl">🔢 เลขที่เอกสาร:</span>
         ${docNums.length?`<span class="rt-chip" style="background:${lighten('#6366f1')};color:#6366f1;">${esc(docNums.join(', '))}</span>`:`<span class="rt-chip empty">ยังไม่ระบุ</span>`}
         <span class="rt-assign-edit">แก้ไข ▾</span>
       </div>
